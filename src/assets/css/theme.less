@@ -1,0 +1,61 @@
+@import url("./default.less");
+
+/**
+ * 修改主题
+ * @param color - 字体颜色
+ * @param bgColor - 背景颜色
+ * @param layoutContentBg - layout内容背景色
+ * @param contentBgColor - 内容背景颜色
+ * @param svgColor - svg颜色
+ */
+.changeTheme(
+  @color: @primaryColor,
+  @bgColor: @primaryBg,
+  @layoutContentBg: @layoutContentBg,
+  @contentBgColor: @contentBg,
+  @svgColor: @svgColor
+) {
+  color: @color !important;
+  background-color: @bgColor !important;
+
+  .bg {
+    background-color: @bgColor !important;
+  }
+
+  .change svg {
+    color: @svgColor !important;
+  }
+
+  a,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: @color !important;
+  }
+
+  #layoutContent {
+    background-color: @layoutContentBg !important;
+  }
+
+  #content {
+    background-color: @contentBgColor !important;
+  }
+
+  // 富文本
+  .w-e-toolbar,
+  .w-e-bar-item button,
+  .w-e-text-container {
+    fill: @color !important;
+    color: @color !important;
+    background-color: @bgColor !important;
+  }
+
+  #header,
+  #layout {
+    color: @color !important;
+    background-color: @bgColor !important;
+  }
+}
