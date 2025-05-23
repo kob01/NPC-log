@@ -15,7 +15,7 @@ export const request = creteRequest();
  */
 function creteRequest() {
   return new AxiosRequest({
-    baseURL: import.meta.env.VITE_BASE_URL,
+    baseURL: '',
     timeout: 180 * 1000,
     interceptors: {
       // 接口请求拦截
