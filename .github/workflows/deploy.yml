@@ -1,0 +1,50 @@
+name: Deploy via GitHub Actions
+
+on:
+  push:
+    branches:
+      - main # 触发部署的分支
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest # 运行环境
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # - name: Set up Node.js
+      #   uses: actions/setup-node@v3
+      #   with:
+      #     node-version: "18" # 根据项目需求调整Node.js版本
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build project
+        run: npm run build # 根据项目类型调整命令
+
+      - name: Compress build files
+        run: cd dist && zip -r ../dist.zip . # 压缩构建产物
+
+      - name: Upload dist.zip to Server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: dist.zip
+          target: /web_tmp
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }} # 服务器IP
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }} # 登录密码（推荐使用密钥）
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            echo "Unzipping dist.zip"
+            unzip -o /web_tmp/dist.zip -d /www/wwwroot/47.116.208.170/web
+            echo "Reloading Nginx..."
+            nginx -s reload
