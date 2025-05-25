@@ -7,9 +7,6 @@ import AxiosRequest from "./request";
 // 请求配置
 export const request = creteRequest();
 
-// TODO：创建多个请求
-// export const newRequest = creteRequest('/test');
-
 /**
  * 创建请求
  */

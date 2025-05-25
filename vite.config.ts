@@ -26,14 +26,14 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       open: true,
-      port: env.VITE_SERVER_PORT,
+      port: +env.VITE_SERVER_PORT,
       // 跨域处理
-      // proxy: {
-      //   "/api": {
-      //     target: env.VITE_API_BASE_URL,
-      //     changeOrigin: true,
-      //   },
-      // },
+      proxy: {
+        "/api": {
+          target: env.VITE_API_BASE_URL,
+          changeOrigin: true,
+        },
+      },
     },
     build: buildOptions(),
   };

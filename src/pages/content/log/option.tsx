@@ -68,10 +68,8 @@ function Page() {
   };
 
   useEffect(() => {
-    console.log('id', id);
     id ? handleUpdate(id) : handleCreate();
     const values = localStorage.getItem('values');
-    console.log('values', values);
     if (values && Object.keys(values).length > 0) {
       setCreateData(JSON.parse(values) as FormData);
     }
@@ -94,7 +92,6 @@ function Page() {
       setLoading(true);
       const { code, data } = await getNPCEventById(id as string);
       if (Number(code) !== 200) return;
-      console.log('data', data);
       setCreateData(data);
     } finally {
       setLoading(false);
@@ -118,7 +115,6 @@ function Page() {
       key: uri,
       nextPath: fatherPath
     });
-    console.log('st',st);
     dispatch(st);
   };
 
@@ -129,8 +125,6 @@ function Page() {
   const handleFinish = async (values: FormData) => {
     try {
       setLoading(true);
-      console.log('createId', createId);
-      console.log('values', values);
       const functions = () => createId ? updateNPCEvent({ ...values, id: createId }) : createNPCEvent(values);
       const { code, message } = await functions();
       if (Number(code) !== 200) return;

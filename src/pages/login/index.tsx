@@ -130,6 +130,7 @@ function Login() {
         return messageApi.error({ content: t('login.notPermissions'), key: 'permissions' });
       }
       localStorage.setItem('NPC_token', token);
+      localStorage.setItem('NPC_user', JSON.stringify(user));
       setToken(token);
       dispatch(setUserInfo(user));
       dispatch(setPermissions(permissions));

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { App } from 'antd';
 import { VERSION } from "@/utils/config";
 import { useTranslation } from 'react-i18next';
-import { HashRouter as Router } from 'react-router-dom';
+import { BrowserRouter as Router } from 'react-router-dom';
 import nprogress from 'nprogress';
 import AppPage from './App';
 import StaticAntd from '@/utils/staticAntd';
