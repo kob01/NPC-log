@@ -149,7 +149,7 @@ export const searchList = (t: TFunction): FormList[] => [
 export const tableColumns = (
   t: TFunction,
   optionRender: TableOptions<object>,
-  TooltipRender: (text: string) => JSX.Element
+  TooltipRender: (text: string) => JSX.Element,
 ): TableColumn => {
   return [
     {
@@ -189,6 +189,9 @@ export const tableColumns = (
       ellipsis: true,
       render: (value) => TooltipRender(value),
     },
+
+
+
     {
       title: "经验教训",
       dataIndex: "experience",
