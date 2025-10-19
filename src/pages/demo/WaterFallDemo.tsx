@@ -14,7 +14,7 @@ interface ResourceDataItem {
 // 排序模式类型
 type SortMode = 'default' | 'durationAsc' | 'durationDesc'
 
-// 瀑布图组件 - 使用div实现
+// 瀑布图组件 - 使用div实现，采用flex布局
 const WaterFallChart: React.FC<{
   data: ResourceDataItem[]
   formatTime: (milliseconds: number) => string
@@ -24,6 +24,7 @@ const WaterFallChart: React.FC<{
   const [hoveredItem, setHoveredItem] = useState<ResourceDataItem | null>(null)
   const [sortMode, setSortMode] = useState<SortMode>('default')
   const containerRef = useRef<HTMLDivElement>(null)
+  const timeRangeRef = useRef<HTMLDivElement>(null)
 
   const rowHeight = 30
   const paddingTop = 36 // 顶部空间用于时间刻度
@@ -31,9 +32,6 @@ const WaterFallChart: React.FC<{
   const durationColumnWidth = 100 // 持续时长列宽度
   const paddingLeft = 20 // 左侧边距
   const paddingRight = 50
-  const chartWidth = 1200
-  const durationColumnX = paddingLeft + nameColumnWidth // 持续时长列X坐标
-  const timeColumnX = durationColumnX + durationColumnWidth // 时间轴X坐标
 
   useEffect(() => {
     if (data.length > 0) {
@@ -41,6 +39,9 @@ const WaterFallChart: React.FC<{
       const endTimes = data.map((item) => item.endTime)
       setMinTime(Math.min(...startTimes))
       setMaxTime(Math.max(...endTimes))
+    } else {
+      setMinTime(0)
+      setMaxTime(1000)
     }
   }, [data])
 
@@ -66,12 +67,21 @@ const WaterFallChart: React.FC<{
 
   // 计算图表高度
   const chartHeight = Math.max(150, data.length * rowHeight + paddingTop + 20)
-  const usableWidth = chartWidth - timeColumnX - paddingRight
+
+  // 基于时间区间区域的实际宽度计算可用宽度
+  const usableWidth = () => {
+    if (!timeRangeRef.current) return 800 // 默认值
+    return timeRangeRef.current.clientWidth - paddingRight
+  }
 
   const timeToX = (time: number): number => {
-    console.log('usableWidth', usableWidth)
-    if (maxTime === minTime) return timeColumnX
-    return timeColumnX + ((time - minTime) / (maxTime - minTime)) * usableWidth
+    if (maxTime === minTime) return 0 // 相对于时间区间区域的左侧边缘
+    console.log('time', time)
+    console.log('minTime', minTime)
+    console.log('maxTime', maxTime)
+    if (time - minTime < 0) return 0 // 时间小于最小时间时，返回0{
+
+    return ((time - minTime) / (maxTime - minTime)) * usableWidth()
   }
 
   const generateTimeTicks = () => {
@@ -105,12 +115,9 @@ const WaterFallChart: React.FC<{
     // 确保时间轴不会太短
     const minimumEndTick = startTick + step * 3
     const finalEndTick = Math.max(endTick, minimumEndTick)
-    console.log('startTick', startTick)
 
     for (let time = startTick; time <= finalEndTick; time += step) {
       const x = timeToX(time)
-      // debugger
-      console.log('x', x)
       ticks.push(
         <div
           key={time}
@@ -156,98 +163,115 @@ const WaterFallChart: React.FC<{
     }
   }
 
-  // 计算开始时间线的位置
-  const getStartTimeLineStyle = (item: ResourceDataItem, index: number) => {
-    const startX = timeToX(item.startTime)
-    const y = paddingTop + index * rowHeight + 10
-
-    return {
-      position: 'absolute' as const,
-      left: startX,
-      top: y,
-      width: 1,
-      height: rowHeight - 8,
-      backgroundColor: '#1890ff',
-    }
-  }
-
-  // 计算结束时间线的位置
-  const getEndTimeLineStyle = (item: ResourceDataItem, index: number) => {
-    const endX = timeToX(item.endTime)
-    const y = paddingTop + index * rowHeight + 10
-
-    return {
-      position: 'absolute' as const,
-      left: endX,
-      top: y,
-      width: 1,
-      height: rowHeight - 8,
-      backgroundColor: '#1890ff',
-    }
-  }
-  console.log(generateTimeTicks())
   return (
     <div
       ref={containerRef}
       style={{
         overflowX: 'auto',
-        position: 'relative',
         height: chartHeight,
-        minWidth: chartWidth,
+        display: 'flex',
       }}
     >
       <div
         style={{
-          position: 'absolute',
-          left: 0,
-          top: paddingTop,
-          right: 0,
-          height: 1,
-          backgroundColor: '#dad9d9ff',
-        }}
-      />
-      {/* 列标题背景 - 开始时间 */}
-      <div
-        style={{
-          position: 'absolute',
-          left: timeColumnX,
-          top: 0,
-          width: chartWidth - timeColumnX,
-          height: paddingTop,
-          zIndex: 2,
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          left: paddingLeft,
-          top: paddingTop - 35,
-          color: '#262626',
-          fontSize: '13px',
-          fontWeight: '600',
-          zIndex: 3,
+          width: nameColumnWidth + paddingLeft,
+          height: chartHeight,
+          flexShrink: 0,
+          position: 'relative',
         }}
       >
-        资源名称
-      </div>
-      <div
-        style={{
-          position: 'absolute',
-          left: durationColumnX,
-          top: 0,
-          width: timeColumnX - durationColumnX,
-          height: paddingTop,
-          backgroundColor: '#f0f5ff',
-          zIndex: 2,
-        }}
-      />
-      <Tooltip title={sortMode === 'default' ? '点击切换排序' : sortMode === 'durationAsc' ? '持续时长升序' : '持续时长降序'} placement='top'>
+        {/* 资源名称列标题 */}
         <div
           style={{
             position: 'absolute',
-            left: durationColumnX,
+            left: paddingLeft,
             top: 0,
-            width: timeColumnX - durationColumnX,
+            width: nameColumnWidth,
+            height: paddingTop,
+            backgroundColor: '#f0f5ff',
+            zIndex: 2,
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            left: paddingLeft,
+            top: 0,
+            width: nameColumnWidth,
+            height: paddingTop,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 3,
+          }}
+        >
+          <span
+            style={{
+              color: '#262626',
+              fontSize: '13px',
+              fontWeight: '600',
+            }}
+          >
+            资源名称
+          </span>
+        </div>
+        {/* 资源名称列表 */}
+        {sortedData.map((item, index) => {
+          const y = paddingTop + index * rowHeight + 10
+          return (
+            <div key={`name-${item.key}`}>
+              {/* 左侧资源名称 - 左对齐，添加文本超长截断和Tooltip */}
+              <Tooltip title={item.name} placement='right' mouseEnterDelay={0.1} mouseLeaveDelay={0.1}>
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: paddingLeft,
+                    top: y,
+                    color: '#262626',
+                    fontSize: '12px',
+                    transform: 'translateY(-50%)',
+                    width: nameColumnWidth - 10,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    zIndex: 1,
+                  }}
+                >
+                  {item.name}
+                </div>
+              </Tooltip>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* 持续时长列 */}
+      <div
+        style={{
+          width: durationColumnWidth,
+          height: chartHeight,
+          flexShrink: 0,
+          position: 'relative',
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            width: durationColumnWidth,
+            height: paddingTop,
+            backgroundColor: '#f0f5ff',
+            zIndex: 2,
+          }}
+        />
+
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            width: durationColumnWidth,
             height: paddingTop,
             display: 'flex',
             alignItems: 'center',
@@ -279,101 +303,87 @@ const WaterFallChart: React.FC<{
             }}
           />
         </div>
-      </Tooltip>
-      <div
-        style={{
-          position: 'absolute',
-          left: durationColumnX,
-          top: paddingTop,
-          width: 1,
-          height: chartHeight - paddingTop,
-          backgroundColor: '#d9d9d9',
-        }}
-      />
 
-      {/* 垂直网格线和时间刻度（顶部） */}
-      {data.length > 0 && generateTimeTicks()}
-      {/* 资源条和名称 */}
-      {sortedData.map((item, index) => {
-        const y = paddingTop + index * rowHeight + 10
-
-        return (
-          <div key={item.key}>
-            <div
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: paddingTop + index * rowHeight,
-                width: nameColumnWidth + paddingLeft,
-                height: rowHeight,
-                zIndex: 0,
-              }}
-            />
-
-            {/* 左侧资源名称 - 左对齐，添加文本超长截断和Tooltip */}
-            <Tooltip title={item.name} placement='right' mouseEnterDelay={0.1} mouseLeaveDelay={0.1}>
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: paddingTop,
+            width: 1,
+            height: chartHeight - paddingTop,
+            backgroundColor: '#d9d9d9',
+          }}
+        />
+        {/* 持续时长列表 */}
+        {sortedData.map((item, index) => {
+          const y = paddingTop + index * rowHeight + 10
+          return (
+            <div key={`duration-${item.key}`}>
               <div
                 style={{
                   position: 'absolute',
-                  left: paddingLeft,
+                  left: 0,
                   top: y + rowHeight / 2 - 2,
-                  color: '#262626',
+                  color: '#1890ff',
                   fontSize: '12px',
                   fontWeight: '500',
                   transform: 'translateY(-50%)',
-                  width: nameColumnWidth - 10,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
+                  pointerEvents: 'none',
                   zIndex: 1,
+                  textAlign: 'center',
+                  width: durationColumnWidth,
                 }}
               >
-                {item.name}
+                {formatTime(item.duration)}
               </div>
-            </Tooltip>
-
-            {/* 持续时长列 */}
-            <div
-              style={{
-                position: 'absolute',
-                left: durationColumnX,
-                top: y + rowHeight / 2 - 2,
-                color: '#1890ff',
-                fontSize: '12px',
-                fontWeight: '500',
-                transform: 'translateY(-50%)',
-                pointerEvents: 'none',
-                zIndex: 1,
-              }}
-            >
-              {formatTime(item.duration)}
             </div>
-            <Tooltip
-              title={
-                <div>
+          )
+        })}
+      </div>
+
+      {/* 时间区间区域 - 自适应宽度 */}
+      <div
+        ref={timeRangeRef}
+        style={{
+          flexGrow: 1,
+          height: chartHeight,
+          minWidth: 800, // 最小宽度确保图表可读性
+          position: 'relative',
+        }}
+      >
+        {/* 垂直网格线和时间刻度（顶部） */}
+        {data.length > 0 && generateTimeTicks()}
+        {/* 资源条和名称 */}
+        {sortedData.map((item, index) => {
+          return (
+            <div key={item.key}>
+              <Tooltip
+                title={
                   <div>
-                    <strong>资源名称:</strong> {item.name}
+                    <div>
+                      <strong>资源名称:</strong> {item.name}
+                    </div>
+                    <div>
+                      <strong>持续时间:</strong> {formatTime(item.duration)}
+                    </div>
+                    <div>
+                      <strong>开始时间:</strong> {formatTime(item.startTime)}
+                    </div>
+                    <div>
+                      <strong>结束时间:</strong> {formatTime(item.endTime)}
+                    </div>
                   </div>
-                  <div>
-                    <strong>持续时间:</strong> {formatTime(item.duration)}
-                  </div>
-                  <div>
-                    <strong>开始时间:</strong> {formatTime(item.startTime)}
-                  </div>
-                  <div>
-                    <strong>结束时间:</strong> {formatTime(item.endTime)}
-                  </div>
-                </div>
-              }
-              overlayInnerStyle={{ textAlign: 'left' }}
-              mouseEnterDelay={0.1}
-              mouseLeaveDelay={0.1}
-            >
-              <div style={getResourceBarStyle(item, index)} onMouseEnter={() => setHoveredItem(item)} onMouseLeave={() => setHoveredItem(null)} />
-            </Tooltip>
-          </div>
-        )
-      })}
+                }
+                overlayInnerStyle={{ textAlign: 'left' }}
+                mouseEnterDelay={0.1}
+                mouseLeaveDelay={0.1}
+              >
+                <div style={getResourceBarStyle(item, index)} onMouseEnter={() => setHoveredItem(item)} onMouseLeave={() => setHoveredItem(null)} />
+              </Tooltip>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
