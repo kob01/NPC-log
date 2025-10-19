@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { Button, Tooltip, message } from 'antd'
-import BasicContent from '@/components/Content/BasicContent'
+import React, { useState, useEffect, useRef } from 'react'
+import { Button, Tooltip } from 'antd'
 import './WaterFallDemo.less'
 
 // 定义资源加载数据类型
@@ -15,18 +14,19 @@ interface ResourceDataItem {
 // 排序模式类型
 type SortMode = 'default' | 'durationAsc' | 'durationDesc'
 
-// 瀑布图组件 - 使用SVG和div实现
-const WaterFallChart: React.FC<{ 
-  data: ResourceDataItem[]; 
-  sortMode: SortMode; 
-  formatTime: (milliseconds: number) => string 
-}> = ({ data, sortMode, formatTime }) => {
+// 瀑布图组件 - 使用div实现
+const WaterFallChart: React.FC<{
+  data: ResourceDataItem[]
+  formatTime: (milliseconds: number) => string
+}> = ({ data, formatTime }) => {
   const [maxTime, setMaxTime] = useState(0)
   const [minTime, setMinTime] = useState(0)
   const [hoveredItem, setHoveredItem] = useState<ResourceDataItem | null>(null)
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
+  const [sortMode, setSortMode] = useState<SortMode>('default')
+  const containerRef = useRef<HTMLDivElement>(null)
+
   const rowHeight = 30
-  const paddingTop = 50 // 顶部空间用于时间刻度
+  const paddingTop = 36 // 顶部空间用于时间刻度
   const nameColumnWidth = 200 // 资源名称列宽度
   const durationColumnWidth = 100 // 持续时长列宽度
   const paddingLeft = 20 // 左侧边距
@@ -44,21 +44,40 @@ const WaterFallChart: React.FC<{
     }
   }, [data])
 
+  // 处理排序模式变化
+  const handleSortChange = () => {
+    const newSortMode = sortMode === 'default' ? 'durationAsc' : sortMode === 'durationAsc' ? 'durationDesc' : 'default'
+    setSortMode(newSortMode)
+  }
+
+  // 根据排序模式对数据进行排序
+  const getSortedData = () => {
+    if (sortMode === 'default') {
+      return data
+    } else if (sortMode === 'durationAsc') {
+      return [...data].sort((a, b) => a.duration - b.duration)
+    } else if (sortMode === 'durationDesc') {
+      return [...data].sort((a, b) => b.duration - a.duration)
+    }
+    return data
+  }
+
+  const sortedData = getSortedData()
+
   // 计算图表高度
   const chartHeight = Math.max(150, data.length * rowHeight + paddingTop + 20)
   const usableWidth = chartWidth - timeColumnX - paddingRight
 
-  // 时间转换为X坐标
   const timeToX = (time: number): number => {
+    console.log('usableWidth', usableWidth)
     if (maxTime === minTime) return timeColumnX
     return timeColumnX + ((time - minTime) / (maxTime - minTime)) * usableWidth
   }
 
-  // 生成时间刻度（移到顶部）
   const generateTimeTicks = () => {
     const ticks = []
     // 确定合适的刻度间隔，使其成为1000的倍数或100的倍数
-    let step = Math.ceil((maxTime - minTime) / 6)
+    let step = Math.ceil((maxTime - minTime) / 8)
     // 调整step为更易读的数字
     if (step > 1000) {
       step = Math.ceil(step / 1000) * 1000
@@ -66,184 +85,295 @@ const WaterFallChart: React.FC<{
       step = Math.ceil(step / 100) * 100
     }
 
+    // 优化时间轴范围计算，解决间隔过大问题
     const startTick = Math.floor(minTime / step) * step
-    const endTick = Math.ceil(maxTime / step) * step
 
-    for (let time = startTick; time <= endTick; time += step) {
+    // 计算扩展因子：根据数据范围动态调整
+    const dataRange = maxTime - minTime
+    let extensionFactor = 0.1 // 默认扩展10%
+
+    // 当数据范围较大时，减少扩展比例；数据范围较小时，适当增加扩展比例
+    if (dataRange > 5000) {
+      extensionFactor = 0.05 // 大范围数据扩展5%
+    } else if (dataRange < 1000) {
+      extensionFactor = 0.15 // 小范围数据扩展15%
+    }
+
+    // 计算结束刻度，确保至少有一个完整的step间隔
+    const endTick = Math.max(Math.ceil(maxTime / step) * step, maxTime + step * extensionFactor)
+
+    // 确保时间轴不会太短
+    const minimumEndTick = startTick + step * 3
+    const finalEndTick = Math.max(endTick, minimumEndTick)
+    console.log('startTick', startTick)
+
+    for (let time = startTick; time <= finalEndTick; time += step) {
       const x = timeToX(time)
+      // debugger
+      console.log('x', x)
       ticks.push(
-        <g key={time}>
-          <line x1={x} y1={paddingTop} x2={x} y2={chartHeight - 20} stroke='#e8e8e8' strokeWidth='1' strokeDasharray='2,2' />
-          <text x={x} y={paddingTop - 10} textAnchor='middle' fill='#666' fontSize='12'>
-            {formatTime(time)}
-          </text>
-        </g>,
+        <div
+          key={time}
+          style={{
+            position: 'absolute',
+            left: x,
+            top: paddingTop - 35,
+            transform: 'translateX(-50%)',
+            whiteSpace: 'nowrap',
+            zIndex: 9,
+          }}
+        >
+          {formatTime(time)}
+        </div>,
       )
     }
 
     return ticks
   }
 
-  // 处理鼠标悬浮事件
-  const handleMouseEnter = (item: ResourceDataItem, event: React.MouseEvent) => {
-    const svgRect = event.currentTarget.getBoundingClientRect()
-    const svgContainer = event.currentTarget.closest('div')
-    if (svgContainer) {
-      const containerRect = svgContainer.getBoundingClientRect()
-      setTooltipPosition({
-        x: event.clientX - containerRect.left + 10,
-        y: event.clientY - containerRect.top - 10
-      })
-      setHoveredItem(item)
+  // 计算资源条的位置和尺寸
+  const getResourceBarStyle = (item: ResourceDataItem, index: number) => {
+    const startX = timeToX(item.startTime)
+    const endX = timeToX(item.endTime)
+    const barWidth = Math.max(endX - startX, 5) // 最小宽度5px
+    const y = paddingTop + index * rowHeight + 10
+
+    // 统一使用蓝色
+    const backgroundColor = '#1890ff'
+
+    return {
+      position: 'absolute',
+      left: startX,
+      top: y,
+      width: barWidth,
+      height: rowHeight - 8,
+      backgroundColor,
+      borderRadius: '4px',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)',
+      opacity: hoveredItem?.key !== item.key ? 1 : 0.8,
+      cursor: 'pointer',
+      transition: 'all 0.2s ease-in-out',
     }
   }
 
-  const handleMouseLeave = () => {
-    setHoveredItem(null)
+  // 计算开始时间线的位置
+  const getStartTimeLineStyle = (item: ResourceDataItem, index: number) => {
+    const startX = timeToX(item.startTime)
+    const y = paddingTop + index * rowHeight + 10
+
+    return {
+      position: 'absolute' as const,
+      left: startX,
+      top: y,
+      width: 1,
+      height: rowHeight - 8,
+      backgroundColor: '#1890ff',
+    }
   }
 
+  // 计算结束时间线的位置
+  const getEndTimeLineStyle = (item: ResourceDataItem, index: number) => {
+    const endX = timeToX(item.endTime)
+    const y = paddingTop + index * rowHeight + 10
+
+    return {
+      position: 'absolute' as const,
+      left: endX,
+      top: y,
+      width: 1,
+      height: rowHeight - 8,
+      backgroundColor: '#1890ff',
+    }
+  }
+  console.log(generateTimeTicks())
   return (
-    <div style={{ overflowX: 'auto', position: 'relative' }}>
-      <svg 
-        width={Math.max(chartWidth, usableWidth + paddingLeft + paddingRight)} 
-        height={chartHeight} 
-        style={{ border: '1px solid #f0f0f0' }}
+    <div
+      ref={containerRef}
+      style={{
+        overflowX: 'auto',
+        position: 'relative',
+        height: chartHeight,
+        minWidth: chartWidth,
+      }}
+    >
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: paddingTop,
+          right: 0,
+          height: 1,
+          backgroundColor: '#dad9d9ff',
+        }}
+      />
+      {/* 列标题背景 - 开始时间 */}
+      <div
+        style={{
+          position: 'absolute',
+          left: timeColumnX,
+          top: 0,
+          width: chartWidth - timeColumnX,
+          height: paddingTop,
+          zIndex: 2,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: paddingLeft,
+          top: paddingTop - 35,
+          color: '#262626',
+          fontSize: '13px',
+          fontWeight: '600',
+          zIndex: 3,
+        }}
       >
-        {/* 水平轴 - 移到时间刻度下方 */}
-        <line
-          x1={paddingLeft}
-          y1={paddingTop}
-          x2={chartWidth - paddingRight}
-          y2={paddingTop}
-          stroke="#333"
-          strokeWidth="1"
-        />
-        
-        {/* 列标题 */}
-          <text x={paddingLeft} y={paddingTop - 10} textAnchor="start" fill="#666" fontSize="12" fontWeight="bold">
-            资源名称
-          </text>
-          <text 
-            x={durationColumnX} 
-            y={paddingTop - 10} 
-            textAnchor="start" 
-            fill="#666" 
-            fontSize="12" 
-            fontWeight="bold"
-            style={{ pointerEvents: 'auto', cursor: 'pointer', textDecoration: 'underline' }}
-            onClick={(e) => {
-              e.stopPropagation();
-              const event = new CustomEvent('sortDurationHeader');
-              window.dispatchEvent(event);
+        资源名称
+      </div>
+      <div
+        style={{
+          position: 'absolute',
+          left: durationColumnX,
+          top: 0,
+          width: timeColumnX - durationColumnX,
+          height: paddingTop,
+          backgroundColor: '#f0f5ff',
+          zIndex: 2,
+        }}
+      />
+      <Tooltip title={sortMode === 'default' ? '点击切换排序' : sortMode === 'durationAsc' ? '持续时长升序' : '持续时长降序'} placement='top'>
+        <div
+          style={{
+            position: 'absolute',
+            left: durationColumnX,
+            top: 0,
+            width: timeColumnX - durationColumnX,
+            height: paddingTop,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            zIndex: 3,
+          }}
+          onClick={handleSortChange}
+        >
+          <span
+            style={{
+              color: '#262626',
+              fontSize: '13px',
+              fontWeight: '600',
+              marginRight: '4px',
             }}
           >
             持续时长
-          </text>
-        
-        {/* 列分隔线 */}
-        <line x1={durationColumnX} y1={paddingTop} x2={durationColumnX} y2={chartHeight - 20} stroke="#e8e8e8" strokeWidth="1" />
-        <line x1={timeColumnX} y1={paddingTop} x2={timeColumnX} y2={chartHeight - 20} stroke="#e8e8e8" strokeWidth="1" />
-
-        {/* 垂直网格线和时间刻度（顶部） */}
-        {data.length > 0 && generateTimeTicks()}
-
-        {/* 资源条和名称 */}
-        {data.map((item, index) => {
-          const startX = timeToX(item.startTime)
-          const endX = timeToX(item.endTime)
-          const barWidth = Math.max(endX - startX, 2) // 最小宽度2px
-          const y = paddingTop + index * rowHeight + 10
-
-          return (
-            <g 
-              key={item.key}
-              onMouseEnter={(e) => handleMouseEnter(item, e)}
-              onMouseLeave={handleMouseLeave}
-              style={{ cursor: 'pointer' }}
-            >
-              {/* 左侧资源名称 - 左对齐 */}
-              <text 
-                x={paddingLeft} 
-                y={y + rowHeight / 2 - 2} 
-                textAnchor="start" 
-                fill="#333" 
-                fontSize="12"
-                style={{ pointerEvents: 'none' }}
-              >
-                <tspan x={paddingLeft}>{item.name}</tspan>
-              </text>
-              
-              {/* 持续时长列 */}
-              <text 
-                x={durationColumnX} 
-                y={y + rowHeight / 2 - 2} 
-                textAnchor="start" 
-                fill="#666" 
-                fontSize="12"
-                style={{ pointerEvents: 'none' }}
-              >
-                {formatTime(item.duration)}
-              </text>
-
-              {/* 开始时间点的竖线 */}
-              <line
-                x1={startX}
-                y1={y}
-                x2={startX}
-                y2={y + rowHeight - 8}
-                stroke="#1890ff"
-                strokeWidth="1"
-              />
-
-              {/* 资源条 */}
-              <rect
-                x={startX}
-                y={y}
-                width={barWidth}
-                height={rowHeight - 8}
-                fill="#1890ff"
-                opacity="0.8"
-              />
-
-              {/* 结束时间点的竖线 */}
-              <line
-                x1={endX}
-                y1={y}
-                x2={endX}
-                y2={y + rowHeight - 8}
-                stroke="#1890ff"
-                strokeWidth="1"
-              />
-
-              {/* 移除资源条中间的持续时间文本，避免重复显示 */}
-            </g>
-          )
-        })}
-      </svg>
-
-      {/* Ant Design Tooltip 替代原生 title */}
-      {hoveredItem && (
-        <div 
-          style={{
-            position: 'absolute',
-            left: tooltipPosition.x,
-            top: tooltipPosition.y,
-            backgroundColor: 'rgba(0, 0, 0, 0.75)',
-            color: 'white',
-            padding: '8px 12px',
-            borderRadius: '4px',
-            fontSize: '12px',
-            zIndex: 1000,
-            pointerEvents: 'none',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          <div><strong>资源名称:</strong> {hoveredItem.name}</div>
-          <div><strong>持续时间:</strong> {formatTime(hoveredItem.duration)}</div>
-          <div><strong>开始时间:</strong> {formatTime(hoveredItem.startTime)}</div>
-          <div><strong>结束时间:</strong> {formatTime(hoveredItem.endTime)}</div>
+          </span>
+          <div
+            style={{
+              width: 0,
+              height: 0,
+              borderLeft: '5px solid transparent',
+              borderRight: '5px solid transparent',
+              borderTop: sortMode === 'durationDesc' ? 'none' : '8px solid #1890ff',
+              borderBottom: sortMode === 'durationDesc' ? '8px solid #1890ff' : 'none',
+              opacity: sortMode === 'default' ? 0.3 : 1,
+            }}
+          />
         </div>
-      )}
+      </Tooltip>
+      <div
+        style={{
+          position: 'absolute',
+          left: durationColumnX,
+          top: paddingTop,
+          width: 1,
+          height: chartHeight - paddingTop,
+          backgroundColor: '#d9d9d9',
+        }}
+      />
+
+      {/* 垂直网格线和时间刻度（顶部） */}
+      {data.length > 0 && generateTimeTicks()}
+      {/* 资源条和名称 */}
+      {sortedData.map((item, index) => {
+        const y = paddingTop + index * rowHeight + 10
+
+        return (
+          <div key={item.key}>
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: paddingTop + index * rowHeight,
+                width: nameColumnWidth + paddingLeft,
+                height: rowHeight,
+                zIndex: 0,
+              }}
+            />
+
+            {/* 左侧资源名称 - 左对齐，添加文本超长截断和Tooltip */}
+            <Tooltip title={item.name} placement='right' mouseEnterDelay={0.1} mouseLeaveDelay={0.1}>
+              <div
+                style={{
+                  position: 'absolute',
+                  left: paddingLeft,
+                  top: y + rowHeight / 2 - 2,
+                  color: '#262626',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  transform: 'translateY(-50%)',
+                  width: nameColumnWidth - 10,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  zIndex: 1,
+                }}
+              >
+                {item.name}
+              </div>
+            </Tooltip>
+
+            {/* 持续时长列 */}
+            <div
+              style={{
+                position: 'absolute',
+                left: durationColumnX,
+                top: y + rowHeight / 2 - 2,
+                color: '#1890ff',
+                fontSize: '12px',
+                fontWeight: '500',
+                transform: 'translateY(-50%)',
+                pointerEvents: 'none',
+                zIndex: 1,
+              }}
+            >
+              {formatTime(item.duration)}
+            </div>
+            <Tooltip
+              title={
+                <div>
+                  <div>
+                    <strong>资源名称:</strong> {item.name}
+                  </div>
+                  <div>
+                    <strong>持续时间:</strong> {formatTime(item.duration)}
+                  </div>
+                  <div>
+                    <strong>开始时间:</strong> {formatTime(item.startTime)}
+                  </div>
+                  <div>
+                    <strong>结束时间:</strong> {formatTime(item.endTime)}
+                  </div>
+                </div>
+              }
+              overlayInnerStyle={{ textAlign: 'left' }}
+              mouseEnterDelay={0.1}
+              mouseLeaveDelay={0.1}
+            >
+              <div style={getResourceBarStyle(item, index)} onMouseEnter={() => setHoveredItem(item)} onMouseLeave={() => setHoveredItem(null)} />
+            </Tooltip>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -269,17 +399,28 @@ const generateResourceData = (): ResourceDataItem[] => {
     'lazy-module.js - 懒加载模块',
     'data.json - 初始数据文件',
     'i18n/en.json - 英文语言包',
-    'images/user-avatar.png - 用户头像',
+    'images/user-user-user-avatar.png - 用户头像',
     'fonts/roboto.woff2 - Roboto字体',
   ]
 
   return resources
     .map((name, index) => {
-      // 生成更合理的时间数据，更接近真实的加载场景
       const baseTime = index * 80 // 基础时间递增
       const randomOffset = Math.floor(Math.random() * 100) // 随机偏移
       const startTime = baseTime + randomOffset
-      const duration = Math.floor(Math.random() * 400) + 100 // 随机持续时间，100-500ms
+
+      // 添加一些超长加载时长的测试数据
+      let duration: number
+      if (index === 2) {
+        duration = 900 + Math.floor(Math.random() * 200) // 2-2.5小时
+      } else if (index === 5) {
+        duration = 300 + Math.floor(Math.random() * 60) // 30-40分钟
+      } else if (index === 8) {
+        duration = 100 + Math.floor(Math.random() * 30) // 10-15分钟
+      } else {
+        duration = Math.floor(Math.random() * 400) + 100 // 随机持续时间，100-500ms
+      }
+
       const endTime = startTime + duration
 
       return {
@@ -293,124 +434,34 @@ const generateResourceData = (): ResourceDataItem[] => {
     .sort((a, b) => a.startTime - b.startTime) // 默认按开始时间升序
 }
 
-/**
- * 瀑布图演示页面
- * 展示静态资源加载时机和持续时长的瀑布图
- */
 const WaterFallDemo = () => {
-  const [messageApi] = message.useMessage()
   const [resourceData, setResourceData] = useState<ResourceDataItem[]>([])
-  const [sortMode, setSortMode] = useState<SortMode>('default')
 
-  /**
-   * 格式化时间显示，支持毫秒、秒、分钟
-   */
   const formatTime = (milliseconds: number): string => {
-    if (milliseconds >= 60000) {
-      // 大于等于1分钟，显示为分钟
-      return `${(milliseconds / 60000).toFixed(2)}min`;
+    if (milliseconds >= 3600000) {
+      return `${(milliseconds / 3600000).toFixed(2)}h`
+    } else if (milliseconds >= 60000) {
+      return `${(milliseconds / 60000).toFixed(2)}min`
     } else if (milliseconds >= 1000) {
-      // 大于等于1秒，显示为秒
-      return `${(milliseconds / 1000).toFixed(2)}s`;
+      return `${(milliseconds / 1000).toFixed(2)}s`
     } else {
-      // 小于1秒，显示为毫秒
-      return `${milliseconds}ms`;
+      return `${milliseconds}ms`
     }
   }
 
-  /**
-   * 处理持续时长列头点击，循环切换三种排序模式
-   */
-  const handleDurationHeaderClick = () => {
-    // 循环切换排序模式：default -> durationAsc -> durationDesc -> default
-    const newSortMode = sortMode === 'default' ? 'durationAsc' : 
-                       sortMode === 'durationAsc' ? 'durationDesc' : 'default';
-    
-    setSortMode(newSortMode);
-    
-    let sortedData = [...resourceData];
-    
-    switch (newSortMode) {
-      case 'durationAsc':
-        // 按持续时长升序
-        sortedData.sort((a, b) => a.duration - b.duration);
-        break;
-      case 'durationDesc':
-        // 按持续时长降序
-        sortedData.sort((a, b) => b.duration - a.duration);
-        break;
-      case 'default':
-      default:
-        // 默认按开始时间升序
-        sortedData.sort((a, b) => a.startTime - b.startTime);
-        break;
-    }
-    
-    setResourceData(sortedData);
-  }
-
-  /**
-   * 加载资源加载数据
-   */
   const loadResourceData = () => {
     const data = generateResourceData()
     setResourceData([...data])
-    setSortMode('default') // 重置为默认排序模式
   }
 
-  // 监听持续时长列头的点击事件
-  useEffect(() => {
-    const handleSortDurationHeader = () => {
-      handleDurationHeaderClick();
-    };
-    
-    window.addEventListener('sortDurationHeader', handleSortDurationHeader as EventListener);
-    
-    return () => {
-      window.removeEventListener('sortDurationHeader', handleSortDurationHeader as EventListener);
-    };
-  }, [sortMode, resourceData])
-
-  // 渲染排序按钮
-  const renderSortButtons = () => (
-    <div className="sort-buttons">
-      <Button 
-        size="small" 
-        onClick={() => setSortMode('default')}
-        className={sortMode === 'default' ? 'active-sort' : ''}
-      >
-        重置默认排序
-      </Button>
-    </div>
-  )
-
   return (
-    <BasicContent>
-      <div className='waterfall-demo-container'>
-        <h2 className='waterfall-demo-title'>资源加载瀑布图演示</h2>
+    <>
+      <Button type='primary' size='large' onClick={loadResourceData}>
+        生成资源加载数据
+      </Button>
 
-        <div className='waterfall-demo-header'>
-        <Button type='primary' size='large' onClick={loadResourceData}>
-          生成资源加载数据
-        </Button>
-        {resourceData.length > 0 && renderSortButtons()}
-      </div>
-
-        {resourceData.length > 0 ? (
-          <div className='waterfall-demo-content'>
-            {/* 合并表格和图表为一个视图 */}
-            <div className='waterfall-combined-view'>
-              <h3 className='waterfall-section-title'>资源加载时序与信息</h3>
-              <WaterFallChart data={resourceData} sortMode={sortMode} formatTime={formatTime} />
-            </div>
-          </div>
-        ) : (
-          <div className='waterfall-empty-state'>
-            <p className='waterfall-empty-text'>请点击上方按钮生成数据</p>
-          </div>
-        )}
-      </div>
-    </BasicContent>
+      <WaterFallChart data={resourceData} formatTime={formatTime} />
+    </>
   )
 }
 

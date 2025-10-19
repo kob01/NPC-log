@@ -1,19 +1,16 @@
-import Forbidden from '@/pages/403';
+import Forbidden from '@/pages/403'
 
 interface Props {
-  isPermission?: boolean;
-  children: JSX.Element | JSX.Element[];
+  isPermission?: boolean
+  children: JSX.Element | JSX.Element[]
 }
 
 function BasicContent(props: Props) {
-  const { isPermission, children } = props;
-  console.log('isPermission', isPermission)
   return (
-    <div className="min-w-980px h-full p-10px box-border overflow-auto">
-      {
-        isPermission !== false &&
+    <div className='min-w-980px h-full p-10px box-border overflow-auto'>
+      {isPermission !== false && (
         <div
-          id="content"
+          id='content'
           className={`
             relative
             box-border
@@ -24,13 +21,10 @@ function BasicContent(props: Props) {
         >
           {children}
         </div>
-      }
-      {
-        isPermission === false &&
-        <Forbidden />
-      }
+      )}
+      {isPermission === false && <Forbidden />}
     </div>
-  );
+  )
 }
 
-export default BasicContent;
+export default BasicContent

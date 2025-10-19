@@ -1,115 +1,115 @@
-import type { FormData } from '#/form';
-import type { AppDispatch, RootState } from '@/stores';
-import type { PagePermission, TableOptions } from '#/public';
-import { useEffect, useState } from 'react';
-import { searchList, tableColumns } from './model';
-import { message, Tooltip } from 'antd';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { setRefreshPage } from '@/stores/public';
-import { checkPermission } from '@/utils/permissions';
-import { useCommonStore } from '@/hooks/useCommonStore';
-import { UpdateBtn, DeleteBtn } from '@/components/Buttons';
-import { getNPCEventPage, deleteNPCEvent } from '@/servers/content/event';
-import BasicContent from '@/components/Content/BasicContent';
-import BasicSearch from '@/components/Search/BasicSearch';
-import BasicTable from '@/components/Table/BasicTable';
-import BasicPagination from '@/components/Pagination/BasicPagination';
-import { INIT_PAGINATION } from '@/utils/config';
+import type { FormData } from '#/form'
+import type { AppDispatch, RootState } from '@/stores'
+import type { PagePermission, TableOptions } from '#/public'
+import { useEffect, useState } from 'react'
+import { searchList, tableColumns } from './model'
+import { message, Tooltip } from 'antd'
+import { useDispatch, useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { setRefreshPage } from '@/stores/public'
+import { checkPermission } from '@/utils/permissions'
+import { useCommonStore } from '@/hooks/useCommonStore'
+import { UpdateBtn, DeleteBtn } from '@/components/Buttons'
+import { getNPCEventPage, deleteNPCEvent } from '@/servers/content/event'
+import BasicContent from '@/components/Content/BasicContent'
+import BasicSearch from '@/components/Search/BasicSearch'
+import BasicTable from '@/components/Table/BasicTable'
+import BasicPagination from '@/components/Pagination/BasicPagination'
+import { INIT_PAGINATION } from '@/utils/config'
 
 // 当前行数据
 interface RowData {
-  id: string;
+  id: string
 }
 
 function Page() {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const dispatch: AppDispatch = useDispatch();
-  const { permissions } = useCommonStore();
-  const [isFetch, setFetch] = useState(false);
-  const [isLoading, setLoading] = useState(false);
-  const [searchData, setSearchData] = useState<FormData>({});
-  const [page, setPage] = useState(INIT_PAGINATION.page);
-  const [pageSize, setPageSize] = useState(INIT_PAGINATION.pageSize);
-  const [total, setTotal] = useState(0);
-  const [tableData, setTableData] = useState<FormData[]>([]);
-  const [messageApi, contextHolder] = message.useMessage();
-  const isRefreshPage = useSelector((state: RootState) => state.public.isRefreshPage);
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const dispatch: AppDispatch = useDispatch()
+  const { permissions } = useCommonStore()
+  const [isFetch, setFetch] = useState(false)
+  const [isLoading, setLoading] = useState(false)
+  const [searchData, setSearchData] = useState<FormData>({})
+  const [page, setPage] = useState(INIT_PAGINATION.page)
+  const [pageSize, setPageSize] = useState(INIT_PAGINATION.pageSize)
+  const [total, setTotal] = useState(0)
+  const [tableData, setTableData] = useState<FormData[]>([])
+  const [messageApi, contextHolder] = message.useMessage()
+  const isRefreshPage = useSelector((state: RootState) => state.public.isRefreshPage)
 
   // 权限前缀
-  const permissionPrefix = '/content/log';
+  const permissionPrefix = '/content/log'
 
   // 权限
   const pagePermission: PagePermission = {
     page: checkPermission(`${permissionPrefix}/index`, permissions),
     create: checkPermission(`${permissionPrefix}/create`, permissions),
     update: checkPermission(`${permissionPrefix}/update`, permissions),
-    delete: checkPermission(`${permissionPrefix}/delete`, permissions)
-  };
+    delete: checkPermission(`${permissionPrefix}/delete`, permissions),
+  }
 
   useEffect(() => {
-    if (isFetch) getPage();
-  }, [isFetch]);
+    if (isFetch) getPage()
+  }, [isFetch])
 
   /**
    * 点击搜索
    * @param values - 表单返回数据
    */
   const onSearch = (values: FormData) => {
-    setPage(1);
-    setSearchData(values);
-    getPage();
-    setFetch(true);
-  };
+    setPage(1)
+    setSearchData(values)
+    getPage()
+    setFetch(true)
+  }
 
   // 首次进入自动加载接口数据
   useEffect(() => {
-    if (pagePermission.page && !isRefreshPage) getPage();
+    if (pagePermission.page && !isRefreshPage) getPage()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagePermission.page]);
+  }, [pagePermission.page])
 
   // 如果是新增或编辑成功重新加载页面
   useEffect(() => {
     if (isRefreshPage) {
-      dispatch(setRefreshPage(false));
-      getPage();
+      dispatch(setRefreshPage(false))
+      getPage()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isRefreshPage]);
+  }, [isRefreshPage])
 
   /** 点击新增 */
   const onCreate = () => {
-    navigate('/content/log/option?type=create');
-  };
+    navigate('/content/log/option?type=create')
+  }
 
   /**
    * 点击编辑
    * @param id - 唯一值
    */
   const onUpdate = (id: string) => {
-    navigate(`/content/log/option?type=update&id=${id}`);
-  };
+    navigate(`/content/log/option?type=update&id=${id}`)
+  }
 
   /** 获取表格数据 */
   const getPage = async () => {
-    const params = { ...searchData, page, pageSize };
+    const params = { ...searchData, page, pageSize }
 
     try {
-      setLoading(true);
-      const { code, data } = await getNPCEventPage(params);
+      setLoading(true)
+      const { code, data } = await getNPCEventPage(params)
 
       if (Number(code) === 200) {
-        const { items, total } = data;
-        setTotal(total);
-        setTableData(items);
+        const { items, total } = data
+        setTotal(total)
+        setTableData(items)
       }
     } finally {
-      setFetch(false);
-      setLoading(false);
+      setFetch(false)
+      setLoading(false)
     }
-  };
+  }
 
   /**
    * 点击删除
@@ -117,17 +117,17 @@ function Page() {
    */
   const onDelete = async (id: string) => {
     try {
-      setLoading(true);
-      const { code, message } = await deleteNPCEvent(id as string);
-      console.log('id', id);
+      setLoading(true)
+      const { code, message } = await deleteNPCEvent(id as string)
+
       if (Number(code) === 200) {
-        messageApi.success(message || t('public.successfullyDeleted'));
-        getPage();
+        messageApi.success(message || t('public.successfullyDeleted'))
+        getPage()
       }
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   /**
    * 处理分页
@@ -135,10 +135,10 @@ function Page() {
    * @param pageSize - 每页条数
    */
   const onChangePagination = (page: number, pageSize: number) => {
-    setPage(page);
-    setPageSize(pageSize);
-    setFetch(true);
-  };
+    setPage(page)
+    setPageSize(pageSize)
+    setFetch(true)
+  }
 
   /**
    * 渲染操作
@@ -147,26 +147,16 @@ function Page() {
    */
   const optionRender: TableOptions<object> = (_, record) => (
     <>
-      {
-        pagePermission.update === true &&
-        <UpdateBtn
-          className='mr-5px'
-          isLoading={isLoading}
-          onClick={() => onUpdate((record as RowData).id)}
-        />
-      }
-      {
-        pagePermission.delete === true &&
-        <DeleteBtn
-          className='mr-5px'
-          isLoading={isLoading}
-          handleDelete={() => onDelete((record as RowData).id)}
-        />
-      }
+      {pagePermission.update === true && <UpdateBtn className='mr-5px' isLoading={isLoading} onClick={() => onUpdate((record as RowData).id)} />}
+      {pagePermission.delete === true && <DeleteBtn className='mr-5px' isLoading={isLoading} handleDelete={() => onDelete((record as RowData).id)} />}
     </>
-  );
+  )
 
-  const TooltipRender = (text: string) => (<Tooltip title={text}><span className="multi-line-ellipsis">{text}</span></Tooltip>);
+  const TooltipRender = (text: string) => (
+    <Tooltip title={text}>
+      <span className='multi-line-ellipsis'>{text}</span>
+    </Tooltip>
+  )
 
   return (
     <BasicContent isPermission={pagePermission.page}>
@@ -180,21 +170,11 @@ function Page() {
         handleFinish={onSearch}
       />
 
-      <BasicTable
-        loading={isLoading}
-        columns={tableColumns(t, optionRender, TooltipRender)}
-        dataSource={tableData}
-      />
+      <BasicTable loading={isLoading} columns={tableColumns(t, optionRender, TooltipRender)} dataSource={tableData} />
 
-      <BasicPagination
-        disabled={isLoading}
-        current={page}
-        pageSize={pageSize}
-        total={total}
-        onChange={onChangePagination}
-      />
+      <BasicPagination disabled={isLoading} current={page} pageSize={pageSize} total={total} onChange={onChangePagination} />
     </BasicContent>
-  );
+  )
 }
 
-export default Page;
+export default Page
