@@ -1,23 +1,23 @@
-import type { FormData } from '#/form';
-import { useCallback, useEffect, useState } from 'react';
-import { getDataTrends } from '@/servers/dashboard';
-import { searchList } from './model';
-import { useUnactivate } from 'react-activation';
-import { useTranslation } from 'react-i18next';
-import BasicSearch from '@/components/Search/BasicSearch';
-import BasicContent from '@/components/Content/BasicContent';
-import Bar from './components/Bar';
-import Line from './components/Line';
-import Block from './components/Block';
+import type { FormData } from '#/form'
+import { useCallback, useEffect, useState } from 'react'
+import { getDataTrends } from '@/servers/dashboard'
+import { searchList } from './model'
+import { useUnactivate } from 'react-activation'
+import { useTranslation } from 'react-i18next'
+import BasicSearch from '@/components/Search/BasicSearch'
+import BasicContent from '@/components/Content/BasicContent'
+import Bar from './components/Bar'
+import Line from './components/Line'
+import Block from './components/Block'
 
 // 初始化搜索
 const initSearch = {
-  pay_date: ['2022-10-19', '2022-10-29']
-};
+  pay_date: ['2022-10-19', '2022-10-29'],
+}
 
 function Dashboard() {
-  const { t } = useTranslation();
-  const [isLoading, setLoading] = useState(false);
+  const { t } = useTranslation()
+  const [isLoading, setLoading] = useState(false)
 
   /**
    * 搜索提交
@@ -25,33 +25,28 @@ function Dashboard() {
    */
   const handleSearch = useCallback(async (values: FormData) => {
     // 数据转换
-    values.all_pay = values.all_pay ? 1 : undefined;
+    values.all_pay = values.all_pay ? 1 : undefined
 
-    const query = { ...values };
+    const query = { ...values }
     try {
-      setLoading(true);
-      await getDataTrends(query);
+      setLoading(true)
+      await getDataTrends(query)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
-    handleSearch(initSearch);
-  }, [handleSearch]);
+    handleSearch(initSearch)
+  }, [handleSearch])
 
   useUnactivate(() => {
-    console.log('退出时执行');
-  });
+    console.log('退出时执行')
+  })
 
   return (
     <BasicContent isPermission={true}>
-      <BasicSearch
-        list={searchList(t)}
-        data={initSearch}
-        isLoading={isLoading}
-        handleFinish={handleSearch}
-      />
+      <BasicSearch list={searchList(t)} data={initSearch} isLoading={isLoading} handleFinish={handleSearch} />
 
       <div className='py-10px'>
         <Block />
@@ -62,7 +57,7 @@ function Dashboard() {
         <Bar />
       </div>
     </BasicContent>
-  );
+  )
 }
 
-export default Dashboard;
+export default Dashboard

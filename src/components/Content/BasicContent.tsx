@@ -6,6 +6,7 @@ interface Props {
 }
 
 function BasicContent(props: Props) {
+  const { isPermission, children } = props
   return (
     <div className='min-w-980px h-full p-10px box-border overflow-auto'>
       {isPermission !== false && (

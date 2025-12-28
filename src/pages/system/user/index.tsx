@@ -21,24 +21,6 @@ import BasicForm from '@/components/Form/BasicForm'
 import BasicTable from '@/components/Table/BasicTable'
 import BasicPagination from '@/components/Pagination/BasicPagination'
 import PermissionDrawer from './components/PermissionDrawer'
-import WaterFall from '../menu/WaterFall'
-import type { WaterFallDataItem } from '../menu/WaterFall'
-
-// 定义测试数据 - 将所有负值利润改为正值
-const monthlyProfitData: WaterFallDataItem[] = [
-  { month: 'Jan.', profit: 587264, start: 0, end: 587264 },
-  { month: 'Feb.', profit: 772096, start: 38726, end: 1159360 },
-  { month: 'Mar.', profit: 638075, start: 1159360, end: 1797435 },
-  { month: 'Apr.', profit: 211386, start: 1797435, end: 2008821 },
-  { month: 'May', profit: 138135, start: 2008821, end: 2146956 },
-  { month: 'Jun', profit: 267238, start: 2146956, end: 2414194 },
-  { month: 'Jul.', profit: 431406, start: 2414194, end: 2845600 },
-  { month: 'Aug.', profit: 363018, start: 2845600, end: 3208618 },
-  { month: 'Sep.', profit: 224638, start: 3208618, end: 3433256 },
-  { month: 'Oct.', profit: 299867, start: 3433256, end: 3733123 },
-  { month: 'Nov.', profit: 607365, start: 3733123, end: 4340488 },
-  { month: 'Dec.', profit: 1106986, start: 4340488, end: 5447474 },
-]
 
 // 当前行数据
 interface RowData {
@@ -68,9 +50,6 @@ function Page() {
   const [total, setTotal] = useState(0)
   const [tableData, setTableData] = useState<FormData[]>([])
   const [tableFilters, setTableFilters] = useState<string[]>([])
-
-  // 瀑布图相关状态
-  const [waterfallData, setWaterfallData] = useState<WaterFallDataItem[]>([])
 
   const [promiseId, setPromiseId] = useState('')
   const [isPromiseVisible, setPromiseVisible] = useState(false)
@@ -280,48 +259,8 @@ function Page() {
     )
   }
 
-  /**
-   * 加载月度利润数据
-   */
-  const loadMonthlyProfitData = () => {
-    setWaterfallData([...monthlyProfitData])
-  }
-
-  /**
-   * 按利润排序数据 - 保持start起点位置不变
-   * 排序后只改变月份顺序，不重新计算start和end值
-   */
-  const sortByProfit = () => {
-    if (waterfallData.length === 0) {
-      messageApi.warning('请先加载数据')
-      return
-    }
-
-    // 按利润降序排序，但保持原有的start和end值不变
-    const sortedData = [...waterfallData].sort((a, b) => {
-      const profitA = a.profit || 0
-      const profitB = b.profit || 0
-      return profitB - profitA // 降序排序
-    })
-
-    setWaterfallData(sortedData)
-  }
-
   return (
-
     <BasicContent isPermission={pagePermission.page}>
-      <div className="mt-6 p-4 bg-white rounded-lg shadow">
-        <h3 className="text-lg font-medium mb-4">月度利润瀑布图</h3>
-        <div className="flex gap-4 mb-4">
-          <Button type="primary" onClick={loadMonthlyProfitData}>加载月度利润数据</Button>
-          <Button onClick={sortByProfit}>按利润排序</Button>
-        </div>
-        {waterfallData.length > 0 && (
-          <div style={{ height: 400 }}>
-            <WaterFall data={waterfallData} />
-          </div>
-        )}
-      </div>
       {contextHolder}
       <BasicSearch
         list={searchList(t)}
@@ -333,8 +272,6 @@ function Page() {
       >
         <FilterButton columns={columns} className='!mb-5px' getTableChecks={getTableChecks} />
       </BasicSearch>
-
-
 
       <BasicTable loading={isLoading} columns={handleFilterTable(columns, tableFilters)} dataSource={tableData} />
 

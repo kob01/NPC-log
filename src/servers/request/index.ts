@@ -38,14 +38,12 @@ function creteRequest() {
           setTimeout(() => {
             window.location.href = '/'
           }, 1000)
-          console.log('data', data)
           handleError(data?.message)
           return res
         }
 
         // 错误处理
         if (data?.code !== 200) {
-          console.log('data', data)
           handleError(data?.message)
           return res
         }
@@ -53,7 +51,6 @@ function creteRequest() {
         return res
       },
       responseInterceptorsCatch(err) {
-        console.log('responseInterceptorsCatch===>', err)
         const { response } = err
         if (response.status === 401) {
           message.error('登录过期，请重新登录！')

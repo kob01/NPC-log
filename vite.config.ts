@@ -1,19 +1,18 @@
-import { defineConfig, loadEnv } from "vite";
-import { createVitePlugins } from "./build/plugins";
-import { buildOptions } from "./build/vite/build";
+import { defineConfig, loadEnv } from 'vite'
+import { createVitePlugins } from './build/plugins'
+import { buildOptions } from './build/vite/build'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  const root = process.cwd();
-  const env = loadEnv(mode, root);
-  console.log("env", env);
+  const root = process.cwd()
+  const env = loadEnv(mode, root)
 
   return {
     plugins: createVitePlugins(),
     resolve: {
       alias: {
-        "@": "/src",
-        "#": "/types",
+        '@': '/src',
+        '#': '/types',
       },
     },
     css: {
@@ -29,12 +28,12 @@ export default defineConfig(({ mode }) => {
       port: +env.VITE_SERVER_PORT,
       // 跨域处理
       proxy: {
-        "/api": {
+        '/api': {
           target: env.VITE_API_BASE_URL,
           changeOrigin: true,
         },
       },
     },
     build: buildOptions(),
-  };
-});
+  }
+})
