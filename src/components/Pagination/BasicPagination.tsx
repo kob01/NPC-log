@@ -1,21 +1,20 @@
-import type { PaginationProps } from 'antd';
-import { Pagination } from 'antd';
-import { useTranslation } from 'react-i18next';
+import { Pagination } from 'antd'
+import { useTranslation } from 'react-i18next'
 
-function BasicPagination(props: PaginationProps) {
-  const { t } = useTranslation();
+import type { PaginationProps } from 'antd'
+
+const BasicPagination = (props: PaginationProps) => {
+  const { t } = useTranslation()
 
   /**
    * 显示总数
    * @param total - 总数
    */
-  const showTotal = (total?: number): string => {
-    return t('public.totalNum', { num: total || 0 });
-  };
+  const showTotal = (total?: number): string => t('public.totalNum', { num: total || 0 })
 
   return (
     <div
-      id="pagination"
+      id='pagination'
       className={`
         w-full
         flex
@@ -26,15 +25,9 @@ function BasicPagination(props: PaginationProps) {
         z-999
       `}
     >
-      <Pagination
-        showSizeChanger
-        showQuickJumper
-        size="small"
-        showTotal={showTotal}
-        {...props}
-      />
+      <Pagination showSizeChanger showQuickJumper size='small' showTotal={showTotal} {...props} />
     </div>
-  );
+  )
 }
 
-export default BasicPagination;
+export default BasicPagination

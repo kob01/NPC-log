@@ -1,6 +1,7 @@
-import type { FormList } from "#/form";
-import type { TFunction } from "i18next";
-import { getGames } from '@/servers/platform/game';
+import { getGames } from '@/servers/platform/game'
+
+import type { FormList } from '#/form'
+import type { TFunction } from 'i18next'
 
 // 搜索数据
 export const searchList = (t: TFunction): FormList[] => [
@@ -10,7 +11,7 @@ export const searchList = (t: TFunction): FormList[] => [
     component: 'RangePicker',
     componentProps: {
       allowClear: false,
-    }
+    },
   },
   {
     label: t('dashboard.gameID'),
@@ -22,7 +23,7 @@ export const searchList = (t: TFunction): FormList[] => [
     label: t('dashboard.cooperativeCompany'),
     name: 'partners',
     wrapperCol: 200,
-    component: 'PartnerSelect'
+    component: 'PartnerSelect',
   },
   {
     label: t('dashboard.gameID') + '2',
@@ -32,18 +33,18 @@ export const searchList = (t: TFunction): FormList[] => [
     componentProps: {
       api: getGames,
       params: {
-        isAll: true
+        isAll: true,
       },
       fieldNames: {
         label: 'name',
-        value: 'id'
-      }
-    }
+        value: 'id',
+      },
+    },
   },
   {
     label: t('dashboard.fullServerRecharge'),
     name: 'all_pay',
     wrapperCol: 15,
-    component: 'Checkbox'
-  }
-];
+    component: 'Checkbox',
+  },
+]

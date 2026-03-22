@@ -9,4 +9,4 @@ export default {
   effectiveRechargeRatio: 'Effective recharge ratio',
   cooperativeCompany: 'Cooperative company',
   fullServerRecharge: 'Full server recharge',
-};
+}

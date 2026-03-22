@@ -1,22 +1,25 @@
+import { type FormInstance, message } from 'antd'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+
+import { UpdateBtn, DeleteBtn } from '@/components/Buttons'
+import BasicContent from '@/components/Content/BasicContent'
+import BasicForm from '@/components/Form/BasicForm'
+import BasicModal from '@/components/Modal/BasicModal'
+import BasicPagination from '@/components/Pagination/BasicPagination'
+import BasicSearch from '@/components/Search/BasicSearch'
+import BasicTable from '@/components/Table/BasicTable'
+import FilterButton from '@/components/TableFilter'
+import { useFiler } from '@/components/TableFilter/hooks/useFiler'
+import { useCommonStore } from '@/hooks/useCommonStore'
+import { getMenuPage, getMenuById, createMenu, updateMenu, deleteMenu } from '@/servers/system/menu'
+import { ADD_TITLE, EDIT_TITLE, INIT_PAGINATION } from '@/utils/config'
+import { checkPermission } from '@/utils/permissions'
+
+import { searchList, createList, tableColumns } from './model'
+
 import type { FormData } from '#/form'
 import type { PagePermission } from '#/public'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { searchList, createList, tableColumns } from './model'
-import { type FormInstance, message } from 'antd'
-import { useTranslation } from 'react-i18next'
-import { checkPermission } from '@/utils/permissions'
-import { useCommonStore } from '@/hooks/useCommonStore'
-import { ADD_TITLE, EDIT_TITLE, INIT_PAGINATION } from '@/utils/config'
-import { UpdateBtn, DeleteBtn } from '@/components/Buttons'
-import { useFiler } from '@/components/TableFilter/hooks/useFiler'
-import { getMenuPage, getMenuById, createMenu, updateMenu, deleteMenu } from '@/servers/system/menu'
-import FilterButton from '@/components/TableFilter'
-import BasicContent from '@/components/Content/BasicContent'
-import BasicSearch from '@/components/Search/BasicSearch'
-import BasicModal from '@/components/Modal/BasicModal'
-import BasicForm from '@/components/Form/BasicForm'
-import BasicTable from '@/components/Table/BasicTable'
-import BasicPagination from '@/components/Pagination/BasicPagination'
 
 // 当前行数据
 interface RowData {
@@ -28,7 +31,7 @@ const initCreate = {
   status: 1,
 }
 
-function Page() {
+const Page = () => {
   const { t } = useTranslation()
   const createFormRef = useRef<FormInstance>(null)
   const columns = tableColumns(t, optionRender)
@@ -45,7 +48,7 @@ function Page() {
   const [total, setTotal] = useState(0)
   const [tableData, setTableData] = useState<FormData[]>([])
   const [tableFilters, setTableFilters] = useState<string[]>([])
-  const [messageApi, contextHolder] = message.useMessage()
+
   const [handleFilterTable] = useFiler()
   const { permissions } = useCommonStore()
 
@@ -61,7 +64,9 @@ function Page() {
   }
 
   useEffect(() => {
-    if (isFetch) getPage()
+    if (isFetch) {
+      getPage()
+    }
   }, [isFetch])
 
   /**
@@ -84,9 +89,13 @@ function Page() {
 
   // 首次进入自动加载接口数据
   useEffect(() => {
-    if (pagePermission.page) getPage()
+    if (pagePermission.page) {
+      getPage()
+    }
     // TODO: 重复请求测试，可删
-    if (pagePermission.page) getPage()
+    if (pagePermission.page) {
+      getPage()
+    }
   }, [pagePermission.page])
 
   /** 点击新增 */
@@ -108,7 +117,9 @@ function Page() {
       setCreateId(id)
       setCreateLoading(true)
       const { code, data } = await getMenuById(id as string)
-      if (Number(code) !== 200) return
+      if (Number(code) !== 200) {
+        return
+      }
       setCreateData(data)
     } finally {
       setCreateLoading(false)
@@ -133,7 +144,9 @@ function Page() {
       setLoading(true)
       const res = await getMenuPage(params)
       const { code, data } = res
-      if (Number(code) !== 200) return
+      if (Number(code) !== 200) {
+        return
+      }
       const { items, total } = data
       setTotal(total)
       setTableData(items)
@@ -152,8 +165,10 @@ function Page() {
       setCreateLoading(true)
       const functions = () => (createId ? updateMenu(createId, values) : createMenu(values))
       const { code, message } = await functions()
-      if (Number(code) !== 200) return
-      messageApi.success(message || t('public.successfulOperation'))
+      if (Number(code) !== 200) {
+        return
+      }
+      message.success(message || t('public.successfulOperation'))
       setCreateOpen(false)
       getPage()
     } finally {
@@ -170,7 +185,7 @@ function Page() {
       setLoading(true)
       const { code, message } = await deleteMenu(id as string)
       if (Number(code) === 200) {
-        messageApi.success(message || t('public.successfullyDeleted'))
+        message.success(message || t('public.successfullyDeleted'))
         getPage()
       }
     } finally {
@@ -197,9 +212,19 @@ function Page() {
   function optionRender(_: unknown, record: object) {
     return (
       <>
-        {pagePermission.update === true && <UpdateBtn className='mr-5px' isLoading={isLoading} onClick={() => onUpdate((record as RowData).id)} />}
+        {pagePermission.update === true && (
+          <UpdateBtn
+            className='mr-5px'
+            isLoading={isLoading}
+            onClick={() => onUpdate((record as RowData).id)}
+          />
+        )}
         {pagePermission.delete === true && (
-          <DeleteBtn className='mr-5px' isLoading={isLoading} handleDelete={() => onDelete((record as RowData).id)} />
+          <DeleteBtn
+            className='mr-5px'
+            isLoading={isLoading}
+            handleDelete={() => onDelete((record as RowData).id)}
+          />
         )}
       </>
     )
@@ -207,7 +232,7 @@ function Page() {
 
   return (
     <BasicContent isPermission={pagePermission.page}>
-      {contextHolder}
+
       <BasicSearch
         list={searchList(t)}
         data={searchData}
@@ -219,11 +244,28 @@ function Page() {
         <FilterButton columns={columns} className='!mb-5px' getTableChecks={getTableChecks} />
       </BasicSearch>
 
-      <BasicTable loading={isLoading} columns={handleFilterTable(columns, tableFilters)} dataSource={tableData} />
+      <BasicTable
+        loading={isLoading}
+        columns={handleFilterTable(columns, tableFilters)}
+        dataSource={tableData}
+      />
 
-      <BasicPagination disabled={isLoading} current={page} pageSize={pageSize} total={total} onChange={onChangePagination} />
+      <BasicPagination
+        disabled={isLoading}
+        current={page}
+        pageSize={pageSize}
+        total={total}
+        onChange={onChangePagination}
+      />
 
-      <BasicModal width={600} title={createTitle} open={isCreateOpen} confirmLoading={isCreateLoading} onOk={createSubmit} onCancel={closeCreate}>
+      <BasicModal
+        width={600}
+        title={createTitle}
+        open={isCreateOpen}
+        confirmLoading={isCreateLoading}
+        onOk={createSubmit}
+        onCancel={closeCreate}
+      >
         <BasicForm
           ref={createFormRef}
           list={createList(t, createId)}

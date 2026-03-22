@@ -1,18 +1,19 @@
-import type { FormData } from '#/form'
-import type { PageServerResult, PaginationData } from '#/public'
 import { request } from '@/servers/request'
 
+import type { FormData } from '#/form'
+import type { PageServerResult, PaginationData } from '#/public'
+
 enum API {
-  URL = '/authority/user',
+  URL = '/api/authority/user',
 }
 
 /**
  * 获取分页数据
  * @param data - 请求数据
  */
-export function getUserPage(datadatadatadatadata: Partial<FormData> & PaginationData) {
+export function getUserPage(data: Partial<FormData> & PaginationData) {
   return request.get<PageServerResult<FormData[]>>(`${API.URL}/page`, {
-    params: datadatadatadatadata,
+    params: data,
   })
 }
 

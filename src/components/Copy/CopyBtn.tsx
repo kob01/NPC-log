@@ -1,42 +1,36 @@
-import type { ButtonProps } from 'antd';
-import { Button, message } from 'antd';
-import { Icon } from '@iconify/react';
-import { useTranslation } from 'react-i18next';
-import { useClipboard } from '@/hooks/useClipboard';
+import { Icon } from '@iconify/react'
+import { Button, message } from 'antd'
+import { useTranslation } from 'react-i18next'
+
+import { useClipboard } from '@/hooks/useClipboard'
+
+import type { ButtonProps } from 'antd'
 
 interface Props extends ButtonProps {
-  text: string;
-  value: string;
+  text: string
+  value: string
 }
 
-function CopyBtn(props: Props) {
-  const { text, value } = props;
-  const { t } = useTranslation();
-  const [, copyToClipboard] = useClipboard();
-  const [messageApi, contextHolder] = message.useMessage();
+const CopyBtn = (props: Props) => {
+  const { text, value } = props
+  const { t } = useTranslation()
+  const [, copyToClipboard] = useClipboard()
 
   /** 点击编辑 */
   const onClick = () => {
     try {
-      copyToClipboard(value);
-      messageApi.success({ content: t('public.copySuccessfully'), key: 'copy' });
-    } catch(e) {
-      messageApi.warning({ content: t('public.copyFailed'), key: 'copy' });
+      copyToClipboard(value)
+      message.success({ content: t('public.copySuccessfully'), key: 'copy' })
+    } catch (e) {
+      message.warning({ content: t('public.copyFailed'), key: 'copy' })
     }
-  };
+  }
 
   return (
-    <>
-      { contextHolder }
-      <Button
-        {...props}
-        icon={<Icon icon="ant-design:copy-outlined" />}
-        onClick={onClick}
-      >
-        { text }
-      </Button>
-    </>
-  );
+    <Button {...props} icon={<Icon icon='ant-design:copy-outlined' />} onClick={onClick}>
+      {text}
+    </Button>
+  )
 }
 
-export default CopyBtn;
+export default CopyBtn

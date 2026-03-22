@@ -1,26 +1,30 @@
-import type { FormData } from '#/form'
-import type { DataNode } from 'antd/es/tree'
-import type { Key } from 'antd/es/table/interface'
-import type { PagePermission } from '#/public'
-import { useEffect, useRef, useState } from 'react'
-import { createList, searchList, tableColumns } from './model'
-import { type FormInstance, Button, message } from 'antd'
+import { SafetyOutlined } from '@ant-design/icons'
+import { type FormInstance, Button, message, Tooltip } from 'antd'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { checkPermission } from '@/utils/permissions'
-import { useCommonStore } from '@/hooks/useCommonStore'
-import { ADD_TITLE, EDIT_TITLE, INIT_PAGINATION } from '@/utils/config'
+
 import { UpdateBtn, DeleteBtn } from '@/components/Buttons'
-import { getPermission, savePermission } from '@/servers/system/menu'
-import { useFiler } from '@/components/TableFilter/hooks/useFiler'
-import { createUser, deleteUser, getUserById, getUserPage, updateUser } from '@/servers/system/user'
-import FilterButton from '@/components/TableFilter'
 import BasicContent from '@/components/Content/BasicContent'
-import BasicSearch from '@/components/Search/BasicSearch'
-import BasicModal from '@/components/Modal/BasicModal'
 import BasicForm from '@/components/Form/BasicForm'
-import BasicTable from '@/components/Table/BasicTable'
+import BasicModal from '@/components/Modal/BasicModal'
 import BasicPagination from '@/components/Pagination/BasicPagination'
+import BasicSearch from '@/components/Search/BasicSearch'
+import BasicTable from '@/components/Table/BasicTable'
+import FilterButton from '@/components/TableFilter'
+import { useFiler } from '@/components/TableFilter/hooks/useFiler'
+import { useCommonStore } from '@/hooks/useCommonStore'
+import { getPermission, savePermission } from '@/servers/system/menu'
+import { createUser, deleteUser, getUserById, getUserPage, updateUser } from '@/servers/system/user'
+import { ADD_TITLE, EDIT_TITLE, INIT_PAGINATION } from '@/utils/config'
+import { checkPermission } from '@/utils/permissions'
+
 import PermissionDrawer from './components/PermissionDrawer'
+import { createList, searchList, tableColumns } from './model'
+
+import type { FormData } from '#/form'
+import type { PagePermission } from '#/public'
+import type { Key } from 'antd/es/table/interface'
+import type { DataNode } from 'antd/es/tree'
 
 // 当前行数据
 interface RowData {
@@ -32,11 +36,10 @@ const initCreate = {
   status: 1,
 }
 
-function Page() {
+const Page = () => {
   const { t } = useTranslation()
   const createFormRef = useRef<FormInstance>(null)
-  const columns = tableColumns(t, optionRender)
-  const [messageApi, contextHolder] = message.useMessage()
+
   const [isFetch, setFetch] = useState(false)
   const [isLoading, setLoading] = useState(false)
   const [isCreateLoading, setCreateLoading] = useState(false)
@@ -71,9 +74,37 @@ function Page() {
     permission: checkPermission(`${permissionPrefix}/authority`, permissions),
   }
 
+  // 获取表格数据
+  const getPage = useCallback(async () => {
+    const params = { ...searchData, page, pageSize }
+
+    try {
+      setLoading(true)
+      const { code, data } = await getUserPage(params)
+      if (Number(code) !== 200) {
+        return
+      }
+      const { items, total } = data
+      setTotal(total)
+      setTableData(items)
+    } finally {
+      setFetch(false)
+      setLoading(false)
+    }
+  }, [searchData, page, pageSize])
+
   useEffect(() => {
-    if (isFetch) getPage()
-  }, [isFetch])
+    if (isFetch) {
+      getPage()
+    }
+  }, [isFetch, getPage])
+
+  // 首次进入自动加载接口数据
+  useEffect(() => {
+    if (pagePermission.page) {
+      getPage()
+    }
+  }, [pagePermission.page, getPage])
 
   /**
    * 获取勾选表格数据
@@ -93,18 +124,15 @@ function Page() {
     setFetch(true)
   }
 
-  // 首次进入自动加载接口数据
-  useEffect(() => {
-    if (pagePermission.page) getPage()
-  }, [pagePermission.page])
-
   /** 开启权限 */
   const openPermission = async (id: string) => {
     try {
       setLoading(true)
       const params = { userId: id }
       const { code, data } = await getPermission(params)
-      if (Number(code) !== 200) return
+      if (Number(code) !== 200) {
+        return
+      }
       const { defaultCheckedKeys, treeData } = data
       setPromiseId(id)
       setPromiseTreeData(treeData)
@@ -131,8 +159,10 @@ function Page() {
         userId: promiseId,
       }
       const { code, message } = await savePermission(params)
-      if (Number(code) !== 200) return
-      messageApi.success(message || t('system.authorizationSuccessful'))
+      if (Number(code) !== 200) {
+        return
+      }
+      message.success(message || t('system.authorizationSuccessful'))
       setPromiseVisible(false)
     } finally {
       setLoading(false)
@@ -158,8 +188,13 @@ function Page() {
       setCreateId(id)
       setCreateLoading(true)
       const { code, data } = await getUserById(id as string)
-      if (Number(code) !== 200) return
-      setCreateData(data)
+      if (Number(code) !== 200) {
+        return
+      }
+      // 编辑时不显示密码
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password, ...restData } = data
+      setCreateData(restData)
     } finally {
       setCreateLoading(false)
     }
@@ -175,23 +210,6 @@ function Page() {
     setCreateOpen(false)
   }
 
-  /** 获取表格数据 */
-  const getPage = async () => {
-    const params = { ...searchData, page, pageSize }
-
-    try {
-      setLoading(true)
-      const { code, data } = await getUserPage(params)
-      if (Number(code) !== 200) return
-      const { items, total } = data
-      setTotal(total)
-      setTableData(items)
-    } finally {
-      setFetch(false)
-      setLoading(false)
-    }
-  }
-
   /**
    * 新增/编辑提交
    * @param values - 表单返回数据
@@ -199,10 +217,17 @@ function Page() {
   const handleCreate = async (values: FormData) => {
     try {
       setCreateLoading(true)
+      // 编辑时如果密码为空，则删除密码字段
+      if (createId && !values.password) {
+        delete values.password
+      }
+
       const functions = () => (createId ? updateUser(createId, values) : createUser(values))
       const { code, message } = await functions()
-      if (Number(code) !== 200) return
-      messageApi.success(message || t('public.successfulOperation'))
+      if (Number(code) !== 200) {
+        return
+      }
+      message.success(message || t('public.successfulOperation'))
       setCreateOpen(false)
       getPage()
     } finally {
@@ -219,7 +244,7 @@ function Page() {
       setLoading(true)
       const { code, message } = await deleteUser(id as string)
       if (Number(code) === 200) {
-        messageApi.success(message || t('public.successfullyDeleted'))
+        message.success(message || t('public.successfullyDeleted'))
         getPage()
       }
     } finally {
@@ -232,9 +257,9 @@ function Page() {
    * @param page - 当前页数
    * @param pageSize - 每页条数
    */
-  const onChangePagination = (page: number, pageSize: number) => {
-    setPage(page)
-    setPageSize(pageSize)
+  const onChangePagination = (newPage: number, newPageSize: number) => {
+    setPage(newPage)
+    setPageSize(newPageSize)
     setFetch(true)
   }
 
@@ -247,21 +272,40 @@ function Page() {
     return (
       <>
         {pagePermission.permission === true && (
-          <Button className='mr-2' loading={isLoading} onClick={() => openPermission((record as RowData).id)}>
-            {t('system.permissions')}
-          </Button>
+          <Tooltip title={t('system.permissions')}>
+            <Button
+              className='mr-5px'
+              type='primary'
+              icon={<SafetyOutlined />}
+              loading={isLoading}
+              onClick={() => openPermission((record as RowData).id)}
+            />
+          </Tooltip>
         )}
-        {pagePermission.update === true && <UpdateBtn className='mr-5px' isLoading={isLoading} onClick={() => onUpdate((record as RowData).id)} />}
+        {pagePermission.update === true && (
+          <UpdateBtn
+            className='mr-5px'
+            isLoading={isLoading}
+            onClick={() => onUpdate((record as RowData).id)}
+          />
+        )}
         {pagePermission.delete === true && (
-          <DeleteBtn className='mr-5px' isLoading={isLoading} handleDelete={() => onDelete((record as RowData).id)} />
+          <DeleteBtn
+            className='mr-5px'
+            isLoading={isLoading}
+            handleDelete={() => onDelete((record as RowData).id)}
+          />
         )}
       </>
     )
   }
 
+  // 表格列
+  const columns = tableColumns(t, optionRender)
+
   return (
     <BasicContent isPermission={pagePermission.page}>
-      {contextHolder}
+
       <BasicSearch
         list={searchList(t)}
         data={searchData}
@@ -273,12 +317,35 @@ function Page() {
         <FilterButton columns={columns} className='!mb-5px' getTableChecks={getTableChecks} />
       </BasicSearch>
 
-      <BasicTable loading={isLoading} columns={handleFilterTable(columns, tableFilters)} dataSource={tableData} />
+      <BasicTable
+        loading={isLoading}
+        columns={handleFilterTable(columns, tableFilters)}
+        dataSource={tableData}
+      />
 
-      <BasicPagination disabled={isLoading} current={page} pageSize={pageSize} total={total} onChange={onChangePagination} />
+      <BasicPagination
+        disabled={isLoading}
+        current={page}
+        pageSize={pageSize}
+        total={total}
+        onChange={onChangePagination}
+      />
 
-      <BasicModal title={createTitle} open={isCreateOpen} confirmLoading={isCreateLoading} onOk={createSubmit} onCancel={closeCreate}>
-        <BasicForm ref={createFormRef} list={createList(t)} data={createData} labelCol={{ span: 6 }} handleFinish={handleCreate} />
+      <BasicModal
+        title={createTitle}
+        open={isCreateOpen}
+        confirmLoading={isCreateLoading}
+        onOk={createSubmit}
+        onCancel={closeCreate}
+        width={600}
+      >
+        <BasicForm
+          ref={createFormRef}
+          list={createList(t, !!createId)}
+          data={createData}
+          labelCol={{ span: 6 }}
+          handleFinish={handleCreate}
+        />
       </BasicModal>
 
       <PermissionDrawer

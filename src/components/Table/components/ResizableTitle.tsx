@@ -1,18 +1,19 @@
-import type { ResizeCallbackData } from 'react-resizable';
-import React from 'react';
-import { Resizable } from 'react-resizable';
+import { Resizable } from 'react-resizable'
+
+import type { HTMLAttributes, SyntheticEvent } from 'react'
+import type { ResizeCallbackData } from 'react-resizable'
 
 /** 自定义拖拽  */
-function ResizableTitle(
-  props: React.HTMLAttributes<unknown> & {
-    onResize: (e: React.SyntheticEvent<Element>, data: ResizeCallbackData) => void
+const ResizableTitle = (
+  props: HTMLAttributes<unknown> & {
+    onResize: (e: SyntheticEvent<Element>, data: ResizeCallbackData) => void
     width: number
-  },
-) {
-  const { onResize, width, ...restProps } = props;
+  }
+) => {
+  const { onResize, width, ...restProps } = props
 
   if (!width) {
-    return <th {...restProps} />;
+    return <th {...restProps} />
   }
 
   return (
@@ -21,9 +22,9 @@ function ResizableTitle(
       height={0}
       handle={
         <span
-          className="react-resizable-handle"
-          onClick={e => {
-            e.stopPropagation();
+          className='react-resizable-handle'
+          onClick={(e) => {
+            e.stopPropagation()
           }}
         />
       }
@@ -32,7 +33,7 @@ function ResizableTitle(
     >
       <th {...restProps} />
     </Resizable>
-  );
+  )
 }
 
-export default ResizableTitle;
+export default ResizableTitle

@@ -1,8 +1,8 @@
-import { type TableProps } from 'antd';
-import { useState } from 'react';
+import { type TableProps } from 'antd'
+import { useState } from 'react'
 
 export function useFiler() {
-  const [isLock, setLock] = useState(true);
+  const [isLock, setLock] = useState(true)
 
   /**
    * 隐藏表格未勾选数据
@@ -10,19 +10,21 @@ export function useFiler() {
    * @param checks - 勾选
    */
   const handleFilterTable = (columns: TableProps['columns'], checks: string[]) => {
-    if (!checks?.length || !columns?.length) return columns || [];
+    if (!checks?.length || !columns?.length) {
+      return columns || []
+    }
     if (isLock) {
-      setLock(false);
-      return columns || [];
+      setLock(false)
+      return columns || []
     }
 
     for (let i = 0; i < columns?.length; i++) {
-      const item = columns[i] as { dataIndex: string; hidden: boolean; };
-      item.hidden = !checks.includes(item.dataIndex);
+      const item = columns[i] as { dataIndex: string; hidden: boolean }
+      item.hidden = !checks.includes(item.dataIndex)
     }
 
-    return columns;
-  };
+    return columns
+  }
 
-  return [handleFilterTable] as const;
+  return [handleFilterTable] as const
 }

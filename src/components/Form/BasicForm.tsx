@@ -1,46 +1,39 @@
-import type { LegacyRef, ReactNode } from 'react';
-import type { FormData, FormList } from '#/form';
-import type { ColProps, FormInstance } from 'antd';
-import { forwardRef, useEffect } from 'react';
-import { FormProps } from 'antd';
-import { Form } from 'antd';
-import { useTranslation } from 'react-i18next';
-import { getComponent } from '../Form/utils/componentMap';
-import { filterFormItem, handleValuePropName } from './utils/helper';
-import { filterDayjs } from '../Dates/utils/helper';
+import { forwardRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+
+import { filterFormItem, handleValuePropName } from './utils/helper'
+import { filterDayjs } from '../Dates/utils/helper'
+import { getComponent } from '../Form/utils/componentMap'
+
+import type { FormData, FormList } from '#/form'
+import { Form, type FormProps, ColProps, FormInstance } from 'antd'
+import type { LegacyRef, ReactNode } from 'react'
 
 interface Props extends FormProps {
-  list: FormList[];
-  data: FormData;
-  children?: ReactNode;
-  labelCol?: Partial<ColProps>;
-  wrapperCol?: Partial<ColProps>;
-  handleFinish: FormProps['onFinish'];
+  list: FormList[]
+  data: FormData
+  children?: ReactNode
+  labelCol?: Partial<ColProps>
+  wrapperCol?: Partial<ColProps>
+  handleFinish: FormProps['onFinish']
 }
 
 const BasicForm = forwardRef((props: Props, ref: LegacyRef<FormInstance>) => {
-  const {
-    list,
-    data,
-    children,
-    labelCol,
-    wrapperCol,
-    handleFinish
-  } = props;
-  const { t } = useTranslation();
-  const [form] = Form.useForm();
+  const { list, data, children, labelCol, wrapperCol, handleFinish } = props
+  const { t } = useTranslation()
+  const [form] = Form.useForm()
 
   // 清除多余参数
-  const formProps: Partial<Props> = { ...props };
-  delete formProps.list;
-  delete formProps.data;
-  delete formProps.handleFinish;
+  const formProps: Partial<Props> = { ...props }
+  delete formProps.list
+  delete formProps.data
+  delete formProps.handleFinish
 
   // 监听传入表单数据，如果变化则替换表单
   useEffect(() => {
-    form?.resetFields();
-    form?.setFieldsValue(props.data);
-  }, [form, props.data]);
+    form?.resetFields()
+    form?.setFieldsValue(props.data)
+  }, [form, props.data])
 
   const validateMessages = {
     required: t('public.requiredForm', { label: '${label}' }),
@@ -51,32 +44,32 @@ const BasicForm = forwardRef((props: Props, ref: LegacyRef<FormInstance>) => {
     number: {
       range: t('public.validateRange', { label: '${label}', max: '${max}', min: '${min}' }),
     },
-  };
+  }
 
   /** 回车处理 */
   const onPressEnter = () => {
-    form?.submit();
-  };
+    form?.submit()
+  }
 
   /**
    * 提交表单
    * @param values - 表单值
    */
-  const onFinish: FormProps['onFinish'] = values => {
+  const onFinish: FormProps['onFinish'] = (values) => {
     if (handleFinish) {
       // 将dayjs类型转为字符串
-      const params = filterDayjs(values, list);
-      handleFinish?.(params);
+      const params = filterDayjs(values, list)
+      handleFinish?.(params)
     }
-  };
+  }
 
   /**
    * 表单提交失败处理
    * @param errorInfo - 错误信息
    */
-  const onFinishFailed: FormProps['onFinishFailed'] = errorInfo => {
-    console.warn('表单错误:', errorInfo);
-  };
+  const onFinishFailed: FormProps['onFinishFailed'] = (errorInfo) => {
+    console.warn('表单错误:', errorInfo)
+  }
 
   return (
     <div>
@@ -90,28 +83,26 @@ const BasicForm = forwardRef((props: Props, ref: LegacyRef<FormInstance>) => {
         validateMessages={validateMessages}
         onFinish={onFinish}
         onFinishFailed={onFinishFailed}
-        autoComplete="off"
+        autoComplete='off'
       >
-        {
-          list?.map(item => (
-            <Form.Item
-              {...filterFormItem(item)}
-              key={`${item.name}`}
-              label={item.label}
-              name={item.name}
-              rules={!item.hidden ? item.rules : []}
-              className={item.hidden ? '!hidden' : ''}
-              valuePropName={handleValuePropName(item.component)}
-            >
-              { getComponent(t, item, onPressEnter) }
-            </Form.Item>
-          ))
-        }
+        {list?.map((item) => (
+          <Form.Item
+            {...filterFormItem(item)}
+            key={`${item.name}`}
+            label={item.label}
+            name={item.name}
+            rules={!item.hidden ? item.rules : []}
+            className={item.hidden ? '!hidden' : ''}
+            valuePropName={handleValuePropName(item.component)}
+          >
+            {getComponent(t, item, onPressEnter)}
+          </Form.Item>
+        ))}
 
-        { children }
+        {children}
       </Form>
     </div>
-  );
-});
+  )
+})
 
-export default BasicForm;
+export default BasicForm

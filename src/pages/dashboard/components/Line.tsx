@@ -1,35 +1,37 @@
-import type { EChartsCoreOption } from 'echarts';
-import { useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useEcharts } from '@/hooks/useEcharts';
-import { useCommonStore } from '@/hooks/useCommonStore';
+import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
-function Line() {
-  const { t } = useTranslation();
-  const { permissions } = useCommonStore();
+import { useCommonStore } from '@/hooks/useCommonStore'
+import { useEcharts } from '@/hooks/useEcharts'
+
+import type { EChartsCoreOption } from 'echarts'
+
+const Line = () => {
+  const { t } = useTranslation()
+  const { permissions } = useCommonStore()
 
   const option: EChartsCoreOption = {
     title: {
       text: t('dashboard.effectiveRechargeRatio'),
       left: 30,
-      top: 5
+      top: 5,
     },
     xAxis: {
       type: 'category',
       boundaryGap: false,
-      data: ['07-11', '07-12', '07-13', '07-14', '07-15', '07-16', '07-17']
+      data: ['07-11', '07-12', '07-13', '07-14', '07-15', '07-16', '07-17'],
     },
     yAxis: {
-      type: 'value'
+      type: 'value',
     },
     tooltip: {
       trigger: 'axis',
       axisPointer: {
         type: 'cross',
         label: {
-          backgroundColor: '#6a7985'
-        }
-      }
+          backgroundColor: '#6a7985',
+        },
+      },
     },
     series: [
       {
@@ -37,42 +39,42 @@ function Line() {
         type: 'line',
         areaStyle: {
           color: '#1890ff',
-          opacity: 0.2
+          opacity: 0.2,
         },
         emphasis: {
-          focus: 'series'
+          focus: 'series',
         },
-        data: [120, 140, 120, 190, 150, 111, 160]
+        data: [120, 140, 120, 190, 150, 111, 160],
       },
       {
         name: t('dashboard.usersNumber'),
         type: 'line',
         areaStyle: {
           color: '#1890ff',
-          opacity: 0.3
+          opacity: 0.3,
         },
         emphasis: {
-          focus: 'series'
+          focus: 'series',
         },
-        data: [90, 122, 90, 140, 123, 280, 200]
+        data: [90, 122, 90, 140, 123, 280, 200],
       },
-    ]
-  };
-  
-  const [echartsRef, init] = useEcharts(option);
+    ],
+  }
+
+  const [echartsRef, init] = useEcharts(option)
 
   useEffect(() => {
     if (permissions.length && echartsRef.current) {
-      init();
+      init()
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [echartsRef]);
-  
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [echartsRef])
+
   return (
     <div className='w-60% h-550px border border-gray-200 rounded-10px'>
-      <div ref={echartsRef} className='w-full h-full'></div>
+      <div ref={echartsRef} className='w-full h-full' />
     </div>
-  );
+  )
 }
 
-export default Line;
+export default Line

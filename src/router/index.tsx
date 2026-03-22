@@ -1,28 +1,24 @@
+import { App, ConfigProvider, theme } from 'antd'
+import enUS from 'antd/es/locale/en_US'
+import zhCN from 'antd/es/locale/zh_CN'
+import nprogress from 'nprogress'
 import { useEffect } from 'react'
-import { App } from 'antd'
-import { VERSION } from '@/utils/config'
+import { AliveScope } from 'react-activation'
 import { useTranslation } from 'react-i18next'
 import { BrowserRouter as Router } from 'react-router-dom'
-import nprogress from 'nprogress'
-import AppPage from './App'
+
+import { useCommonStore } from '@/hooks/useCommonStore'
+import { VERSION } from '@/utils/config'
 import StaticAntd from '@/utils/staticAntd'
 
-// antd
-import { theme, ConfigProvider } from 'antd'
-import zhCN from 'antd/es/locale/zh_CN'
-import enUS from 'antd/es/locale/en_US'
+import AppPage from './App'
 
 // antd主题
 const { defaultAlgorithm, darkAlgorithm } = theme
 
-// keepalive
-import { AliveScope } from 'react-activation'
-
-import { useCommonStore } from '@/hooks/useCommonStore'
-
-function Page() {
+const Page = () => {
   const { i18n } = useTranslation()
-  const { theme } = useCommonStore()
+  const { theme: themeMode } = useCommonStore()
   // 获取当前语言
   const currentLanguage = i18n.language
 
@@ -54,7 +50,7 @@ function Page() {
       <ConfigProvider
         locale={currentLanguage === 'en' ? enUS : zhCN}
         theme={{
-          algorithm: [theme === 'dark' ? darkAlgorithm : defaultAlgorithm],
+          algorithm: [themeMode === 'dark' ? darkAlgorithm : defaultAlgorithm],
         }}
       >
         <App>

@@ -1,7 +1,9 @@
-import { message } from '@/utils/staticAntd'
-import { getLocalInfo, removeLocalInfo } from '@/utils/local'
-import { TOKEN } from '@/utils/config'
 import axios from 'axios'
+
+import { TOKEN } from '@/utils/config'
+import { getLocalInfo, removeLocalInfo } from '@/utils/local'
+import { message } from '@/utils/staticAntd'
+
 import AxiosRequest from './request'
 
 // 请求配置
@@ -25,7 +27,7 @@ function creteRequest() {
       },
       // 请求拦截超时
       requestInterceptorsCatch(err) {
-        message.error('请求超时！')
+        message.error({ content: '请求超时！', duration: 3 })
         return err
       },
       // 接口响应拦截
@@ -33,7 +35,7 @@ function creteRequest() {
         const { data } = res
         // 权限不足
         if (data?.code === 401) {
-          message.error('权限不足，请重新登录！')
+          message.error({ content: '权限不足，请重新登录！', duration: 3 })
           removeLocalInfo(TOKEN)
           setTimeout(() => {
             window.location.href = '/'
@@ -53,7 +55,7 @@ function creteRequest() {
       responseInterceptorsCatch(err) {
         const { response } = err
         if (response.status === 401) {
-          message.error('登录过期，请重新登录！')
+          message.error({ content: '登录过期，请重新登录！', duration: 3 })
           removeLocalInfo(TOKEN)
           setTimeout(() => {
             window.location.href = '/'
@@ -84,6 +86,7 @@ const handleError = (error: string, content?: string) => {
   message.error({
     content: content || error || '服务器错误',
     key: 'error',
+    duration: 3,
   })
 }
 
@@ -91,11 +94,7 @@ const handleError = (error: string, content?: string) => {
  * 取消请求
  * @param url - 链接
  */
-export const cancelRequest = (url: string | string[]) => {
-  return request.cancelRequest(url)
-}
+export const cancelRequest = (url: string | string[]) => request.cancelRequest(url)
 
 /** 取消全部请求 */
-export const cancelAllRequest = () => {
-  return request.cancelAllRequest()
-}
+export const cancelAllRequest = () => request.cancelAllRequest()

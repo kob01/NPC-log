@@ -1,28 +1,26 @@
-import type { ButtonProps } from 'antd';
-import { Button } from 'antd';
-import { useTranslation } from 'react-i18next';
+import { EditOutlined } from '@ant-design/icons'
+import { Button, Tooltip } from 'antd'
+import { useTranslation } from 'react-i18next'
+
+import type { ButtonProps } from 'antd'
 
 interface Props extends Omit<ButtonProps, 'loading'> {
-  isLoading: boolean;
+  isLoading: boolean
 }
 
-function UpdateBtn(props: Props) {
-  const { isLoading } = props;
-  const { t } = useTranslation();
+const UpdateBtn = (props: Props) => {
+  const { isLoading } = props
+  const { t } = useTranslation()
 
   // 清除自定义属性
-  const params: Partial<Props> = { ...props };
-  delete params.isLoading;
+  const params: Partial<Props> = { ...props }
+  delete params.isLoading
 
   return (
-    <Button
-      type='primary'
-      {...params}
-      loading={!!isLoading}
-    >
-      { t('public.edit') }
-    </Button>
-  );
+    <Tooltip title={t('public.edit')}>
+      <Button type='primary' icon={<EditOutlined />} {...params} loading={!!isLoading} />
+    </Tooltip>
+  )
 }
 
-export default UpdateBtn;
+export default UpdateBtn

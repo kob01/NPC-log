@@ -1,8 +1,9 @@
-import type { DataNode, TreeProps } from 'antd/es/tree'
-import type { Key } from 'antd/lib/table/interface'
 import { Drawer, Tree, Button } from 'antd'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+
+import type { DataNode, TreeProps } from 'antd/es/tree'
+import type { Key } from 'antd/lib/table/interface'
 
 interface Props {
   isVisible: boolean
@@ -13,7 +14,7 @@ interface Props {
   onSubmit: (checked: Key[]) => Promise<void>
 }
 
-function PermissionDrawer(props: Props) {
+const PermissionDrawer = (props: Props) => {
   const { title, isVisible, treeData, checkedKeys, onClose, onSubmit } = props
   const { t } = useTranslation()
   const [treeCheckedKeys, setTreeCheckedKeys] = useState(checkedKeys)
@@ -43,7 +44,13 @@ function PermissionDrawer(props: Props) {
   }
 
   return (
-    <Drawer open={isVisible} title={title || t('system.rightsProfile')} placement='right' extra={extraRender} onClose={onClose}>
+    <Drawer
+      open={isVisible}
+      title={title || t('system.rightsProfile')}
+      placement='right'
+      extra={extraRender}
+      onClose={onClose}
+    >
       <Tree checkable checkedKeys={treeCheckedKeys} treeData={treeData} onCheck={handleCheck} />
     </Drawer>
   )

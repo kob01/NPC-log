@@ -1,21 +1,21 @@
-import { DatePicker } from 'antd';
-import type { RangePickerProps } from 'antd/es/date-picker';
-import { stringRang2DayjsRang } from './utils/helper';
+import { DatePicker } from 'antd'
 
-const { RangePicker } = DatePicker;
+import { stringRang2DayjsRang } from './utils/helper'
 
-function BasicRangePicker(props: RangePickerProps) {
-  const { value } = props;
-  const params = {...props};
+import type { RangePickerProps } from 'antd/es/date-picker'
+
+const { RangePicker } = DatePicker
+
+const BasicRangePicker = (props: RangePickerProps) => {
+  const { value } = props
+  const params = { ...props }
 
   // 如果值不是dayjs类型则进行转换
-  if (value) params.value = stringRang2DayjsRang(value);
+  if (value) {
+    params.value = stringRang2DayjsRang(value)
+  }
 
-  return (
-    <RangePicker
-      {...params}
-    />
-  );
+  return <RangePicker {...params} />
 }
 
-export default BasicRangePicker;
+export default BasicRangePicker

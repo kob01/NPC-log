@@ -9,4 +9,4 @@ export default {
   effectiveRechargeRatio: '有效充值占比',
   cooperativeCompany: '合作公司',
   fullServerRecharge: '全服充值',
-};
+}

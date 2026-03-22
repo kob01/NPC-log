@@ -7,4 +7,6 @@ export default {
   confirmPasswordMessage: '密码和确认密码不相同!',
   notPermissions: '用户暂无权限登录',
   passwordRuleMessage: '密码为6-30位必须包含字母和数字!',
-};
+  pleaseEnterUsername: '请输入用户名',
+  pleaseEnterPassword: '请输入密码',
+}

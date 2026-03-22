@@ -1,36 +1,37 @@
-import type { LoginData } from './model'
-import type { FormProps } from 'antd'
-import type { SideMenu } from '#/public'
-import type { AppDispatch } from '@/stores'
-import type { ThemeType } from '@/stores/public'
-import { message } from 'antd'
-import { Form, Button, Input } from 'antd'
+import { UserOutlined, LockOutlined } from '@ant-design/icons'
+import { message, Form, Button, Input } from 'antd'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
-import { PASSWORD_RULE, THEME_KEY } from '@/utils/config'
-import { UserOutlined, LockOutlined } from '@ant-design/icons'
-import { login } from '@/servers/login'
-import { useToken } from '@/hooks/useToken'
-import { setThemeValue } from '@/stores/public'
-import { setMenuList } from '@/stores/menu'
-import { getMenuList } from '@/servers/system/menu'
-import { setPermissions, setUserInfo } from '@/stores/user'
-import { useCommonStore } from '@/hooks/useCommonStore'
-import { getPermissions } from '@/servers/permissions'
-import { getFirstMenu } from '@/menus/utils/helper'
+
 import Logo from '@/assets/images/logo.svg'
 import I18n from '@/components/I18n'
+import { useCommonStore } from '@/hooks/useCommonStore'
+import { useToken } from '@/hooks/useToken'
+import { getFirstMenu } from '@/menus/utils/helper'
+import { login } from '@/servers/login'
+import { getPermissions } from '@/servers/permissions'
+import { getMenuList } from '@/servers/system/menu'
+import { setMenuList } from '@/stores/menu'
+import { setThemeValue } from '@/stores/public'
+import { setPermissions, setUserInfo } from '@/stores/user'
+import { PASSWORD_RULE, THEME_KEY } from '@/utils/config'
 import { encryptMd5 } from '@/utils/crypto'
 
-function Login() {
+import type { SideMenu } from '#/public'
+import type { LoginData } from './model'
+import type { AppDispatch } from '@/stores'
+import type { ThemeType } from '@/stores/public'
+import type { FormProps } from 'antd'
+
+const Login = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const dispatch: AppDispatch = useDispatch()
   const [getToken, setToken] = useToken()
   const [isLoading, setLoading] = useState(false)
-  const [messageApi, contextHolder] = message.useMessage()
+
   const { permissions, menuList } = useCommonStore()
   const themeCache = (localStorage.getItem(THEME_KEY) || 'light') as ThemeType
 
@@ -69,7 +70,9 @@ function Login() {
     try {
       setLoading(true)
       const { code, data } = await getPermissions({ refresh_cache: false })
-      if (Number(code) !== 200) return
+      if (Number(code) !== 200) {
+        return
+      }
       const { user, permissions } = data
       dispatch(setUserInfo(user))
       dispatch(setPermissions(permissions))
@@ -81,14 +84,18 @@ function Login() {
 
   /** 获取菜单数据 */
   const getMenuData = async () => {
-    if (menuList?.length) return menuList
+    if (menuList?.length) {
+      return menuList
+    }
     let result: SideMenu[] = []
 
     try {
       setLoading(true)
       const { code, data } = await getMenuList()
       // const { code, data } = { "code": 200, "data": [{ "label": "仪表盘", "labelEn": "Dashboard", "icon": "la:tachometer-alt", "key": "/dashboard", "rule": "/dashboard" }, { "label": "组件", "labelEn": "Components", "icon": "fluent:box-20-regular", "key": "/demo", "children": [{ "label": "剪切板", "labelEn": "Copy", "key": "/demo/copy", "rule": "/demo/copy" }, { "label": "水印", "labelEn": "Watermark", "key": "/demo/watermark", "rule": "/demo/watermark" }, { "label": "虚拟滚动", "labelEn": "Virtual Scroll", "key": "/demo/virtualScroll", "rule": "/demo/virtualScroll" }, { "label": "富文本", "labelEn": "Editor", "key": "/demo/editor", "rule": "/demo/editor" }, { "label": "动态路由参数", "labelEn": "Dynamic", "key": "/demo/123/dynamic", "rule": "/demo/dynamic" }, { "label": "层级1", "labelEn": "Level1", "key": "/demo/level1", "children": [{ "label": "层级2", "labelEn": "Level2", "key": "/demo/level1/level2", "children": [{ "label": "层级3", "labelEn": "Level3", "key": "/demo/level1/level2/level3", "rule": "/demo/watermark" }] }] }] }, { "label": "系统管理", "labelEn": "System Management", "icon": "ion:settings-outline", "key": "/system", "children": [{ "label": "用户管理", "labelEn": "User Management", "key": "/system/user", "rule": "/authority/user" }, { "label": "菜单管理", "labelEn": "Menu Management", "key": "/system/menu", "rule": "/authority/menu" }] }, { "label": "内容管理", "labelEn": "Content Management", "icon": "majesticons:article-search-line", "key": "/content", "children": [{ "label": "文章管理", "labelEn": "Article Management", "key": "/content/article", "rule": "/content/article" }] }] };
-      if (Number(code) !== 200) return
+      if (Number(code) !== 200) {
+        return
+      }
       dispatch(setMenuList(data || []))
       result = data
     } finally {
@@ -108,7 +115,7 @@ function Login() {
     // 有权限则直接跳转
     const firstMenu = getFirstMenu(menuData, permissions)
     if (!firstMenu) {
-      return messageApi.error({ content: t('login.notPermissions'), key: 'permissions' })
+      return message.error({ content: t('login.notPermissions'), key: 'permissions' })
     }
     // navigate(firstMenu);
     navigate('/content/log')
@@ -121,12 +128,17 @@ function Login() {
   const handleFinish: FormProps['onFinish'] = async (values: LoginData) => {
     try {
       setLoading(true)
-      const { code, data } = await login({ username: values.username, password: encryptMd5(values.password) })
-      if (Number(code) !== 200) return
+      const { code, data } = await login({
+        username: values.username,
+        password: encryptMd5(values.password),
+      })
+      if (Number(code) !== 200) {
+        return
+      }
       const { token, user, permissions } = data
 
       if (!permissions?.length || !token) {
-        return messageApi.error({ content: t('login.notPermissions'), key: 'permissions' })
+        return message.error({ content: t('login.notPermissions'), key: 'permissions' })
       }
       localStorage.setItem('NPC_token', token)
       localStorage.setItem('NPC_user', JSON.stringify(user))
@@ -149,7 +161,7 @@ function Login() {
 
   return (
     <>
-      {contextHolder}
+
       <div
         className={`
         ${themeCache === 'dark' ? 'bg-black text-white' : 'bg-light-400'}
@@ -190,7 +202,12 @@ function Login() {
               password: '',
             }}
           >
-            <Form.Item name='username' rules={[{ required: true, message: t('public.pleaseEnter', { name: t('login.username') }) }]}>
+            <Form.Item
+              name='username'
+              rules={[
+                { required: true, message: t('public.pleaseEnter', { name: t('login.username') }) },
+              ]}
+            >
               <Input
                 allow-clear='true'
                 placeholder={t('login.username')}
@@ -202,13 +219,25 @@ function Login() {
 
             <Form.Item
               name='password'
-              rules={[{ required: true, message: t('public.pleaseEnter', { name: t('login.password') }) }, PASSWORD_RULE(t)]}
+              rules={[
+                { required: true, message: t('public.pleaseEnter', { name: t('login.password') }) },
+                PASSWORD_RULE(t),
+              ]}
             >
-              <Input.Password placeholder={t('login.password')} autoComplete='current-password' addonBefore={<LockOutlined className='change' />} />
+              <Input.Password
+                placeholder={t('login.password')}
+                autoComplete='current-password'
+                addonBefore={<LockOutlined className='change' />}
+              />
             </Form.Item>
 
             <Form.Item>
-              <Button type='primary' htmlType='submit' className='w-full mt-5px rounded-5px tracking-2px' loading={isLoading}>
+              <Button
+                type='primary'
+                htmlType='submit'
+                className='w-full mt-5px rounded-5px tracking-2px'
+                loading={isLoading}
+              >
                 {t('login.login')}
               </Button>
             </Form.Item>

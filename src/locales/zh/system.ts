@@ -10,6 +10,7 @@ export default {
   age: '年龄',
   role: '角色',
   phone: '手机',
+  email: '邮箱',
   rightsProfile: '权限配置',
   authority: '权限系统',
   platform: '运营系统',
@@ -23,4 +24,11 @@ export default {
   detail: '详情',
   export: '导出',
   status: '状态',
-};
+  searchByName: '请输入用户名或姓名搜索',
+  leaveBlankForNoChange: '留空表示不修改密码',
+  pleaseEnterRealName: '请输入真实姓名',
+  pleaseEnterRole: '请输入角色',
+  pleaseEnterPhone: '请输入手机号',
+  pleaseEnterEmail: '请输入邮箱',
+  pleaseEnterValidEmail: '请输入有效的邮箱地址',
+}

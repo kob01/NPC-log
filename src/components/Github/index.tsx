@@ -1,22 +1,22 @@
-import { Tooltip } from 'antd';
-import { Icon } from '@iconify/react';
+import { Icon } from '@iconify/react'
+import { Tooltip } from 'antd'
 
-function Github() {
+const Github = () => {
   /** 跳转Github */
   const goGithub = () => {
-    window.open('https://github.com/kob01');
-  };
+    window.open('https://github.com/kob01')
+  }
 
   return (
     <Tooltip title='Github'>
       <div onClick={goGithub}>
         <Icon
-          className="flex items-center justify-center text-lg mr-3 cursor-pointer"
+          className='flex items-center justify-center text-lg mr-3 cursor-pointer'
           icon='mdi:github'
         />
       </div>
     </Tooltip>
-  );
+  )
 }
 
-export default Github;
+export default Github

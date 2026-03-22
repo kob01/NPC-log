@@ -1,26 +1,27 @@
-import type { AppDispatch } from '@/stores'
-import { useToken } from '@/hooks/useToken'
-import { useCallback, useEffect, useState } from 'react'
-import { useNavigate, useOutlet } from 'react-router-dom'
-import { Skeleton, message } from 'antd'
 import { Icon } from '@iconify/react'
 import { useDebounceFn } from 'ahooks'
-import { useDispatch } from 'react-redux'
-import { useLocation } from 'react-router-dom'
-import { versionCheck } from './utils/helper'
-import { getPermissions } from '@/servers/permissions'
-import { useCommonStore } from '@/hooks/useCommonStore'
-import { setPermissions, setUserInfo } from '@/stores/user'
-import { setMenuList, toggleCollapsed, togglePhone } from '@/stores/menu'
-import { getMenuList } from '@/servers/system/menu'
-import Menu from './components/Menu'
-import Header from './components/Header'
-import Tabs from './components/Tabs'
-import Forbidden from '@/pages/403'
+import { Skeleton, message } from 'antd'
+import { useCallback, useEffect, useState } from 'react'
 import KeepAlive from 'react-activation'
+import { useDispatch } from 'react-redux'
+import { useNavigate, useOutlet, useLocation } from 'react-router-dom'
+
+import { useCommonStore } from '@/hooks/useCommonStore'
+import { useToken } from '@/hooks/useToken'
+import Forbidden from '@/pages/403'
+import { getPermissions } from '@/servers/permissions'
+import { getMenuList } from '@/servers/system/menu'
+import { setMenuList, toggleCollapsed, togglePhone } from '@/stores/menu'
+import { setPermissions, setUserInfo } from '@/stores/user'
+
+import Header from './components/Header'
+import Menu from './components/Menu'
+import Tabs from './components/Tabs'
 import styles from './index.module.less'
 
-function Layout() {
+import type { AppDispatch } from '@/stores'
+
+const Layout = () => {
   const dispatch: AppDispatch = useDispatch()
   const navigate = useNavigate()
   const [getToken] = useToken()
@@ -29,7 +30,7 @@ function Layout() {
   const token = getToken()
   const outlet = useOutlet()
   const [isLoading, setLoading] = useState(true)
-  const [messageApi, contextHolder] = message.useMessage()
+
 
   const { permissions, userId, isMaximize, isCollapsed, isPhone, isRefresh } = useCommonStore()
 
@@ -38,7 +39,9 @@ function Layout() {
     try {
       setLoading(true)
       const { code, data } = await getPermissions({ refresh_cache: false })
-      if (Number(code) !== 200) return
+      if (Number(code) !== 200) {
+        return
+      }
       const { user, permissions } = data
 
       dispatch(setUserInfo(user))
@@ -58,7 +61,9 @@ function Layout() {
       setLoading(true)
       const { code, data } = await getMenuList()
       // const { code, data } = { "code": 200, "data": [{ "label": "仪表盘", "labelEn": "Dashboard", "icon": "la:tachometer-alt", "key": "/dashboard", "rule": "/dashboard" }, { "label": "组件", "labelEn": "Components", "icon": "fluent:box-20-regular", "key": "/demo", "children": [{ "label": "剪切板", "labelEn": "Copy", "key": "/demo/copy", "rule": "/demo/copy" }, { "label": "水印", "labelEn": "Watermark", "key": "/demo/watermark", "rule": "/demo/watermark" }, { "label": "虚拟滚动", "labelEn": "Virtual Scroll", "key": "/demo/virtualScroll", "rule": "/demo/virtualScroll" }, { "label": "富文本", "labelEn": "Editor", "key": "/demo/editor", "rule": "/demo/editor" }, { "label": "动态路由参数", "labelEn": "Dynamic", "key": "/demo/123/dynamic", "rule": "/demo/dynamic" }, { "label": "层级1", "labelEn": "Level1", "key": "/demo/level1", "children": [{ "label": "层级2", "labelEn": "Level2", "key": "/demo/level1/level2", "children": [{ "label": "层级3", "labelEn": "Level3", "key": "/demo/level1/level2/level3", "rule": "/demo/watermark" }] }] }] }, { "label": "系统管理", "labelEn": "System Management", "icon": "ion:settings-outline", "key": "/system", "children": [{ "label": "用户管理", "labelEn": "User Management", "key": "/system/user", "rule": "/authority/user" }, { "label": "菜单管理", "labelEn": "Menu Management", "key": "/system/menu", "rule": "/authority/menu" }] }, { "label": "内容管理", "labelEn": "Content Management", "icon": "majesticons:article-search-line", "key": "/content", "children": [{ "label": "文章管理", "labelEn": "Article Management", "key": "/content/article", "rule": "/content/article" }] }] };
-      if (Number(code) !== 200) return
+      if (Number(code) !== 200) {
+        return
+      }
       dispatch(setMenuList(data || []))
     } finally {
       setLoading(false)
@@ -81,7 +86,7 @@ function Layout() {
 
   // 监测是否需要刷新
   // useEffect(() => {
-  //   versionCheck(messageApi);
+  //   versionCheck(message);
   //   // eslint-disable-next-line react-hooks/exhaustive-deps
   // }, [pathname]);
 
@@ -90,10 +95,12 @@ function Layout() {
     () => {
       const isPhone = window.innerWidth <= 768
       // 手机首次进来收缩菜单
-      if (isPhone) dispatch(toggleCollapsed(true))
+      if (isPhone) {
+        dispatch(toggleCollapsed(true))
+      }
       dispatch(togglePhone(isPhone))
     },
-    { wait: 500 },
+    { wait: 500 }
   )
 
   // 监听是否是手机端
@@ -108,7 +115,6 @@ function Layout() {
 
   return (
     <div id='layout'>
-      {contextHolder}
       <Menu />
       <div className={styles.layout_right}>
         <div
@@ -136,7 +142,9 @@ function Layout() {
             ${isPhone ? `!left-0 !w-full` : ''}
           `}
         >
-          {isLoading && permissions.length === 0 && <Skeleton active className='p-30px' paragraph={{ rows: 10 }} />}
+          {isLoading && permissions.length === 0 && (
+            <Skeleton active className='p-30px' paragraph={{ rows: 10 }} />
+          )}
           {!isLoading && permissions.length === 0 && <Forbidden />}
           {isRefresh && (
             <div

@@ -1,32 +1,41 @@
-import type { AppDispatch } from '@/stores'
-import type { PasswordModal } from './UpdatePassword'
-import type { MenuProps } from 'antd'
-import { useRef } from 'react'
-import { useDispatch } from 'react-redux'
-import { useAliveController } from 'react-activation'
-import { toggleCollapsed } from '@/stores/menu'
-import { useNavigate } from 'react-router-dom'
-import { useToken } from '@/hooks/useToken'
-import { clearInfo } from '@/stores/user'
-import { closeAllTab, setActiveKey } from '@/stores/tabs'
+import {
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  LogoutOutlined,
+  FormOutlined,
+  ExclamationCircleOutlined,
+} from '@ant-design/icons'
 import { App, Dropdown } from 'antd'
+import { useRef } from 'react'
+import { useAliveController } from 'react-activation'
 import { useTranslation } from 'react-i18next'
-import { useCommonStore } from '@/hooks/useCommonStore'
-import { MenuFoldOutlined, MenuUnfoldOutlined, LogoutOutlined, FormOutlined, ExclamationCircleOutlined } from '@ant-design/icons'
+import { useDispatch } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
+
 import Avatar from '@/assets/images/avatar.png'
-import styles from '../index.module.less'
 import Fullscreen from '@/components/Fullscreen'
-import GlobalSearch from '@/components/GlobalSearch'
 import Github from '@/components/Github'
+import GlobalSearch from '@/components/GlobalSearch'
 import I18n from '@/components/I18n'
 import Theme from '@/components/Theme'
-import UpdatePassword from './UpdatePassword'
-import Nav from './Nav'
+import { useCommonStore } from '@/hooks/useCommonStore'
+import { useToken } from '@/hooks/useToken'
 import { logout } from '@/servers/login'
+import { toggleCollapsed } from '@/stores/menu'
+import { closeAllTab, setActiveKey } from '@/stores/tabs'
+import { clearInfo } from '@/stores/user'
+
+import Nav from './Nav'
+import UpdatePassword from './UpdatePassword'
+import styles from '../index.module.less'
+
+import type { PasswordModal } from './UpdatePassword'
+import type { AppDispatch } from '@/stores'
+import type { MenuProps } from 'antd'
 
 type MenuKey = 'password' | 'logout'
 
-function Header() {
+const Header = () => {
   const [, , removeToken] = useToken()
   const { t } = useTranslation()
   const { clear } = useAliveController()
@@ -88,33 +97,38 @@ function Header() {
   }
 
   /** 右侧组件抽离减少重复渲染 */
-  const RightRender = () => {
-    return (
-      <div className='flex items-center'>
-        <Github />
-        <GlobalSearch />
-        <Fullscreen />
-        <I18n />
-        <Theme />
-        <Dropdown className='min-w-50px' menu={{ items, onClick }}>
-          <div className='ant-dropdown-link flex items-center cursor-pointer' onClick={(e) => e.preventDefault()}>
-            <img src={Avatar} width={27} height={27} alt='Avatar' className='rounded-1/2 overflow-hidden object-cover bg-light-500' />
-            <span className='ml-2 text-15px min-w-50px truncate'>{username || 'south-admin'}</span>
-          </div>
-        </Dropdown>
-      </div>
-    )
-  }
+  const RightRender = () => (
+    <div className='flex items-center'>
+      <Github />
+      <GlobalSearch />
+      <Fullscreen />
+      <I18n />
+      <Theme />
+      <Dropdown className='min-w-50px' menu={{ items, onClick }}>
+        <div
+          className='ant-dropdown-link flex items-center cursor-pointer'
+          onClick={(e) => e.preventDefault()}
+        >
+          <img
+            src={Avatar}
+            width={27}
+            height={27}
+            alt='Avatar'
+            className='rounded-1/2 overflow-hidden object-cover bg-light-500'
+          />
+          <span className='ml-2 text-15px min-w-50px truncate'>{username || 'south-admin'}</span>
+        </div>
+      </Dropdown>
+    </div>
+  )
 
   /** icon渲染 */
-  const IconRender = () => {
-    return (
-      <div className='text-lg cursor-pointer' onClick={() => dispatch(toggleCollapsed(!isCollapsed))}>
-        {isCollapsed && <MenuUnfoldOutlined />}
-        {!isCollapsed && <MenuFoldOutlined />}
-      </div>
-    )
-  }
+  const IconRender = () => (
+    <div className='text-lg cursor-pointer' onClick={() => dispatch(toggleCollapsed(!isCollapsed))}>
+      {isCollapsed && <MenuUnfoldOutlined />}
+      {!isCollapsed && <MenuFoldOutlined />}
+    </div>
+  )
 
   return (
     <>

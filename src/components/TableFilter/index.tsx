@@ -1,6 +1,6 @@
+import { UnorderedListOutlined } from '@ant-design/icons'
 import { type ButtonProps, type TableProps, Button, Popover, Divider, Checkbox } from 'antd'
 import { useEffect, useState } from 'react'
-import { UnorderedListOutlined } from '@ant-design/icons'
 
 /**
  * 表格字段筛选
@@ -16,7 +16,7 @@ interface Props extends ButtonProps {
   getTableChecks: (checks: string[]) => void
 }
 
-function FilterButton(props: Props) {
+const FilterButton = (props: Props) => {
   const { columns, getTableChecks } = props
   const [isOpen, setOpen] = useState(false)
   const [list, setList] = useState<CheckboxList[]>([])
@@ -38,7 +38,9 @@ function FilterButton(props: Props) {
    * @param columns - 表格数据
    */
   const filterColumns = (columns: TableProps['columns']) => {
-    if (!columns?.length) return []
+    if (!columns?.length) {
+      return []
+    }
     const result: CheckboxList[] = [],
       currentOptions: string[] = []
 
@@ -75,31 +77,33 @@ function FilterButton(props: Props) {
   }
 
   // 渲染内容
-  const content = () => {
-    return (
-      <div className='min-w-130px'>
-        <Checkbox.Group className='flex flex-col !px-12px' value={checkList} onChange={onChangeCheckbox}>
-          {list?.map((item) => (
-            <div key={item.value}>
-              <Checkbox value={item.value}>{item.label}</Checkbox>
-            </div>
-          ))}
-        </Checkbox.Group>
+  const content = () => (
+    <div className='min-w-130px'>
+      <Checkbox.Group
+        className='flex flex-col !px-12px'
+        value={checkList}
+        onChange={onChangeCheckbox}
+      >
+        {list?.map((item) => (
+          <div key={item.value}>
+            <Checkbox value={item.value}>{item.label}</Checkbox>
+          </div>
+        ))}
+      </Checkbox.Group>
 
-        <Divider className='!mt-10px !mb-5px' />
+      <Divider className='!mt-10px !mb-5px' />
 
-        <div className='flex justify-end px-10px'>
-          <Button size='small' className='mr-5px' onClick={handleClick}>
-            取消
-          </Button>
+      <div className='flex justify-end px-10px'>
+        <Button size='small' className='mr-5px' onClick={handleClick}>
+          取消
+        </Button>
 
-          <Button type='primary' size='small' onClick={handleFilter}>
-            筛选
-          </Button>
-        </div>
+        <Button type='primary' size='small' onClick={handleFilter}>
+          筛选
+        </Button>
       </div>
-    )
-  }
+    </div>
+  )
 
   return (
     <Popover

@@ -1,10 +1,13 @@
-import type { RouteObject } from 'react-router-dom'
-import type { DefaultComponent } from '@loadable/component'
-import { handleRoutes } from './utils/helper'
 import { useRoutes } from 'react-router-dom'
+
 import Layout from '@/layouts'
-import Login from '@/pages/login'
 import NotFound from '@/pages/404'
+import Login from '@/pages/login'
+
+import { handleRoutes } from './utils/helper'
+
+import type { DefaultComponent } from '@loadable/component'
+import type { RouteObject } from 'react-router-dom'
 
 type PageFiles = Record<string, () => Promise<DefaultComponent<unknown>>>
 const pages = import.meta.glob('../pages/**/*.tsx') as PageFiles
@@ -29,8 +32,6 @@ const newRoutes: RouteObject[] = [
   },
 ]
 
-function App() {
-  return <>{useRoutes(newRoutes)}</>
-}
+const App = () => <>{useRoutes(newRoutes)}</>
 
 export default App

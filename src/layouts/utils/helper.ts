@@ -1,9 +1,10 @@
-import type { MessageInstance } from 'antd/es/message/interface'
-import { VERSION } from '@/utils/config'
+import { message } from 'antd'
 import axios from 'axios'
 
+import { VERSION } from '@/utils/config'
+
 /** 版本监控 */
-export const versionCheck = async (messageApi: MessageInstance) => {
+export const versionCheck = async () => {
   // if (import.meta.env.MODE === 'development') return;
   const versionLocal = localStorage.getItem(VERSION)
   const {
@@ -17,7 +18,7 @@ export const versionCheck = async (messageApi: MessageInstance) => {
 
   if (versionLocal !== String(version)) {
     localStorage.setItem(VERSION, String(version))
-    messageApi.info({
+    message.info({
       content: '发现新内容，自动更新中...',
       key: 'reload',
       onClose: () => {

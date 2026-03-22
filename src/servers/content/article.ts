@@ -1,9 +1,10 @@
-import type { FormData } from '#/form';
-import type { PageServerResult, PaginationData } from '#/public';
-import { request } from '@/servers/request';
+import { request } from '@/servers/request'
+
+import type { FormData } from '#/form'
+import type { PageServerResult, PaginationData } from '#/public'
 
 enum API {
-  URL = '/content/article'
+  URL = '/content/article',
 }
 
 /**
@@ -11,10 +12,7 @@ enum API {
  * @param data - 请求数据
  */
 export function getArticlePage(data: Partial<FormData> & PaginationData) {
-  return request.get<PageServerResult<FormData[]>>(
-    `${API.URL}/page`,
-    { params: data }
-  );
+  return request.get<PageServerResult<FormData[]>>(`${API.URL}/page`, { params: data })
 }
 
 /**
@@ -22,7 +20,7 @@ export function getArticlePage(data: Partial<FormData> & PaginationData) {
  * @param id - ID
  */
 export function getNPCEventById(id: string) {
-  return request.get<FormData>(`${API.URL}/detail?id=${id}`);
+  return request.get<FormData>(`${API.URL}/detail?id=${id}`)
 }
 
 /**
@@ -30,7 +28,7 @@ export function getNPCEventById(id: string) {
  * @param data - 请求数据
  */
 export function createArticle(data: FormData) {
-  return request.post(API.URL, data);
+  return request.post(API.URL, data)
 }
 
 /**
@@ -39,7 +37,7 @@ export function createArticle(data: FormData) {
  * @param data - 请求数据
  */
 export function updateArticle(id: string, data: FormData) {
-  return request.put(`${API.URL}/${id}`, data);
+  return request.put(`${API.URL}/${id}`, data)
 }
 
 /**
@@ -47,5 +45,5 @@ export function updateArticle(id: string, data: FormData) {
  * @param id - 删除id值
  */
 export function deleteArticle(id: string) {
-  return request.delete(`${API.URL}/${id}`);
+  return request.delete(`${API.URL}/${id}`)
 }

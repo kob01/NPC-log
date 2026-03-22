@@ -1,60 +1,60 @@
-import type { FormList } from "#/form";
-import type { TFunction } from "i18next";
-import type { TableColumn, TableOptions } from '#/public';
-import { FORM_REQUIRED } from '@/utils/config';
-import CustomizeInput from './components/CustomizeInput';
+import { FORM_REQUIRED } from '@/utils/config'
+
+import CustomizeInput from './components/CustomizeInput'
+
+import type { FormList } from '#/form'
+import type { TableColumn, TableOptions } from '#/public'
+import type { TFunction } from 'i18next'
 
 // 搜索数据
 export const searchList = (t: TFunction): FormList[] => [
   {
     label: t('login.username'),
     name: 'username',
-    component: 'Input'
+    component: 'Input',
   },
   {
     label: t('public.title'),
     name: 'title',
-    component: 'Input'
-  }
-];
+    component: 'Input',
+  },
+]
 
 /**
  * 表格数据
  * @param optionRender - 渲染操作函数
  */
-export const tableColumns = (t: TFunction, optionRender: TableOptions<object>): TableColumn => {
-  return [
-    {
-      title: 'ID',
-      dataIndex: 'id',
-      width: 400,
-      fixed: 'left'
-    },
-    {
-      title: t('login.username'),
-      dataIndex: 'username',
-      width: 400,
-      fixed: 'left'
-    },
-    {
-      title: t('public.title'),
-      dataIndex: 'title',
-      width: 400
-    },
-    {
-      title: t('public.content'),
-      dataIndex: 'content',
-      width: 400
-    },
-    {
-      title: t('public.operate'),
-      dataIndex: 'operate',
-      width: 200,
-      fixed: 'right',
-      render: (value: unknown, record: object) => optionRender(value, record)
-    },
-  ];
-};
+export const tableColumns = (t: TFunction, optionRender: TableOptions<object>): TableColumn => [
+  {
+    title: 'ID',
+    dataIndex: 'id',
+    width: 400,
+    fixed: 'left',
+  },
+  {
+    title: t('login.username'),
+    dataIndex: 'username',
+    width: 400,
+    fixed: 'left',
+  },
+  {
+    title: t('public.title'),
+    dataIndex: 'title',
+    width: 400,
+  },
+  {
+    title: t('public.content'),
+    dataIndex: 'content',
+    width: 400,
+  },
+  {
+    title: t('public.operate'),
+    dataIndex: 'operate',
+    width: 200,
+    fixed: 'right',
+    render: (value: unknown, record: object) => optionRender(value, record),
+  },
+]
 
 // 新增数据
 export const createList = (t: TFunction): FormList[] => [
@@ -65,9 +65,9 @@ export const createList = (t: TFunction): FormList[] => [
     component: 'Input',
     componentProps: {
       style: {
-        width: '80%'
-      }
-    }
+        width: '80%',
+      },
+    },
   },
   {
     label: t('content.nestedData'),
@@ -78,9 +78,9 @@ export const createList = (t: TFunction): FormList[] => [
     extra: '这是描述，这是描述，这是描述。',
     componentProps: {
       style: {
-        width: '80%'
-      }
-    }
+        width: '80%',
+      },
+    },
   },
   {
     label: t('public.title'),
@@ -90,9 +90,9 @@ export const createList = (t: TFunction): FormList[] => [
     render: CustomizeInput,
     componentProps: {
       style: {
-        width: '80%'
-      }
-    }
+        width: '80%',
+      },
+    },
   },
   {
     label: t('public.content'),
@@ -100,8 +100,8 @@ export const createList = (t: TFunction): FormList[] => [
     component: 'Editor',
     componentProps: {
       style: {
-        width: '80%'
-      }
-    }
-  }
-];
+        width: '80%',
+      },
+    },
+  },
+]

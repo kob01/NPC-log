@@ -1,6 +1,7 @@
+import { request } from '@/servers/request'
+
 import type { FormData } from '#/form'
 import type { PageServerResult, PaginationData } from '#/public'
-import { request } from '@/servers/request'
 
 enum API {
   URL = '/api/event',
@@ -12,6 +13,16 @@ enum API {
  */
 export function getNPCEventPage(data: Partial<FormData> & PaginationData) {
   return request.get<PageServerResult<FormData[]>>(`${API.URL}/list`, {
+    params: data,
+  })
+}
+
+/**
+ * 获取所有数据（导出用）
+ * @param data - 请求数据
+ */
+export function getAllNPCEvents(data: Partial<FormData>) {
+  return request.get<FormData[]>(`${API.URL}/export`, {
     params: data,
   })
 }

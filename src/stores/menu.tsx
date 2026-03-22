@@ -1,5 +1,6 @@
-import type { SideMenu } from '#/public';
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit'
+
+import type { SideMenu } from '#/public'
 
 const menuSlice = createSlice({
   name: 'menu',
@@ -12,29 +13,24 @@ const menuSlice = createSlice({
   },
   reducers: {
     toggleCollapsed: (state, action) => {
-      state.isCollapsed = !!action.payload;
+      state.isCollapsed = !!action.payload
     },
     togglePhone: (state, action) => {
-      state.isPhone = !!action.payload;
+      state.isPhone = !!action.payload
     },
     setSelectedKeys: (state, action) => {
-      state.selectedKeys = action.payload;
+      state.selectedKeys = action.payload
     },
     setOpenKeys: (state, action) => {
-      state.openKeys = action.payload;
+      state.openKeys = action.payload
     },
     setMenuList: (state, action) => {
-      state.menuList = action.payload;
+      state.menuList = action.payload
     },
-  }
-});
+  },
+})
 
-export const {
-  toggleCollapsed,
-  togglePhone,
-  setSelectedKeys,
-  setOpenKeys,
-  setMenuList
-} = menuSlice.actions;
+export const { toggleCollapsed, togglePhone, setSelectedKeys, setOpenKeys, setMenuList } =
+  menuSlice.actions
 
-export default menuSlice.reducer;
+export default menuSlice.reducer

@@ -1,18 +1,20 @@
-import type { AppDispatch } from '@/stores';
-import { Icon } from '@iconify/react';
-import { useDispatch } from 'react-redux';
-import { toggleMaximize } from '@/stores/tabs';
-import { useCommonStore } from '@/hooks/useCommonStore';
+import { Icon } from '@iconify/react'
+import { useDispatch } from 'react-redux'
 
-function TabMaximize() {
-  const dispatch: AppDispatch = useDispatch();
+import { useCommonStore } from '@/hooks/useCommonStore'
+import { toggleMaximize } from '@/stores/tabs'
+
+import type { AppDispatch } from '@/stores'
+
+const TabMaximize = () => {
+  const dispatch: AppDispatch = useDispatch()
   // 是否窗口最大化
-  const { isMaximize } = useCommonStore();
+  const { isMaximize } = useCommonStore()
 
   /** 点击最大化/最小化 */
   const onClick = () => {
-    dispatch(toggleMaximize(!isMaximize));
-  };
+    dispatch(toggleMaximize(!isMaximize))
+  }
 
   return (
     <Icon
@@ -23,10 +25,10 @@ function TabMaximize() {
         text-lg
         cursor-pointer
       `}
-      icon={ isMaximize ? "ant-design:compress-outlined" : "ant-design:expand-outlined" }
+      icon={isMaximize ? 'ant-design:compress-outlined' : 'ant-design:expand-outlined'}
       onClick={onClick}
     />
-  );
+  )
 }
 
-export default TabMaximize;
+export default TabMaximize

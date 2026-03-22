@@ -10,6 +10,7 @@ export default {
   age: 'age',
   role: 'role',
   phone: 'phone',
+  email: 'email',
   rightsProfile: 'Rights Profile',
   authority: 'authority system',
   platform: 'operating system',
@@ -23,4 +24,11 @@ export default {
   detail: 'details',
   export: 'export',
   status: 'status',
-};
+  searchByName: 'Search by username or name',
+  leaveBlankForNoChange: 'Leave blank to keep current password',
+  pleaseEnterRealName: 'Please enter real name',
+  pleaseEnterRole: 'Please enter role',
+  pleaseEnterPhone: 'Please enter phone number',
+  pleaseEnterEmail: 'Please enter email',
+  pleaseEnterValidEmail: 'Please enter a valid email address',
+}

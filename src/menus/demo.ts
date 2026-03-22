@@ -1,4 +1,4 @@
-import type { SideMenu } from '#/public';
+import type { SideMenu } from '#/public'
 
 export const demo: SideMenu[] = [
   {
@@ -46,11 +46,11 @@ export const demo: SideMenu[] = [
                 labelEn: 'Level3',
                 key: '/demo/level1/level2/level3',
                 rule: '/demo/watermark',
-              }
-            ]
-          }
-        ]
+              },
+            ],
+          },
+        ],
       },
-    ]
-  }
-];
+    ],
+  },
+]

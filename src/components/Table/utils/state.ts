@@ -1,14 +1,15 @@
-import type { Dispatch } from 'react';
-import { createContext } from 'react';
-import { TableAction } from './reducer';
+import { createContext } from 'react'
+
+import type { TableAction } from './reducer'
+import type { Dispatch } from 'react'
 
 interface ScrollContextProps {
-  dispatch?: Dispatch<TableAction>;
-  renderLen: number;
-  start: number;
-  offsetStart: number;
-  rowHeight: number;
-  totalLen: number;
+  dispatch?: Dispatch<TableAction>
+  renderLen: number
+  start: number
+  offsetStart: number
+  rowHeight: number
+  totalLen: number
 }
 
 export const ScrollContext = createContext<ScrollContextProps>({
@@ -17,5 +18,5 @@ export const ScrollContext = createContext<ScrollContextProps>({
   start: 0,
   offsetStart: 0,
   rowHeight: 46,
-  totalLen: 0
-});
+  totalLen: 0,
+})

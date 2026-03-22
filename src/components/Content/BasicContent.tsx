@@ -5,7 +5,7 @@ interface Props {
   children: JSX.Element | JSX.Element[]
 }
 
-function BasicContent(props: Props) {
+const BasicContent = (props: Props) => {
   const { isPermission, children } = props
   return (
     <div className='min-w-980px h-full p-10px box-border overflow-auto'>

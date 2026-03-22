@@ -1,29 +1,34 @@
-import type { FormData } from '#/form'
-import type { AppDispatch, RootState } from '@/stores'
-import type { PagePermission, TableOptions } from '#/public'
+import { FileExcelOutlined } from '@ant-design/icons'
+import { message, Tooltip, Button } from 'antd'
 import { useEffect, useState } from 'react'
-import { searchList, tableColumns } from './model'
-import { message, Tooltip } from 'antd'
+import { useTranslation } from 'react-i18next'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
-import { setRefreshPage } from '@/stores/public'
-import { checkPermission } from '@/utils/permissions'
-import { useCommonStore } from '@/hooks/useCommonStore'
+
 import { UpdateBtn, DeleteBtn } from '@/components/Buttons'
-import { getNPCEventPage, deleteNPCEvent } from '@/servers/content/event'
 import BasicContent from '@/components/Content/BasicContent'
+import BasicPagination from '@/components/Pagination/BasicPagination'
 import BasicSearch from '@/components/Search/BasicSearch'
 import BasicTable from '@/components/Table/BasicTable'
-import BasicPagination from '@/components/Pagination/BasicPagination'
+import { useCommonStore } from '@/hooks/useCommonStore'
+import { getNPCEventPage, getAllNPCEvents, deleteNPCEvent } from '@/servers/content/event'
+import { setRefreshPage } from '@/stores/public'
 import { INIT_PAGINATION } from '@/utils/config'
+import { exportToExcel } from '@/utils/excel'
+import { checkPermission } from '@/utils/permissions'
+
+import { searchList, tableColumns } from './model'
+
+import type { FormData } from '#/form'
+import type { PagePermission, TableOptions } from '#/public'
+import type { AppDispatch, RootState } from '@/stores'
 
 // 当前行数据
 interface RowData {
   id: string
 }
 
-function Page() {
+const Page = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const dispatch: AppDispatch = useDispatch()
@@ -35,7 +40,6 @@ function Page() {
   const [pageSize, setPageSize] = useState(INIT_PAGINATION.pageSize)
   const [total, setTotal] = useState(0)
   const [tableData, setTableData] = useState<FormData[]>([])
-  const [messageApi, contextHolder] = message.useMessage()
   const isRefreshPage = useSelector((state: RootState) => state.public.isRefreshPage)
 
   // 权限前缀
@@ -50,55 +54,31 @@ function Page() {
   }
 
   useEffect(() => {
-    if (isFetch) getPage()
+    if (isFetch) {
+      getPage()
+    }
   }, [isFetch])
 
-  /**
-   * 点击搜索
-   * @param values - 表单返回数据
-   */
-  const onSearch = (values: FormData) => {
-    setPage(1)
-    setSearchData(values)
-    getPage()
-    setFetch(true)
-  }
-
-  // 首次进入自动加载接口数据
-  useEffect(() => {
-    if (pagePermission.page && !isRefreshPage) getPage()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagePermission.page])
-
-  // 如果是新增或编辑成功重新加载页面
+  // 监听是否刷新页面
   useEffect(() => {
     if (isRefreshPage) {
-      dispatch(setRefreshPage(false))
       getPage()
+      dispatch(setRefreshPage(false))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRefreshPage])
 
-  /** 点击新增 */
-  const onCreate = () => {
-    navigate('/content/log/option?type=create')
-  }
-
   /**
-   * 点击编辑
-   * @param id - 唯一值
+   * 获取分页数据
    */
-  const onUpdate = (id: string) => {
-    navigate(`/content/log/option?type=update&id=${id}`)
-  }
-
-  /** 获取表格数据 */
   const getPage = async () => {
-    const params = { ...searchData, page, pageSize }
-
     try {
       setLoading(true)
-      const { code, data } = await getNPCEventPage(params)
+      const { code, data } = await getNPCEventPage({
+        ...searchData,
+        page,
+        pageSize,
+      })
 
       if (Number(code) === 200) {
         const { items, total } = data
@@ -112,16 +92,40 @@ function Page() {
   }
 
   /**
+   * 点击新增
+   */
+  const onCreate = () => {
+    navigate('/content/log/option')
+  }
+
+  /**
+   * 点击编辑
+   * @param id - 唯一值
+   */
+  const onUpdate = (id: string) => {
+    navigate(`/content/log/option?id=${id}`)
+  }
+
+  /**
+   * 点击搜索
+   * @param values - 表单返回数据
+   */
+  const onSearch = (values: FormData) => {
+    setSearchData(values)
+    setFetch(true)
+  }
+
+  /**
    * 点击删除
    * @param id - 唯一值
    */
   const onDelete = async (id: string) => {
     try {
       setLoading(true)
-      const { code, message } = await deleteNPCEvent(id as string)
+      const { code, message: msg } = await deleteNPCEvent(id as string)
 
       if (Number(code) === 200) {
-        messageApi.success(message || t('public.successfullyDeleted'))
+        message.success(msg || t('public.successfullyDeleted'))
         getPage()
       }
     } finally {
@@ -141,14 +145,82 @@ function Page() {
   }
 
   /**
+   * 导出Excel
+   */
+  const handleExportExcel = async () => {
+    if (tableData.length === 0) {
+      message.warning('暂无数据可导出')
+      return
+    }
+
+    try {
+      setLoading(true)
+      // 获取所有数据（不分页）
+      const { code, data } = await getAllNPCEvents(searchData)
+      if (Number(code) !== 200) {
+        message.error('获取数据失败')
+        return
+      }
+
+      // 定义导出列
+      const exportColumns = [
+        { key: 'time', title: '时间' },
+        { key: 'event', title: '事件' },
+        { key: 'type', title: '分类' },
+        { key: 'content', title: '进度/记录' },
+        { key: 'rating', title: '评价' },
+        { key: 'feeling', title: '感受' },
+        { key: 'experience', title: '经验教训' },
+        { key: 'position', title: '地点' },
+        { key: 'witness', title: '见证者' },
+      ]
+
+      // 格式化数据
+      const exportData = data.map((item: FormData) => {
+        const formatted: Record<string, string> = {}
+        exportColumns.forEach((col) => {
+          formatted[col.title] = (item[col.key] as string) ?? ''
+        })
+        return formatted
+      })
+
+      // 导出
+      const success = exportToExcel(
+        exportData,
+        `事件记录_${new Date().toLocaleDateString()}`,
+        '事件记录'
+      )
+      if (success) {
+        message.success('导出成功', 3)
+      } else {
+        message.error('导出失败', 3)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  /**
    * 渲染操作
    * @param _ - 当前值
    * @param record - 当前行参数
    */
   const optionRender: TableOptions<object> = (_, record) => (
     <>
-      {pagePermission.update === true && <UpdateBtn className='mr-5px' isLoading={isLoading} onClick={() => onUpdate((record as RowData).id)} />}
-      {pagePermission.delete === true && <DeleteBtn className='mr-5px' isLoading={isLoading} handleDelete={() => onDelete((record as RowData).id)} />}
+      {pagePermission.update === true && (
+        <UpdateBtn
+          className='mr-5px'
+          isLoading={isLoading}
+          onClick={() => onUpdate((record as RowData).id)}
+        />
+      )}
+      {pagePermission.delete === true && (
+        <DeleteBtn
+          className='mr-5px'
+          isLoading={isLoading}
+          handleDelete={() => onDelete((record as RowData).id)}
+        />
+      )}
     </>
   )
 
@@ -160,7 +232,6 @@ function Page() {
 
   return (
     <BasicContent isPermission={pagePermission.page}>
-      {contextHolder}
       <BasicSearch
         list={searchList(t)}
         data={searchData}
@@ -168,11 +239,31 @@ function Page() {
         isCreate={pagePermission.create}
         onCreate={onCreate}
         handleFinish={onSearch}
+      >
+        <Button
+          type='primary'
+          icon={<FileExcelOutlined />}
+          loading={isLoading}
+          onClick={handleExportExcel}
+          className='ml-2'
+        >
+          导出Excel
+        </Button>
+      </BasicSearch>
+
+      <BasicTable
+        loading={isLoading}
+        columns={tableColumns(t, optionRender, TooltipRender)}
+        dataSource={tableData}
       />
 
-      <BasicTable loading={isLoading} columns={tableColumns(t, optionRender, TooltipRender)} dataSource={tableData} />
-
-      <BasicPagination disabled={isLoading} current={page} pageSize={pageSize} total={total} onChange={onChangePagination} />
+      <BasicPagination
+        disabled={isLoading}
+        current={page}
+        pageSize={pageSize}
+        total={total}
+        onChange={onChangePagination}
+      />
     </BasicContent>
   )
 }

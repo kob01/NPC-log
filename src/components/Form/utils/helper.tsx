@@ -1,7 +1,8 @@
-import type { TFunction } from 'i18next';
-import type { FormItemProps } from 'antd';
-import type { ComponentProps, ComponentType, FormList } from '#/form';
-import { DATE_FORMAT, TIME_FORMAT } from '@/utils/config';
+import { DATE_FORMAT, TIME_FORMAT } from '@/utils/config'
+
+import type { ComponentProps, ComponentType, FormList } from '#/form'
+import type { FormItemProps } from 'antd'
+import type { TFunction } from 'i18next'
 
 /**
  * 处理子节点的值的属性
@@ -12,13 +13,13 @@ export function handleValuePropName(component: ComponentType): string {
     case 'Switch':
     case 'Checkbox':
     case 'CheckboxGroup':
-      return 'checked';
+      return 'checked'
 
     case 'Upload':
-      return 'fileList';
+      return 'fileList'
 
     default:
-      return 'value';
+      return 'value'
   }
 }
 
@@ -36,65 +37,65 @@ export function initCompProps(
     case 'Select':
       return {
         allowClear: true,
-        placeholder: t('public.inputPleaseSelect')
-      };
+        placeholder: t('public.inputPleaseSelect'),
+      }
 
     // 输入框
     case 'Input':
       return {
         allowClear: true,
         placeholder: t('public.inputPleaseEnter'),
-        onPressEnter
+        onPressEnter,
       }
 
     // 数字框
     case 'InputNumber':
       return {
         placeholder: t('public.inputPleaseEnter'),
-        onPressEnter
-      };
+        onPressEnter,
+      }
 
     // 勾选框
     case 'Checkbox':
-      return {};
+      return {}
 
     // 勾选框组
     case 'CheckboxGroup':
-      return {};
+      return {}
 
     // 日期
     case 'DatePicker':
       return {
         placeholder: t('public.inputPleaseSelect'),
         format: DATE_FORMAT,
-      };
+      }
 
     // 日期区间
     case 'RangePicker':
       return {
         placeholder: [t('public.inputPleaseSelect'), t('public.inputPleaseSelect')],
         format: [DATE_FORMAT, DATE_FORMAT],
-      };
+      }
 
     // 时间
     case 'TimePicker':
       return {
         placeholder: t('public.inputPleaseSelect'),
         format: TIME_FORMAT,
-      };
+      }
 
     // 时间区间
     case 'TimeRangePicker':
       return {
         placeholder: [t('public.inputPleaseSelect'), t('public.inputPleaseSelect')],
         format: [TIME_FORMAT, TIME_FORMAT],
-      };
+      }
 
     default:
       return {
         allowClear: true,
-        placeholder: t('public.inputPleaseEnter')
-      };
+        placeholder: t('public.inputPleaseEnter'),
+      }
   }
 }
 
@@ -103,8 +104,8 @@ export function initCompProps(
  * @param data - 表单数据
  */
 export const filterFormItem = (data: FormList): FormItemProps => {
-  const result = JSON.parse(JSON.stringify(data));
-  delete result.componentProps;
+  const result = JSON.parse(JSON.stringify(data))
+  delete result.componentProps
 
-  return result as FormItemProps;
-};
+  return result as FormItemProps
+}

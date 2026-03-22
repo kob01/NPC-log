@@ -1,29 +1,32 @@
-import type { TabsProps } from 'antd'
-import type { AppDispatch, RootState } from '@/stores'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { getMenuByKey } from '@/menus/utils/helper'
 import { message, Tabs, Dropdown } from 'antd'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAliveController } from 'react-activation'
-import { useDropdownMenu } from '../hooks/useDropdownMenu'
-import { useDispatch, useSelector } from 'react-redux'
-import { useCommonStore } from '@/hooks/useCommonStore'
-import { setRefresh } from '@/stores/public'
 import { useTranslation } from 'react-i18next'
+import { useDispatch, useSelector } from 'react-redux'
+import { useLocation, useNavigate } from 'react-router-dom'
+
+import { useCommonStore } from '@/hooks/useCommonStore'
+import { getMenuByKey } from '@/menus/utils/helper'
+import { setRefresh } from '@/stores/public'
 import { setActiveKey, addTabs, closeTabs, setNav, toggleLock, switchTabsLang } from '@/stores/tabs'
+
+import { useDropdownMenu } from '../hooks/useDropdownMenu'
 import styles from '../index.module.less'
-import TabRefresh from './TabRefresh'
 import TabMaximize from './TabMaximize'
 import TabOptions from './TabOptions'
+import TabRefresh from './TabRefresh'
 
-function LayoutTabs() {
+import type { AppDispatch, RootState } from '@/stores'
+import type { TabsProps } from 'antd'
+
+const LayoutTabs = () => {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const { pathname, search } = useLocation()
   const uri = pathname + search
   const dispatch: AppDispatch = useDispatch()
   const { refresh } = useAliveController()
-  const [messageApi, contextHolder] = message.useMessage()
+
   const [time, setTime] = useState<null | NodeJS.Timeout>(null)
   const [refreshTime, seRefreshTime] = useState<null | NodeJS.Timeout>(null)
   const isLock = useSelector((state: RootState) => state.tabs.isLock)
@@ -42,7 +45,9 @@ function LayoutTabs() {
     (path = uri) => {
       // 当值为空时匹配路由
       if (permissions.length > 0) {
-        if (path === '/') return
+        if (path === '/') {
+          return
+        }
         const menuByKeyProps = {
           menus: menuList,
           permissions,
@@ -59,30 +64,33 @@ function LayoutTabs() {
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     },
-    [permissions, menuList],
+    [permissions, menuList]
   )
 
   useEffect(() => {
     handleAddTab()
   }, [handleAddTab, permissions, menuList])
-  ;(useEffect(() => {
+
+  useEffect(() => {
     dispatch(switchTabsLang(currentLanguage))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentLanguage, tabs]),
-    useEffect(() => {
-      return () => {
-        if (time) {
-          clearTimeout(time)
-          setTime(null)
-        }
+  }, [currentLanguage, tabs])
 
-        if (refreshTime) {
-          clearTimeout(refreshTime)
-          seRefreshTime(null)
-        }
+  useEffect(
+    () => () => {
+      if (time) {
+        clearTimeout(time)
+        setTime(null)
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []))
+
+      if (refreshTime) {
+        clearTimeout(refreshTime)
+        seRefreshTime(null)
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  )
 
   useEffect(() => {
     // 当选中贴标签不等于当前路由则跳转
@@ -132,7 +140,9 @@ function LayoutTabs() {
   const onClickRefresh = useCallback(
     (key = activeKey) => {
       // 如果key不是字符串格式则退出
-      if (typeof key !== 'string') return
+      if (typeof key !== 'string') {
+        return
+      }
 
       // 定时器没有执行时运行
       if (!time) {
@@ -141,43 +151,47 @@ function LayoutTabs() {
 
         setTime(
           setTimeout(() => {
-            messageApi.success({
+            message.success({
               content: t('public.refreshSuccessfully'),
               key: 'refresh',
             })
             dispatch(setRefresh(false))
             setTime(null)
-          }, 100),
+          }, 100)
         )
 
         seRefreshTime(
           setTimeout(() => {
             seRefreshTime(null)
-          }, 1000),
+          }, 1000)
         )
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     },
-    [activeKey, time],
+    [activeKey, time]
   )
 
   // 渲染重新加载
-  const RefreshRender = useMemo(() => {
-    return <TabRefresh isRefresh={!!refreshTime} onClick={onClickRefresh} />
-  }, [refreshTime, onClickRefresh])
+  const RefreshRender = useMemo(
+    () => <TabRefresh isRefresh={!!refreshTime} onClick={onClickRefresh} />,
+    [refreshTime, onClickRefresh]
+  )
 
   // 渲染标签操作
-  const TabOptionsRender = useMemo(() => {
-    return <TabOptions activeKey={activeKey} handleRefresh={onClickRefresh} />
-  }, [activeKey, onClickRefresh])
+  const TabOptionsRender = useMemo(
+    () => <TabOptions activeKey={activeKey} handleRefresh={onClickRefresh} />,
+    [activeKey, onClickRefresh]
+  )
 
   // 渲染最大化操作
-  const TabMaximizeRender = useMemo(() => {
-    return <TabMaximize />
-  }, [])
+  const TabMaximizeRender = useMemo(() => <TabMaximize />, [])
 
   // 标签栏功能
-  const tabOptions = [{ element: RefreshRender }, { element: TabOptionsRender }, { element: TabMaximizeRender }]
+  const tabOptions = [
+    { element: RefreshRender },
+    { element: TabOptionsRender },
+    { element: TabMaximizeRender },
+  ]
 
   // 下拉菜单
   const dropdownMenuParams = { activeKey, handleRefresh: onClickRefresh }
@@ -212,7 +226,6 @@ function LayoutTabs() {
       ${isMaximize ? styles.conMaximize : ''}
     `}
     >
-      {contextHolder}
       {tabs.length > 0 ? (
         <Tabs
           hideAdd
@@ -225,7 +238,7 @@ function LayoutTabs() {
           renderTabBar={renderTabBar}
         />
       ) : (
-        <span></span>
+        <span />
       )}
 
       <div className='flex'>

@@ -1,22 +1,23 @@
-import type { ButtonProps } from 'antd';
-import { Button, App } from 'antd';
-import { useTranslation } from 'react-i18next';
-import { ExclamationCircleOutlined } from '@ant-design/icons';
+import { ExclamationCircleOutlined, DeleteOutlined } from '@ant-design/icons'
+import { Button, App, Tooltip } from 'antd'
+import { useTranslation } from 'react-i18next'
+
+import type { ButtonProps } from 'antd'
 
 interface Props extends Omit<ButtonProps, 'loading'> {
-  isLoading: boolean;
-  handleDelete: () => void;
+  isLoading: boolean
+  handleDelete: () => void
 }
 
-function DeleteBtn(props: Props) {
-  const { isLoading, handleDelete } = props;
-  const { t } = useTranslation();
-  const { modal } = App.useApp();
+const DeleteBtn = (props: Props) => {
+  const { isLoading, handleDelete } = props
+  const { t } = useTranslation()
+  const { modal } = App.useApp()
 
   // 清除自定义属性
-  const params: Partial<Props> = { ...props };
-  delete params.isLoading;
-  delete params.handleDelete;
+  const params: Partial<Props> = { ...props }
+  delete params.isLoading
+  delete params.handleDelete
 
   const showConfirm = () => {
     modal.confirm({
@@ -27,22 +28,23 @@ function DeleteBtn(props: Props) {
       okType: 'danger',
       cancelText: t('public.cancel'),
       onOk() {
-        handleDelete();
+        handleDelete()
       },
-    });
-  };
+    })
+  }
 
   return (
-    <Button
-      danger
-      type='primary'
-      {...params}
-      loading={!!isLoading}
-      onClick={showConfirm}
-    >
-      { t('public.delete') }
-    </Button>
-  );
+    <Tooltip title={t('public.delete')}>
+      <Button
+        danger
+        type='primary'
+        icon={<DeleteOutlined />}
+        {...params}
+        loading={!!isLoading}
+        onClick={showConfirm}
+      />
+    </Tooltip>
+  )
 }
 
-export default DeleteBtn;
+export default DeleteBtn

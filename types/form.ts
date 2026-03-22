@@ -1,3 +1,6 @@
+import type { BusinessComponents } from '@/components/Business'
+import type { EditorProps } from '@/components/WangEditor'
+import type { ServerResult } from '@/servers/request/types'
 import type {
   InputProps,
   InputNumberProps,
@@ -14,19 +17,22 @@ import type {
   TransferProps,
   FormItemProps,
 } from 'antd'
-import type { FC, Key, ReactNode } from 'react'
 import type { RangePickerProps } from 'antd/lib/date-picker'
-import type { DefaultOptionType } from 'antd/lib/select'
 import type { RuleObject } from 'antd/lib/form'
-import type { ServerResult } from '@/servers/request/types'
-import type { BusinessComponents } from '@/components/Business'
-import type { EditorProps } from '@/components/WangEditor'
+import type { DefaultOptionType } from 'antd/lib/select'
+import type { FC, Key, ReactNode } from 'react'
 
 // 数据类型
 export type FormData = Record<string, unknown>
 
 // 基础数据组件
-type DefaultDataComponents = 'Input' | 'InputNumber' | 'TextArea' | 'InputPassword' | 'AutoComplete' | 'customize'
+type DefaultDataComponents =
+  | 'Input'
+  | 'InputNumber'
+  | 'TextArea'
+  | 'InputPassword'
+  | 'AutoComplete'
+  | 'customize'
 
 // 下拉组件
 type SelectComponents = 'Select' | 'TreeSelect' | 'ApiSelect' | 'ApiTreeSelect'
@@ -84,7 +90,11 @@ export interface ApiResult extends Omit<DefaultOptionType, 'value'> {
   value?: string | number
 }
 
-export type ApiFn = (params?: object, params2?: object, params3?: object) => Promise<ServerResult<unknown>>
+export type ApiFn = (
+  params?: object,
+  params2?: object,
+  params3?: object
+) => Promise<ServerResult<unknown>>
 
 // api参数
 interface ApiParam {

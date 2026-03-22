@@ -1,11 +1,12 @@
-import { Button } from 'antd';
-import { useTranslation } from 'react-i18next';
-import { useWatermark } from '@/hooks/useWatermark';
+import { Button } from 'antd'
+import { useTranslation } from 'react-i18next'
 
-function Watermark() {
-  const { t } = useTranslation();
-  const [Watermark, RemoveWatermark] = useWatermark();
-  
+import { useWatermark } from '@/hooks/useWatermark'
+
+const Watermark = () => {
+  const { t } = useTranslation()
+  const [Watermark, RemoveWatermark] = useWatermark()
+
   const openWatermark = () => {
     Watermark({
       content: t('content.watermark'),
@@ -14,24 +15,22 @@ function Watermark() {
       rotate: -20,
       color: '#000',
       fontSize: 30,
-      opacity: .07
-    });
-  };
+      opacity: 0.07,
+    })
+  }
 
   const hidWatermark = () => {
-    RemoveWatermark();
-  };
+    RemoveWatermark()
+  }
 
   return (
-    <div className="p-30px">
-      <Button onClick={openWatermark}>
-        { t('content.openWatermark') }
-      </Button>
+    <div className='p-30px'>
+      <Button onClick={openWatermark}>{t('content.openWatermark')}</Button>
       <Button danger onClick={hidWatermark}>
-        { t('content.hideWatermark') }
+        {t('content.hideWatermark')}
       </Button>
     </div>
-  );
+  )
 }
 
-export default Watermark;
+export default Watermark

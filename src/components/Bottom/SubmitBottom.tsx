@@ -1,19 +1,20 @@
-import { Button } from 'antd';
-import { useTranslation } from 'react-i18next';
+import { Button } from 'antd'
+import { useTranslation } from 'react-i18next'
 
 interface Props {
-  goBack: () => void;
-  handleSubmit: () => void;
-  isLoading?: boolean;
-  children?: JSX.Element;
+  goBack: () => void
+  handleSubmit: () => void
+  isLoading?: boolean
+  children?: JSX.Element
 }
 
-function SubmitBottom(props: Props) {
-  const { t } = useTranslation();
-  const { goBack, handleSubmit, isLoading, children } = props;
+const SubmitBottom = (props: Props) => {
+  const { t } = useTranslation()
+  const { goBack, handleSubmit, isLoading, children } = props
 
   return (
-    <div className={`
+    <div
+      className={`
       w-full
       bg
       fixed
@@ -27,25 +28,18 @@ function SubmitBottom(props: Props) {
       box-border
       shadow
       shadow-gray-500
-    `}>
-      { children }
+    `}
+    >
+      {children}
 
-      <Button
-        className='mr-10px'
-        danger
-        onClick={goBack}
-      >
-        { t('public.back') }
+      <Button className='mr-10px' danger onClick={goBack}>
+        {t('public.back')}
       </Button>
-      <Button
-        loading={!!isLoading}
-        type="primary"
-        onClick={handleSubmit}
-      >
-        { t('public.submit') }
+      <Button loading={!!isLoading} type='primary' onClick={handleSubmit}>
+        {t('public.submit')}
       </Button>
     </div>
-  );
+  )
 }
 
-export default SubmitBottom;
+export default SubmitBottom

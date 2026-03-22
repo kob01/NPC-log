@@ -14,4 +14,4 @@ export default {
   hideWatermark: '隐藏水印',
   nestedData: '嵌套数据',
   sensitiveInfo: '注：标题不能含有敏感信息!',
-};
+}

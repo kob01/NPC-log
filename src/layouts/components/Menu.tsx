@@ -1,22 +1,33 @@
-import type { MenuProps } from 'antd'
+import { CompassOutlined } from '@ant-design/icons'
+import { Icon } from '@iconify/react'
+import { Menu } from 'antd'
+import { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useDispatch } from 'react-redux'
+import { useNavigate, useLocation } from 'react-router-dom'
+
+import Logo from '@/assets/images/logo.svg'
+import { useCommonStore } from '@/hooks/useCommonStore'
+import {
+  filterMenus,
+  getFirstMenu,
+  getMenuByKey,
+  getMenuName,
+  getOpenMenuByRouter,
+  handleFilterMenus,
+  splitPath,
+} from '@/menus/utils/helper'
+import { setOpenKeys, setSelectedKeys, toggleCollapsed } from '@/stores/menu'
+import { addTabs, setNav, setActiveKey } from '@/stores/tabs'
+import { setTitle } from '@/utils/helper'
+
+import styles from '../index.module.less'
+
 import type { SideMenu } from '#/public'
 import type { AppDispatch } from '@/stores'
-import { useCallback, useEffect, useState } from 'react'
-import { Menu } from 'antd'
-import { Icon } from '@iconify/react'
-import { setTitle } from '@/utils/helper'
-import { useDispatch } from 'react-redux'
-import { useTranslation } from 'react-i18next'
-import { useCommonStore } from '@/hooks/useCommonStore'
-import { useNavigate, useLocation } from 'react-router-dom'
-import { addTabs, setNav, setActiveKey } from '@/stores/tabs'
-import { setOpenKeys, setSelectedKeys, toggleCollapsed } from '@/stores/menu'
-import { filterMenus, getFirstMenu, getMenuByKey, getMenuName, getOpenMenuByRouter, handleFilterMenus, splitPath } from '@/menus/utils/helper'
-import styles from '../index.module.less'
-import Logo from '@/assets/images/logo.svg'
-import { CompassOutlined } from '@ant-design/icons'
+import type { MenuProps } from 'antd'
 
-function LayoutMenu() {
+const LayoutMenu = () => {
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const { pathname } = useLocation()
@@ -25,7 +36,8 @@ function LayoutMenu() {
   // 获取当前语言
   const currentLanguage = i18n.language
 
-  const { isMaximize, isCollapsed, isPhone, openKeys, selectedKeys, permissions, menuList } = useCommonStore()
+  const { isMaximize, isCollapsed, isPhone, openKeys, selectedKeys, permissions, menuList } =
+    useCommonStore()
 
   // 处理默认展开
   useEffect(() => {
@@ -44,7 +56,9 @@ function LayoutMenu() {
    */
   const handleSetTitle = useCallback((list: SideMenu[], path: string) => {
     const title = getMenuName(list, path, i18n.language)
-    if (title) setTitle(t, title)
+    if (title) {
+      setTitle(t, title)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -106,7 +120,9 @@ function LayoutMenu() {
    */
   const onClick: MenuProps['onClick'] = (e) => {
     goPath(e.key)
-    if (isPhone) hiddenMenu()
+    if (isPhone) {
+      hiddenMenu()
+    }
   }
 
   /**
@@ -145,7 +161,9 @@ function LayoutMenu() {
       for (let i = openKeys.length - 2; i >= 0; i--) {
         const arr = splitPath(openKeys[i])
         const hasOpenKey = diffOpenMenu(arr, lastArr)
-        if (hasOpenKey) newOpenKey.unshift(openKeys[i])
+        if (hasOpenKey) {
+          newOpenKey.unshift(openKeys[i])
+        }
       }
     }
 
@@ -156,7 +174,9 @@ function LayoutMenu() {
   const onClickLogo = () => {
     const firstMenu = getFirstMenu(menus, permissions)
     goPath(firstMenu)
-    if (isPhone) hiddenMenu()
+    if (isPhone) {
+      hiddenMenu()
+    }
   }
 
   /** 隐藏菜单 */

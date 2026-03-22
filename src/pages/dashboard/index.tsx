@@ -1,21 +1,24 @@
-import type { FormData } from '#/form'
 import { useCallback, useEffect, useState } from 'react'
-import { getDataTrends } from '@/servers/dashboard'
-import { searchList } from './model'
 import { useUnactivate } from 'react-activation'
 import { useTranslation } from 'react-i18next'
-import BasicSearch from '@/components/Search/BasicSearch'
+
 import BasicContent from '@/components/Content/BasicContent'
+import BasicSearch from '@/components/Search/BasicSearch'
+import { getDataTrends } from '@/servers/dashboard'
+
 import Bar from './components/Bar'
-import Line from './components/Line'
 import Block from './components/Block'
+import Line from './components/Line'
+import { searchList } from './model'
+
+import type { FormData } from '#/form'
 
 // 初始化搜索
 const initSearch = {
   pay_date: ['2022-10-19', '2022-10-29'],
 }
 
-function Dashboard() {
+const Dashboard = () => {
   const { t } = useTranslation()
   const [isLoading, setLoading] = useState(false)
 
@@ -45,8 +48,13 @@ function Dashboard() {
   })
 
   return (
-    <BasicContent isPermission={true}>
-      <BasicSearch list={searchList(t)} data={initSearch} isLoading={isLoading} handleFinish={handleSearch} />
+    <BasicContent isPermission>
+      <BasicSearch
+        list={searchList(t)}
+        data={initSearch}
+        isLoading={isLoading}
+        handleFinish={handleSearch}
+      />
 
       <div className='py-10px'>
         <Block />

@@ -1,12 +1,13 @@
-import type { LoginData, LoginResult } from "@/pages/login/model";
-import { request } from "@/servers/request";
+import { request } from '@/servers/request'
+
+import type { LoginData, LoginResult } from '@/pages/login/model'
 
 /**
  * 登录
  * @param data - 请求数据
  */
 export function login(data: LoginData) {
-  return request.post<LoginResult>("/api/user/login", data);
+  return request.post<LoginResult>('/api/user/login', data)
 }
 
 /**
@@ -14,7 +15,7 @@ export function login(data: LoginData) {
  * @param data - 请求数据
  */
 export function logout() {
-  return request.post<LoginResult>("/api/user/logout");
+  return request.post<LoginResult>('/api/user/logout')
 }
 
 /**
@@ -22,5 +23,5 @@ export function logout() {
  * @param data - 请求数据
  */
 export function updatePassword(data: object) {
-  return request.post("/update-password", data);
+  return request.post('/update-password', data)
 }
