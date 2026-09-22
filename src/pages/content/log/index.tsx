@@ -1,9 +1,15 @@
 import { FileExcelOutlined } from '@ant-design/icons'
 import { message, Tooltip, Button } from 'antd'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
+
+import { searchList, tableColumns } from './model'
+
+import type { FormData } from '#/form'
+import type { PagePermission, TableOptions } from '#/public'
+import type { AppDispatch, RootState } from '@/stores'
 
 import { UpdateBtn, DeleteBtn } from '@/components/Buttons'
 import BasicContent from '@/components/Content/BasicContent'
@@ -13,19 +19,15 @@ import BasicTable from '@/components/Table/BasicTable'
 import { useCommonStore } from '@/hooks/useCommonStore'
 import { getNPCEventPage, getAllNPCEvents, deleteNPCEvent } from '@/servers/content/event'
 import { setRefreshPage } from '@/stores/public'
+import { setMenuClick } from '@/stores/tabs'
 import { INIT_PAGINATION } from '@/utils/config'
 import { exportToExcel } from '@/utils/excel'
 import { checkPermission } from '@/utils/permissions'
 
-import { searchList, tableColumns } from './model'
-
-import type { FormData } from '#/form'
-import type { PagePermission, TableOptions } from '#/public'
-import type { AppDispatch, RootState } from '@/stores'
-
 // 当前行数据
 interface RowData {
   id: string
+  is_mine?: boolean
 }
 
 const Page = () => {
@@ -41,6 +43,8 @@ const Page = () => {
   const [total, setTotal] = useState(0)
   const [tableData, setTableData] = useState<FormData[]>([])
   const isRefreshPage = useSelector((state: RootState) => state.public.isRefreshPage)
+  const isMenuClick = useSelector((state: RootState) => state.tabs.isMenuClick)
+  const hasFetched = useRef(false) // 标记是否已经请求过数据
 
   // 权限前缀
   const permissionPrefix = '/content/log'
@@ -52,6 +56,19 @@ const Page = () => {
     update: checkPermission(`${permissionPrefix}/update`, permissions),
     delete: checkPermission(`${permissionPrefix}/delete`, permissions),
   }
+
+  // 管理员（可操作他人日志）
+  const isAdmin = checkPermission('/authority/user/index', permissions)
+
+  // 页面首次加载或从菜单点击进入时请求数据
+  useEffect(() => {
+    // 首次进入页面（未请求过数据）
+    if (!hasFetched.current) {
+      setFetch(true)
+      hasFetched.current = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (isFetch) {
@@ -67,6 +84,16 @@ const Page = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRefreshPage])
+
+  // 监听是否从菜单点击进入，如果是则刷新数据
+  useEffect(() => {
+    if (isMenuClick) {
+      setFetch(true)
+      // 重置标记
+      dispatch(setMenuClick(false))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMenuClick])
 
   /**
    * 获取分页数据
@@ -173,13 +200,25 @@ const Page = () => {
         { key: 'experience', title: '经验教训' },
         { key: 'position', title: '地点' },
         { key: 'witness', title: '见证者' },
+        { key: 'author', title: '作者' },
+        { key: 'visibility', title: '可见范围' },
       ]
 
       // 格式化数据
       const exportData = data.map((item: FormData) => {
         const formatted: Record<string, string> = {}
         exportColumns.forEach((col) => {
-          formatted[col.title] = (item[col.key] as string) ?? ''
+          if (col.key === 'visibility') {
+            const orgNames = (item.visibleOrgNames as string) || ''
+            formatted[col.title] =
+              Number(item[col.key]) === 1
+                ? orgNames
+                  ? `组织可见·${orgNames}`
+                  : '组织可见'
+                : '仅自己可见'
+          } else {
+            formatted[col.title] = (item[col.key] as string) ?? ''
+          }
         })
         return formatted
       })
@@ -205,24 +244,25 @@ const Page = () => {
    * @param _ - 当前值
    * @param record - 当前行参数
    */
-  const optionRender: TableOptions<object> = (_, record) => (
-    <>
-      {pagePermission.update === true && (
-        <UpdateBtn
-          className='mr-5px'
-          isLoading={isLoading}
-          onClick={() => onUpdate((record as RowData).id)}
-        />
-      )}
-      {pagePermission.delete === true && (
-        <DeleteBtn
-          className='mr-5px'
-          isLoading={isLoading}
-          handleDelete={() => onDelete((record as RowData).id)}
-        />
-      )}
-    </>
-  )
+  const optionRender: TableOptions<object> = (_, record) => {
+    const row = record as RowData
+    // 仅作者本人或管理员可编辑/删除
+    const canOperate = row.is_mine || isAdmin
+    return (
+      <>
+        {pagePermission.update === true && canOperate && (
+          <UpdateBtn className='mr-5px' isLoading={isLoading} onClick={() => onUpdate(row.id)} />
+        )}
+        {pagePermission.delete === true && canOperate && (
+          <DeleteBtn
+            className='mr-5px'
+            isLoading={isLoading}
+            handleDelete={() => onDelete(row.id)}
+          />
+        )}
+      </>
+    )
+  }
 
   const TooltipRender = (text: string) => (
     <Tooltip title={text}>

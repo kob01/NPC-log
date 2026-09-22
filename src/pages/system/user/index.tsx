@@ -1,5 +1,5 @@
-import { SafetyOutlined } from '@ant-design/icons'
-import { type FormInstance, Button, message, Tooltip } from 'antd'
+import { type FormInstance } from 'antd'
+import { message } from 'antd'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -13,18 +13,16 @@ import BasicTable from '@/components/Table/BasicTable'
 import FilterButton from '@/components/TableFilter'
 import { useFiler } from '@/components/TableFilter/hooks/useFiler'
 import { useCommonStore } from '@/hooks/useCommonStore'
-import { getPermission, savePermission } from '@/servers/system/menu'
 import { createUser, deleteUser, getUserById, getUserPage, updateUser } from '@/servers/system/user'
+import { getAllOrgs, getUserOrgs, setUserOrgs } from '@/servers/system/organization'
 import { ADD_TITLE, EDIT_TITLE, INIT_PAGINATION } from '@/utils/config'
+import { encryptMd5 } from '@/utils/crypto'
 import { checkPermission } from '@/utils/permissions'
 
-import PermissionDrawer from './components/PermissionDrawer'
 import { createList, searchList, tableColumns } from './model'
 
 import type { FormData } from '#/form'
 import type { PagePermission } from '#/public'
-import type { Key } from 'antd/es/table/interface'
-import type { DataNode } from 'antd/es/tree'
 
 // 当前行数据
 interface RowData {
@@ -34,6 +32,8 @@ interface RowData {
 // 初始化新增数据
 const initCreate = {
   status: 1,
+  account_type: 0,
+  org_ids: [],
 }
 
 const Page = () => {
@@ -53,11 +53,8 @@ const Page = () => {
   const [total, setTotal] = useState(0)
   const [tableData, setTableData] = useState<FormData[]>([])
   const [tableFilters, setTableFilters] = useState<string[]>([])
+  const [orgOptions, setOrgOptions] = useState<{ label: string; value: number }[]>([])
 
-  const [promiseId, setPromiseId] = useState('')
-  const [isPromiseVisible, setPromiseVisible] = useState(false)
-  const [promiseCheckedKeys, setPromiseCheckedKeys] = useState<Key[]>([])
-  const [promiseTreeData, setPromiseTreeData] = useState<DataNode[]>([])
   const [handleFilterTable] = useFiler()
 
   const { permissions } = useCommonStore()
@@ -71,7 +68,6 @@ const Page = () => {
     create: checkPermission(`${permissionPrefix}/create`, permissions),
     update: checkPermission(`${permissionPrefix}/update`, permissions),
     delete: checkPermission(`${permissionPrefix}/delete`, permissions),
-    permission: checkPermission(`${permissionPrefix}/authority`, permissions),
   }
 
   // 获取表格数据
@@ -99,12 +95,29 @@ const Page = () => {
     }
   }, [isFetch, getPage])
 
+  // 加载组织选项
+  const loadOrgOptions = useCallback(async () => {
+    try {
+      const { code, data } = await getAllOrgs()
+      if (Number(code) === 200) {
+        setOrgOptions((data || []).map((org: FormData) => ({
+          label: org.org_name as string,
+          value: org.id as number,
+        })))
+      }
+    } catch (error) {
+      console.error('加载组织选项失败:', error)
+    }
+  }, [])
+
   // 首次进入自动加载接口数据
   useEffect(() => {
     if (pagePermission.page) {
       getPage()
+      loadOrgOptions()
     }
-  }, [pagePermission.page, getPage])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagePermission.page])
 
   /**
    * 获取勾选表格数据
@@ -122,51 +135,6 @@ const Page = () => {
     setPage(1)
     setSearchData(values)
     setFetch(true)
-  }
-
-  /** 开启权限 */
-  const openPermission = async (id: string) => {
-    try {
-      setLoading(true)
-      const params = { userId: id }
-      const { code, data } = await getPermission(params)
-      if (Number(code) !== 200) {
-        return
-      }
-      const { defaultCheckedKeys, treeData } = data
-      setPromiseId(id)
-      setPromiseTreeData(treeData)
-      setPromiseCheckedKeys(defaultCheckedKeys)
-      setPromiseVisible(true)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  /** 关闭权限 */
-  const closePermission = () => {
-    setPromiseVisible(false)
-  }
-
-  /**
-   * 权限提交
-   */
-  const permissionSubmit = async (checked: Key[]) => {
-    try {
-      setLoading(true)
-      const params = {
-        menuIds: checked,
-        userId: promiseId,
-      }
-      const { code, message } = await savePermission(params)
-      if (Number(code) !== 200) {
-        return
-      }
-      message.success(message || t('system.authorizationSuccessful'))
-      setPromiseVisible(false)
-    } finally {
-      setLoading(false)
-    }
   }
 
   /** 点击新增 */
@@ -191,10 +159,15 @@ const Page = () => {
       if (Number(code) !== 200) {
         return
       }
-      // 编辑时不显示密码
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // 编辑时不回填密码
       const { password, ...restData } = data
-      setCreateData(restData)
+      // 加载该用户所属组织
+      const { code: orgCode, data: orgIds } = await getUserOrgs(id)
+      const finalData: FormData = { ...restData }
+      if (Number(orgCode) === 200) {
+        finalData.org_ids = orgIds || []
+      }
+      setCreateData(finalData)
     } finally {
       setCreateLoading(false)
     }
@@ -217,17 +190,35 @@ const Page = () => {
   const handleCreate = async (values: FormData) => {
     try {
       setCreateLoading(true)
-      // 编辑时如果密码为空，则删除密码字段
-      if (createId && !values.password) {
-        delete values.password
+      const payload: FormData = { ...values }
+      // 密码与登录链路保持一致：提交前做 MD5；编辑留空表示不修改
+      if (payload.password) {
+        payload.password = encryptMd5(payload.password as string)
+      } else {
+        delete payload.password
       }
 
-      const functions = () => (createId ? updateUser(createId, values) : createUser(values))
-      const { code, message } = await functions()
-      if (Number(code) !== 200) {
-        return
+      const orgIds = ((payload.org_ids as number[]) || []).map((x) => Number(x))
+      delete payload.org_ids
+
+      if (createId) {
+        const { code, message: msg } = await updateUser(createId, payload)
+        if (Number(code) !== 200) {
+          return
+        }
+        await setUserOrgs(createId, orgIds)
+        message.success(msg || t('public.successfulOperation'))
+      } else {
+        const { code, data } = await createUser(payload)
+        if (Number(code) !== 200) {
+          return
+        }
+        const newId = (data as { id?: number })?.id
+        if (newId) {
+          await setUserOrgs(String(newId), orgIds)
+        }
+        message.success(t('public.successfulOperation'))
       }
-      message.success(message || t('public.successfulOperation'))
       setCreateOpen(false)
       getPage()
     } finally {
@@ -242,9 +233,9 @@ const Page = () => {
   const onDelete = async (id: string) => {
     try {
       setLoading(true)
-      const { code, message } = await deleteUser(id as string)
+      const { code, message: msg } = await deleteUser(id as string)
       if (Number(code) === 200) {
-        message.success(message || t('public.successfullyDeleted'))
+        message.success(msg || t('public.successfullyDeleted'))
         getPage()
       }
     } finally {
@@ -254,8 +245,8 @@ const Page = () => {
 
   /**
    * 处理分页
-   * @param page - 当前页数
-   * @param pageSize - 每页条数
+   * @param newPage - 当前页数
+   * @param newPageSize - 每页条数
    */
   const onChangePagination = (newPage: number, newPageSize: number) => {
     setPage(newPage)
@@ -271,17 +262,6 @@ const Page = () => {
   function optionRender(_: unknown, record: object) {
     return (
       <>
-        {pagePermission.permission === true && (
-          <Tooltip title={t('system.permissions')}>
-            <Button
-              className='mr-5px'
-              type='primary'
-              icon={<SafetyOutlined />}
-              loading={isLoading}
-              onClick={() => openPermission((record as RowData).id)}
-            />
-          </Tooltip>
-        )}
         {pagePermission.update === true && (
           <UpdateBtn
             className='mr-5px'
@@ -305,7 +285,6 @@ const Page = () => {
 
   return (
     <BasicContent isPermission={pagePermission.page}>
-
       <BasicSearch
         list={searchList(t)}
         data={searchData}
@@ -341,20 +320,12 @@ const Page = () => {
       >
         <BasicForm
           ref={createFormRef}
-          list={createList(t, !!createId)}
+          list={createList(t, !!createId, orgOptions)}
           data={createData}
           labelCol={{ span: 6 }}
           handleFinish={handleCreate}
         />
       </BasicModal>
-
-      <PermissionDrawer
-        isVisible={isPromiseVisible}
-        treeData={promiseTreeData}
-        checkedKeys={promiseCheckedKeys}
-        onClose={closePermission}
-        onSubmit={permissionSubmit}
-      />
     </BasicContent>
   )
 }

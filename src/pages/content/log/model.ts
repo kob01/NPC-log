@@ -1,8 +1,8 @@
-import { FORM_REQUIRED } from '@/utils/config'
-
 import type { FormList } from '#/form'
 import type { TableColumn, TableOptions } from '#/public'
 import type { TFunction } from 'i18next'
+
+import { FORM_REQUIRED } from '@/utils/config'
 
 export const typeOptions = [
   {
@@ -83,6 +83,11 @@ export const ratingOptions = [
     label: '非常差',
     value: '非常差',
   },
+]
+// 可见范围选项
+export const visibilityOptions = [
+  { label: '仅自己可见', value: 0 },
+  { label: '组织可见', value: 1 },
 ]
 // 搜索数据
 export const searchList = (t: TFunction): FormList[] => [
@@ -207,6 +212,23 @@ export const tableColumns = (
     width: 100,
   },
   {
+    title: '作者',
+    dataIndex: 'author',
+    width: 100,
+  },
+  {
+    title: '可见范围',
+    dataIndex: 'visibility',
+    width: 130,
+    render: (value: number, record: object) => {
+      if (Number(value) !== 1) {
+        return '仅自己可见'
+      }
+      const orgNames = (record as { visibleOrgNames?: string }).visibleOrgNames
+      return orgNames ? `组织可见·${orgNames}` : '组织可见'
+    },
+  },
+  {
     title: t('public.operate'),
     dataIndex: 'operate',
     width: 100,
@@ -216,7 +238,10 @@ export const tableColumns = (
 ]
 
 // 新增数据
-export const createList = (t: TFunction): FormList[] => [
+export const createList = (
+  t: TFunction,
+  orgOptions: { label: string; value: number }[] = []
+): FormList[] => [
   {
     label: t('public.date'),
     name: 'time',
@@ -286,5 +311,25 @@ export const createList = (t: TFunction): FormList[] => [
     label: '见证者',
     name: 'witness',
     component: 'Input',
+  },
+  {
+    label: '可见范围',
+    name: 'visibility',
+    component: 'Select',
+    rules: FORM_REQUIRED,
+    componentProps: {
+      options: visibilityOptions,
+    },
+  },
+  {
+    label: '可见组织',
+    name: 'visibleOrgIds',
+    component: 'Select',
+    componentProps: {
+      mode: 'multiple',
+      options: orgOptions,
+      allowClear: true,
+      placeholder: '默认所有已加入组织可见（可多选指定组织）',
+    },
   },
 ]

@@ -3,6 +3,7 @@ import { useRoutes } from 'react-router-dom'
 import Layout from '@/layouts'
 import NotFound from '@/pages/404'
 import Login from '@/pages/login'
+import Register from '@/pages/register'
 
 import { handleRoutes } from './utils/helper'
 
@@ -20,6 +21,10 @@ const newRoutes: RouteObject[] = [
   {
     path: 'login',
     element: <Login />,
+  },
+  {
+    path: 'register',
+    element: <Register />,
   },
   {
     path: '',

@@ -241,6 +241,12 @@ const Login = () => {
                 {t('login.login')}
               </Button>
             </Form.Item>
+
+            <div className='flex justify-center'>
+              <Button type='link' size='small' onClick={() => navigate('/register')}>
+                {t('login.toRegister')}
+              </Button>
+            </div>
           </Form>
         </div>
       </div>

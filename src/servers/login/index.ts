@@ -1,6 +1,6 @@
 import { request } from '@/servers/request'
 
-import type { LoginData, LoginResult } from '@/pages/login/model'
+import type { LoginData, LoginResult, RegisterData } from '@/pages/login/model'
 
 /**
  * 登录
@@ -8,6 +8,14 @@ import type { LoginData, LoginResult } from '@/pages/login/model'
  */
 export function login(data: LoginData) {
   return request.post<LoginResult>('/api/user/login', data)
+}
+
+/**
+ * 注册
+ * @param data - 请求数据 { username, password(已MD5), real_name }
+ */
+export function register(data: RegisterData) {
+  return request.post<{ id: number }>('/api/user/register', data)
 }
 
 /**

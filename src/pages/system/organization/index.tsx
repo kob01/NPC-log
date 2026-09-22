@@ -1,5 +1,6 @@
-import { type FormInstance, message } from 'antd'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { type FormInstance } from 'antd'
+import { message } from 'antd'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { UpdateBtn, DeleteBtn } from '@/components/Buttons'
@@ -9,14 +10,18 @@ import BasicModal from '@/components/Modal/BasicModal'
 import BasicPagination from '@/components/Pagination/BasicPagination'
 import BasicSearch from '@/components/Search/BasicSearch'
 import BasicTable from '@/components/Table/BasicTable'
-import FilterButton from '@/components/TableFilter'
-import { useFiler } from '@/components/TableFilter/hooks/useFiler'
 import { useCommonStore } from '@/hooks/useCommonStore'
-import { getMenuPage, getMenuById, createMenu, updateMenu, deleteMenu, getAllMenus } from '@/servers/system/menu'
+import {
+  createOrg,
+  deleteOrg,
+  getOrgById,
+  getOrgPage,
+  updateOrg,
+} from '@/servers/system/organization'
 import { ADD_TITLE, EDIT_TITLE, INIT_PAGINATION } from '@/utils/config'
 import { checkPermission } from '@/utils/permissions'
 
-import { searchList, createList, tableColumns } from './model'
+import { createList, searchList, tableColumns } from './model'
 
 import type { FormData } from '#/form'
 import type { PagePermission } from '#/public'
@@ -34,11 +39,11 @@ const initCreate = {
 const Page = () => {
   const { t } = useTranslation()
   const createFormRef = useRef<FormInstance>(null)
-  const columns = tableColumns(t, optionRender)
+
   const [isFetch, setFetch] = useState(false)
-  const [isCreateOpen, setCreateOpen] = useState(false)
   const [isLoading, setLoading] = useState(false)
   const [isCreateLoading, setCreateLoading] = useState(false)
+  const [isCreateOpen, setCreateOpen] = useState(false)
   const [createTitle, setCreateTitle] = useState(ADD_TITLE(t))
   const [createId, setCreateId] = useState('')
   const [createData, setCreateData] = useState<FormData>(initCreate)
@@ -47,16 +52,12 @@ const Page = () => {
   const [pageSize, setPageSize] = useState(INIT_PAGINATION.pageSize)
   const [total, setTotal] = useState(0)
   const [tableData, setTableData] = useState<FormData[]>([])
-  const [tableFilters, setTableFilters] = useState<string[]>([])
-  const [parentOptions, setParentOptions] = useState<{ label: string; value: number }[]>([])
 
-  const [handleFilterTable] = useFiler()
   const { permissions } = useCommonStore()
 
-  // 权限前缀
-  const permissionPrefix = '/authority/menu'
+  // 权限前缀（组织管理）
+  const permissionPrefix = '/org/manager'
 
-  // 权限
   const pagePermission: PagePermission = {
     page: checkPermission(`${permissionPrefix}/index`, permissions),
     create: checkPermission(`${permissionPrefix}/create`, permissions),
@@ -64,52 +65,41 @@ const Page = () => {
     delete: checkPermission(`${permissionPrefix}/delete`, permissions),
   }
 
+  const getPage = useCallback(async () => {
+    const params = { ...searchData, page, pageSize }
+    try {
+      setLoading(true)
+      const { code, data } = await getOrgPage(params)
+      if (Number(code) !== 200) {
+        return
+      }
+      const { items, total } = data
+      setTotal(total)
+      setTableData(items)
+    } finally {
+      setFetch(false)
+      setLoading(false)
+    }
+  }, [searchData, page, pageSize])
+
   useEffect(() => {
     if (isFetch) {
       getPage()
     }
-  }, [isFetch])
+  }, [isFetch, getPage])
 
-  /**
-   * 获取勾选表格数据
-   * @param checks - 勾选
-   */
-  const getTableChecks = (checks: string[]) => {
-    setTableFilters(checks)
-  }
-
-  /**
-   * 点击搜索
-   * @param values - 表单返回数据
-   */
-  const onSearch = (values: FormData) => {
-    setPage(1)
-    setSearchData(values)
-    setFetch(true)
-  }
-
-  // 首次进入自动加载接口数据
   useEffect(() => {
     if (pagePermission.page) {
       getPage()
-      loadParentOptions()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagePermission.page])
 
-  /** 加载父级菜单选项 */
-  const loadParentOptions = async () => {
-    try {
-      const { code, data } = await getAllMenus()
-      if (Number(code) === 200) {
-        setParentOptions((data || []).map((m: FormData) => ({
-          label: m.label as string,
-          value: m.id as number,
-        })))
-      }
-    } catch (error) {
-      console.error('加载菜单选项失败:', error)
-    }
+  /** 点击搜索 */
+  const onSearch = (values: FormData) => {
+    setPage(1)
+    setSearchData(values)
+    setFetch(true)
   }
 
   /** 点击新增 */
@@ -120,17 +110,14 @@ const Page = () => {
     setCreateData(initCreate)
   }
 
-  /**
-   * 点击编辑
-   * @param id - 唯一值
-   */
+  /** 点击编辑 */
   const onUpdate = async (id: string) => {
     try {
       setCreateOpen(true)
       setCreateTitle(EDIT_TITLE(t, id))
       setCreateId(id)
       setCreateLoading(true)
-      const { code, data } = await getMenuById(id as string)
+      const { code, data } = await getOrgById(id)
       if (Number(code) !== 200) {
         return
       }
@@ -142,42 +129,19 @@ const Page = () => {
 
   /** 表单提交 */
   const createSubmit = () => {
-    createFormRef?.current?.submit()
+    createFormRef.current?.submit()
   }
 
-  /** 关闭新增/修改弹窗 */
+  /** 关闭弹窗 */
   const closeCreate = () => {
     setCreateOpen(false)
   }
 
-  /** 获取表格数据 */
-  const getPage = async () => {
-    const params = { ...searchData, page, pageSize }
-
-    try {
-      setLoading(true)
-      const res = await getMenuPage(params)
-      const { code, data } = res
-      if (Number(code) !== 200) {
-        return
-      }
-      const { items, total } = data
-      setTotal(total)
-      setTableData(items)
-    } finally {
-      setFetch(false)
-      setLoading(false)
-    }
-  }
-
-  /**
-   * 新增/编辑提交
-   * @param values - 表单返回数据
-   */
+  /** 新增/编辑提交 */
   const handleCreate = async (values: FormData) => {
     try {
       setCreateLoading(true)
-      const functions = () => (createId ? updateMenu(createId, values) : createMenu(values))
+      const functions = () => (createId ? updateOrg(createId, values) : createOrg(values))
       const { code, message: msg } = await functions()
       if (Number(code) !== 200) {
         return
@@ -190,14 +154,11 @@ const Page = () => {
     }
   }
 
-  /**
-   * 点击删除
-   * @param id - 唯一值
-   */
+  /** 点击删除 */
   const onDelete = async (id: string) => {
     try {
       setLoading(true)
-      const { code, message: msg } = await deleteMenu(id as string)
+      const { code, message: msg } = await deleteOrg(id)
       if (Number(code) === 200) {
         message.success(msg || t('public.successfullyDeleted'))
         getPage()
@@ -207,22 +168,14 @@ const Page = () => {
     }
   }
 
-  /**
-   * 处理分页
-   * @param page - 当前页数
-   * @param pageSize - 每页条数
-   */
-  const onChangePagination = useCallback((page: number, pageSize: number) => {
-    setPage(page)
-    setPageSize(pageSize)
+  /** 处理分页 */
+  const onChangePagination = (newPage: number, newPageSize: number) => {
+    setPage(newPage)
+    setPageSize(newPageSize)
     setFetch(true)
-  }, [])
+  }
 
-  /**
-   * 渲染操作
-   * @param _ - 当前值
-   * @param record - 当前行参数
-   */
+  /** 渲染操作 */
   function optionRender(_: unknown, record: object) {
     return (
       <>
@@ -244,9 +197,10 @@ const Page = () => {
     )
   }
 
+  const columns = tableColumns(t, optionRender)
+
   return (
     <BasicContent isPermission={pagePermission.page}>
-
       <BasicSearch
         list={searchList(t)}
         data={searchData}
@@ -254,15 +208,9 @@ const Page = () => {
         isCreate={pagePermission.create}
         onCreate={onCreate}
         handleFinish={onSearch}
-      >
-        <FilterButton columns={columns} className='!mb-5px' getTableChecks={getTableChecks} />
-      </BasicSearch>
-
-      <BasicTable
-        loading={isLoading}
-        columns={handleFilterTable(columns, tableFilters)}
-        dataSource={tableData}
       />
+
+      <BasicTable loading={isLoading} columns={columns} dataSource={tableData} />
 
       <BasicPagination
         disabled={isLoading}
@@ -273,19 +221,18 @@ const Page = () => {
       />
 
       <BasicModal
-        width={600}
         title={createTitle}
         open={isCreateOpen}
         confirmLoading={isCreateLoading}
         onOk={createSubmit}
         onCancel={closeCreate}
+        width={600}
       >
         <BasicForm
           ref={createFormRef}
-          list={createList(t, createId, parentOptions)}
+          list={createList(t)}
           data={createData}
-          labelCol={{ span: 4 }}
-          wrapperCol={{ span: 19 }}
+          labelCol={{ span: 6 }}
           handleFinish={handleCreate}
         />
       </BasicModal>

@@ -9,4 +9,9 @@ export default {
   passwordRuleMessage: '密码为6-30位必须包含字母和数字!',
   pleaseEnterUsername: '请输入用户名',
   pleaseEnterPassword: '请输入密码',
+  register: '注册',
+  systemRegister: '系统注册',
+  registerSuccess: '注册成功，请登录',
+  backToLogin: '返回登录',
+  toRegister: '注册账号',
 }

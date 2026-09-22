@@ -9,4 +9,9 @@ export default {
   passwordRuleMessage: 'The password is 6-30 characters and must contain letters and numbers!',
   pleaseEnterUsername: 'Please enter username',
   pleaseEnterPassword: 'Please enter password',
+  register: 'Register',
+  systemRegister: 'System Register',
+  registerSuccess: 'Register successful, please log in',
+  backToLogin: 'Back to login',
+  toRegister: 'Register Account',
 }

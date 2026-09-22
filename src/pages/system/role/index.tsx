@@ -1,5 +1,6 @@
-import { type FormInstance, message } from 'antd'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { SafetyOutlined } from '@ant-design/icons'
+import { type FormInstance, Button, message, Tooltip } from 'antd'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { UpdateBtn, DeleteBtn } from '@/components/Buttons'
@@ -12,14 +13,18 @@ import BasicTable from '@/components/Table/BasicTable'
 import FilterButton from '@/components/TableFilter'
 import { useFiler } from '@/components/TableFilter/hooks/useFiler'
 import { useCommonStore } from '@/hooks/useCommonStore'
-import { getMenuPage, getMenuById, createMenu, updateMenu, deleteMenu, getAllMenus } from '@/servers/system/menu'
+import { getRolePage, getRoleById, createRole, updateRole, deleteRole, getRoleMenus, saveRoleMenus } from '@/servers/system/role'
+import { getMenuList } from '@/servers/system/menu'
 import { ADD_TITLE, EDIT_TITLE, INIT_PAGINATION } from '@/utils/config'
 import { checkPermission } from '@/utils/permissions'
 
-import { searchList, createList, tableColumns } from './model'
+import PermissionDrawer from './components/PermissionDrawer'
+import { createList, searchList, tableColumns } from './model'
 
 import type { FormData } from '#/form'
 import type { PagePermission } from '#/public'
+import type { Key } from 'antd/es/table/interface'
+import type { DataNode } from 'antd/es/tree'
 
 // 当前行数据
 interface RowData {
@@ -29,16 +34,17 @@ interface RowData {
 // 初始化新增数据
 const initCreate = {
   status: 1,
+  sort_order: 0,
 }
 
 const Page = () => {
   const { t } = useTranslation()
   const createFormRef = useRef<FormInstance>(null)
-  const columns = tableColumns(t, optionRender)
+
   const [isFetch, setFetch] = useState(false)
-  const [isCreateOpen, setCreateOpen] = useState(false)
   const [isLoading, setLoading] = useState(false)
   const [isCreateLoading, setCreateLoading] = useState(false)
+  const [isCreateOpen, setCreateOpen] = useState(false)
   const [createTitle, setCreateTitle] = useState(ADD_TITLE(t))
   const [createId, setCreateId] = useState('')
   const [createData, setCreateData] = useState<FormData>(initCreate)
@@ -48,13 +54,17 @@ const Page = () => {
   const [total, setTotal] = useState(0)
   const [tableData, setTableData] = useState<FormData[]>([])
   const [tableFilters, setTableFilters] = useState<string[]>([])
-  const [parentOptions, setParentOptions] = useState<{ label: string; value: number }[]>([])
 
+  const [promiseId, setPromiseId] = useState('')
+  const [isPromiseVisible, setPromiseVisible] = useState(false)
+  const [promiseCheckedKeys, setPromiseCheckedKeys] = useState<Key[]>([])
+  const [promiseTreeData, setPromiseTreeData] = useState<DataNode[]>([])
   const [handleFilterTable] = useFiler()
+
   const { permissions } = useCommonStore()
 
   // 权限前缀
-  const permissionPrefix = '/authority/menu'
+  const permissionPrefix = '/authority/role'
 
   // 权限
   const pagePermission: PagePermission = {
@@ -62,13 +72,40 @@ const Page = () => {
     create: checkPermission(`${permissionPrefix}/create`, permissions),
     update: checkPermission(`${permissionPrefix}/update`, permissions),
     delete: checkPermission(`${permissionPrefix}/delete`, permissions),
+    permission: checkPermission(`${permissionPrefix}/authority`, permissions),
   }
+
+  // 获取表格数据
+  const getPage = useCallback(async () => {
+    const params = { ...searchData, page, pageSize }
+
+    try {
+      setLoading(true)
+      const { code, data } = await getRolePage(params)
+      if (Number(code) !== 200) {
+        return
+      }
+      const { items, total } = data
+      setTotal(total)
+      setTableData(items)
+    } finally {
+      setFetch(false)
+      setLoading(false)
+    }
+  }, [searchData, page, pageSize])
 
   useEffect(() => {
     if (isFetch) {
       getPage()
     }
-  }, [isFetch])
+  }, [isFetch, getPage])
+
+  // 首次进入自动加载接口数据
+  useEffect(() => {
+    if (pagePermission.page) {
+      getPage()
+    }
+  }, [pagePermission.page, getPage])
 
   /**
    * 获取勾选表格数据
@@ -88,27 +125,68 @@ const Page = () => {
     setFetch(true)
   }
 
-  // 首次进入自动加载接口数据
-  useEffect(() => {
-    if (pagePermission.page) {
-      getPage()
-      loadParentOptions()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagePermission.page])
-
-  /** 加载父级菜单选项 */
-  const loadParentOptions = async () => {
+  /** 开启权限设置 */
+  const openPermission = async (id: string) => {
     try {
-      const { code, data } = await getAllMenus()
-      if (Number(code) === 200) {
-        setParentOptions((data || []).map((m: FormData) => ({
-          label: m.label as string,
-          value: m.id as number,
-        })))
+      setLoading(true)
+      // 获取菜单树
+      const { code: menuCode, data: menuData } = await getMenuList()
+      if (Number(menuCode) !== 200) {
+        message.error('获取菜单列表失败')
+        return
       }
-    } catch (error) {
-      console.error('加载菜单选项失败:', error)
+
+      // 获取角色已有权限
+      const { code: roleCode, data: roleMenus } = await getRoleMenus(id)
+      if (Number(roleCode) !== 200) {
+        message.error('获取角色权限失败')
+        return
+      }
+
+      // 转换菜单数据为树形结构
+      const treeData = convertMenuToTree(menuData)
+      
+      setPromiseId(id)
+      setPromiseTreeData(treeData)
+      setPromiseCheckedKeys(roleMenus || [])
+      setPromiseVisible(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  /** 将菜单数据转换为树形结构 */
+  const convertMenuToTree = (menus: any[]): DataNode[] => {
+    return menus.map(menu => ({
+      title: menu.label,
+      key: menu.id?.toString() || menu.key,
+      children: menu.children ? convertMenuToTree(menu.children) : undefined
+    }))
+  }
+
+  /** 关闭权限设置 */
+  const closePermission = () => {
+    setPromiseVisible(false)
+  }
+
+  /**
+   * 权限提交
+   */
+  const permissionSubmit = async (checked: Key[]) => {
+    try {
+      setLoading(true)
+      const params = {
+        roleId: promiseId,
+        menuIds: checked.map(key => key.toString()),
+      }
+      const { code, message: msg } = await saveRoleMenus(params)
+      if (Number(code) !== 200) {
+        return
+      }
+      message.success(msg || t('system.authorizationSuccessful'))
+      setPromiseVisible(false)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -130,7 +208,7 @@ const Page = () => {
       setCreateTitle(EDIT_TITLE(t, id))
       setCreateId(id)
       setCreateLoading(true)
-      const { code, data } = await getMenuById(id as string)
+      const { code, data } = await getRoleById(id as string)
       if (Number(code) !== 200) {
         return
       }
@@ -140,34 +218,14 @@ const Page = () => {
     }
   }
 
-  /** 表单提交 */
+  /** 表格提交 */
   const createSubmit = () => {
-    createFormRef?.current?.submit()
+    createFormRef.current?.submit()
   }
 
   /** 关闭新增/修改弹窗 */
   const closeCreate = () => {
     setCreateOpen(false)
-  }
-
-  /** 获取表格数据 */
-  const getPage = async () => {
-    const params = { ...searchData, page, pageSize }
-
-    try {
-      setLoading(true)
-      const res = await getMenuPage(params)
-      const { code, data } = res
-      if (Number(code) !== 200) {
-        return
-      }
-      const { items, total } = data
-      setTotal(total)
-      setTableData(items)
-    } finally {
-      setFetch(false)
-      setLoading(false)
-    }
   }
 
   /**
@@ -177,12 +235,12 @@ const Page = () => {
   const handleCreate = async (values: FormData) => {
     try {
       setCreateLoading(true)
-      const functions = () => (createId ? updateMenu(createId, values) : createMenu(values))
-      const { code, message: msg } = await functions()
+      const functions = () => (createId ? updateRole(createId, values) : createRole(values))
+      const { code, message } = await functions()
       if (Number(code) !== 200) {
         return
       }
-      message.success(msg || t('public.successfulOperation'))
+      message.success(message || t('public.successfulOperation'))
       setCreateOpen(false)
       getPage()
     } finally {
@@ -197,9 +255,9 @@ const Page = () => {
   const onDelete = async (id: string) => {
     try {
       setLoading(true)
-      const { code, message: msg } = await deleteMenu(id as string)
+      const { code, message } = await deleteRole(id as string)
       if (Number(code) === 200) {
-        message.success(msg || t('public.successfullyDeleted'))
+        message.success(message || t('public.successfullyDeleted'))
         getPage()
       }
     } finally {
@@ -212,11 +270,11 @@ const Page = () => {
    * @param page - 当前页数
    * @param pageSize - 每页条数
    */
-  const onChangePagination = useCallback((page: number, pageSize: number) => {
-    setPage(page)
-    setPageSize(pageSize)
+  const onChangePagination = (newPage: number, newPageSize: number) => {
+    setPage(newPage)
+    setPageSize(newPageSize)
     setFetch(true)
-  }, [])
+  }
 
   /**
    * 渲染操作
@@ -226,6 +284,17 @@ const Page = () => {
   function optionRender(_: unknown, record: object) {
     return (
       <>
+        {pagePermission.permission === true && (
+          <Tooltip title={t('system.permissions')}>
+            <Button
+              className='mr-5px'
+              type='primary'
+              icon={<SafetyOutlined />}
+              loading={isLoading}
+              onClick={() => openPermission((record as RowData).id)}
+            />
+          </Tooltip>
+        )}
         {pagePermission.update === true && (
           <UpdateBtn
             className='mr-5px'
@@ -243,6 +312,9 @@ const Page = () => {
       </>
     )
   }
+
+  // 表格列
+  const columns = tableColumns(t, optionRender)
 
   return (
     <BasicContent isPermission={pagePermission.page}>
@@ -273,22 +345,29 @@ const Page = () => {
       />
 
       <BasicModal
-        width={600}
         title={createTitle}
         open={isCreateOpen}
         confirmLoading={isCreateLoading}
         onOk={createSubmit}
         onCancel={closeCreate}
+        width={600}
       >
         <BasicForm
           ref={createFormRef}
-          list={createList(t, createId, parentOptions)}
+          list={createList(t, !!createId)}
           data={createData}
-          labelCol={{ span: 4 }}
-          wrapperCol={{ span: 19 }}
+          labelCol={{ span: 6 }}
           handleFinish={handleCreate}
         />
       </BasicModal>
+
+      <PermissionDrawer
+        isVisible={isPromiseVisible}
+        treeData={promiseTreeData}
+        checkedKeys={promiseCheckedKeys}
+        onClose={closePermission}
+        onSubmit={permissionSubmit}
+      />
     </BasicContent>
   )
 }

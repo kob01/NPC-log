@@ -1,7 +1,7 @@
 import { CompassOutlined } from '@ant-design/icons'
 import { Icon } from '@iconify/react'
-import { Menu } from 'antd'
-import { useCallback, useEffect, useState } from 'react'
+import { Badge, Menu } from 'antd'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -17,8 +17,9 @@ import {
   handleFilterMenus,
   splitPath,
 } from '@/menus/utils/helper'
+import { getPendingCount } from '@/servers/system/organization'
 import { setOpenKeys, setSelectedKeys, toggleCollapsed } from '@/stores/menu'
-import { addTabs, setNav, setActiveKey } from '@/stores/tabs'
+import { addTabs, setNav, setActiveKey, setMenuClick } from '@/stores/tabs'
 import { setTitle } from '@/utils/helper'
 
 import styles from '../index.module.less'
@@ -27,12 +28,49 @@ import type { SideMenu } from '#/public'
 import type { AppDispatch } from '@/stores'
 import type { MenuProps } from 'antd'
 
+// “我的组织”菜单 key，用于挂载待审批红点
+const ORG_MY_KEY = '/org/my'
+// 待审批轮询间隔（60 秒）
+const PENDING_POLL_MS = 60000
+
+interface RawMenuItem {
+  key?: string
+  label?: ReactNode
+  children?: RawMenuItem[]
+  [prop: string]: unknown
+}
+
+/**
+ * 递归为“我的组织”菜单项注入待审批数量徽标
+ * @param list - 原始菜单项
+ * @param count - 待审批数量
+ */
+const withPendingBadge = (list: RawMenuItem[], count: number): RawMenuItem[] =>
+  list.map((item) => {
+    if (item.key === ORG_MY_KEY && count > 0) {
+      return {
+        ...item,
+        label: (
+          <Badge count={count} size='small' overflowCount={99} offset={[6, -2]}>
+            <span>{item.label}</span>
+          </Badge>
+        ),
+      }
+    }
+    if (item.children?.length) {
+      return { ...item, children: withPendingBadge(item.children, count) }
+    }
+    return item
+  })
+
 const LayoutMenu = () => {
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const { pathname } = useLocation()
   const dispatch: AppDispatch = useDispatch()
   const [menus, setMenus] = useState<SideMenu[]>([])
+  // 待审批申请总数（我管理的组织），驱动“我的组织”红点
+  const [pendingCount, setPendingCount] = useState(0)
   // 获取当前语言
   const currentLanguage = i18n.language
 
@@ -99,11 +137,36 @@ const LayoutMenu = () => {
     }
   }, [filterMenuIcon, permissions, currentLanguage, menuList])
 
+  // 轮询待审批申请数，使管理员不打开页面也能感知新申请
+  useEffect(() => {
+    if (permissions.length === 0) {
+      return
+    }
+    let active = true
+    const fetchCount = async () => {
+      try {
+        const { code, data } = await getPendingCount()
+        if (active && Number(code) === 200) {
+          setPendingCount(Number(data) || 0)
+        }
+      } catch (error) {
+        console.error('获取待审批申请数失败:', error)
+      }
+    }
+    fetchCount()
+    const timer = setInterval(fetchCount, PENDING_POLL_MS)
+    return () => {
+      active = false
+      clearInterval(timer)
+    }
+  }, [permissions.length])
+
   /**
    * 处理跳转
    * @param path - 路径
+   * @param fromMenu - 是否从菜单点击
    */
-  const goPath = (path: string) => {
+  const goPath = (path: string, fromMenu = false) => {
     navigate(path)
     const menuByKeyProps = { menus, permissions, key: path }
     const newTab = getMenuByKey(menuByKeyProps)
@@ -111,6 +174,8 @@ const LayoutMenu = () => {
       dispatch(setActiveKey(newTab.key))
       dispatch(setNav(newTab.nav))
       dispatch(addTabs(newTab))
+      // 标记是从菜单点击进入，需要刷新数据
+      dispatch(setMenuClick(fromMenu))
     }
   }
 
@@ -119,7 +184,7 @@ const LayoutMenu = () => {
    * @param e - 菜单事件
    */
   const onClick: MenuProps['onClick'] = (e) => {
-    goPath(e.key)
+    goPath(e.key, true) // true 表示从菜单点击进入，需要刷新数据
     if (isPhone) {
       hiddenMenu()
     }
@@ -173,7 +238,7 @@ const LayoutMenu = () => {
   /** 点击logo */
   const onClickLogo = () => {
     const firstMenu = getFirstMenu(menus, permissions)
-    goPath(firstMenu)
+    goPath(firstMenu, true) // true 表示从菜单点击进入，需要刷新数据
     if (isPhone) {
       hiddenMenu()
     }
@@ -183,6 +248,16 @@ const LayoutMenu = () => {
   const hiddenMenu = () => {
     dispatch(toggleCollapsed(true))
   }
+
+  // 注入待审批红点后的菜单项
+  const menuItems = useMemo(
+    () =>
+      withPendingBadge(
+        handleFilterMenus(menus) as unknown as RawMenuItem[],
+        pendingCount
+      ) as unknown as MenuProps['items'],
+    [menus, pendingCount]
+  )
 
   return (
     <>
@@ -233,7 +308,7 @@ const LayoutMenu = () => {
           mode='inline'
           theme='dark'
           inlineCollapsed={isCollapsed}
-          items={handleFilterMenus(menus)}
+          items={menuItems}
           onClick={onClick}
           onOpenChange={onOpenChange}
         />

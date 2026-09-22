@@ -9,6 +9,10 @@ import AxiosRequest from './request'
 // 请求配置
 export const request = creteRequest()
 
+// 用于存储最近显示的错误消息，防止重复弹出
+const recentErrors = new Map<string, number>()
+const ERROR_COOLDOWN = 3000 // 错误消息冷却时间（毫秒）
+
 /**
  * 创建请求
  */
@@ -82,10 +86,31 @@ function creteRequest() {
  * @param content - 自定义内容
  */
 const handleError = (error: string, content?: string) => {
+  const errorMessage = content || error || '服务器错误'
+  const now = Date.now()
+
+  // 检查相同错误消息是否在冷却期内
+  const lastShown = recentErrors.get(errorMessage)
+  if (lastShown && now - lastShown < ERROR_COOLDOWN) {
+    // 在冷却期内，不显示重复错误
+    console.warn('重复错误消息被忽略:', errorMessage)
+    return
+  }
+
+  // 记录错误消息显示时间
+  recentErrors.set(errorMessage, now)
+
+  // 清理过期的错误记录
+  for (const [msg, time] of recentErrors.entries()) {
+    if (now - time > ERROR_COOLDOWN) {
+      recentErrors.delete(msg)
+    }
+  }
+
   console.error('错误信息:', error)
   message.error({
-    content: content || error || '服务器错误',
-    key: 'error',
+    content: errorMessage,
+    key: `error-${errorMessage}`,
     duration: 3,
   })
 }

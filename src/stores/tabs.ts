@@ -18,6 +18,7 @@ const tabsSlice = createSlice({
     activeKey: '',
     nav: [] as NavData[],
     tabs: [] as TabsData[],
+    isMenuClick: false, // 是否从菜单点击进入，用于控制页面数据刷新
   },
   reducers: {
     /** 设置锁 */
@@ -31,6 +32,10 @@ const tabsSlice = createSlice({
     /** 设置选择 */
     setActiveKey: (state, action) => {
       state.activeKey = action.payload
+    },
+    /** 设置是否从菜单点击 */
+    setMenuClick: (state, action) => {
+      state.isMenuClick = action.payload
     },
     /** 设置导航 */
     setNav: (state, action) => {
@@ -176,6 +181,7 @@ export const {
   toggleMaximize,
   setActiveKey,
   setNav,
+  setMenuClick,
   switchTabsLang,
   addTabs,
   closeTabs,

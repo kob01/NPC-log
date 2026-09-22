@@ -1,5 +1,5 @@
 import { FORM_REQUIRED } from '@/utils/config'
-import { MENU_ACTIONS, MENU_MODULE, MENU_STATUS } from '@/utils/constants'
+import { MENU_STATUS } from '@/utils/constants'
 import { valueToLabel } from '@/utils/helper'
 
 import type { FormList } from '#/form'
@@ -9,27 +9,21 @@ import type { TFunction } from 'i18next'
 // 搜索数据
 export const searchList = (t: TFunction): FormList[] => [
   {
+    label: t('public.name'),
+    name: 'keyword',
+    component: 'Input',
+    componentProps: {
+      placeholder: t('system.searchByMenuName'),
+    },
+  },
+  {
     label: t('system.state'),
     name: 'status',
-    wrapperCol: 100,
     component: 'Select',
     componentProps: {
-      options: MENU_STATUS(t),
+      options: [{ label: t('public.all'), value: '' }, ...MENU_STATUS(t)],
+      allowClear: true,
     },
-  },
-  {
-    label: t('system.module'),
-    name: 'module',
-    wrapperCol: 170,
-    component: 'Select',
-    componentProps: {
-      options: MENU_MODULE(t),
-    },
-  },
-  {
-    label: t('system.controller'),
-    name: 'controller',
-    component: 'Input',
   },
 ]
 
@@ -41,55 +35,109 @@ export const tableColumns = (t: TFunction, optionRender: TableOptions<object>): 
   {
     title: 'ID',
     dataIndex: 'id',
-    width: 200,
+    width: 80,
   },
   {
     title: t('public.name'),
-    dataIndex: 'name',
+    dataIndex: 'label',
+    width: 160,
+  },
+  {
+    title: t('system.menuKey'),
+    dataIndex: 'menuKey',
     width: 200,
+  },
+  {
+    title: t('system.permissionRule'),
+    dataIndex: 'rule',
+    width: 200,
+  },
+  {
+    title: t('system.sort'),
+    dataIndex: 'sort',
+    width: 80,
   },
   {
     title: t('system.state'),
     dataIndex: 'status',
-    width: 200,
+    width: 100,
     render: (value: number) => <span>{valueToLabel(value, MENU_STATUS(t))}</span>,
   },
   {
-    title: t('system.module'),
-    dataIndex: 'module',
-    width: 200,
-  },
-  {
-    title: t('system.controller'),
-    dataIndex: 'controller',
-    width: 200,
-  },
-  {
-    title: t('public.creationTime'),
+    title: t('public.createTime'),
     dataIndex: 'created_at',
-    width: 200,
-  },
-  {
-    title: t('public.updateTime'),
-    dataIndex: 'updated_at',
-    width: 200,
+    width: 180,
   },
   {
     title: t('public.operate'),
     dataIndex: 'operate',
-    width: 200,
+    width: 160,
     fixed: 'right',
     render: (value: unknown, record: object) => optionRender(value, record),
   },
 ]
 
-// 新增数据
-export const createList = (t: TFunction, id: string): FormList[] => [
+// 新增/编辑表单数据
+export const createList = (
+  t: TFunction,
+  id: string,
+  parentOptions: { label: string; value: number }[] = []
+): FormList[] => [
+  {
+    label: t('system.parentMenu'),
+    name: 'parent_id',
+    rules: FORM_REQUIRED,
+    component: 'Select',
+    componentProps: {
+      options: [{ label: t('system.topLevel'), value: 0 }, ...parentOptions],
+      placeholder: t('system.pleaseSelectParentMenu'),
+    },
+  },
   {
     label: t('public.name'),
-    name: 'name',
+    name: 'label',
     rules: FORM_REQUIRED,
     component: 'Input',
+    componentProps: {
+      placeholder: t('system.pleaseEnterMenuName'),
+    },
+  },
+  {
+    label: t('system.menuNameEn'),
+    name: 'labelEn',
+    component: 'Input',
+  },
+  {
+    label: t('system.icon'),
+    name: 'icon',
+    component: 'Input',
+    componentProps: {
+      placeholder: 'ion:settings-outline',
+    },
+  },
+  {
+    label: t('system.menuKey'),
+    name: 'menuKey',
+    component: 'Input',
+    componentProps: {
+      placeholder: '/system/user',
+    },
+  },
+  {
+    label: t('system.permissionRule'),
+    name: 'rule',
+    component: 'Input',
+    componentProps: {
+      placeholder: '/authority/user/index',
+    },
+  },
+  {
+    label: t('system.sort'),
+    name: 'sort',
+    component: 'InputNumber',
+    componentProps: {
+      min: 0,
+    },
   },
   {
     label: t('system.state'),
@@ -98,30 +146,6 @@ export const createList = (t: TFunction, id: string): FormList[] => [
     component: 'Select',
     componentProps: {
       options: MENU_STATUS(t),
-    },
-  },
-  {
-    label: t('system.module'),
-    name: 'module',
-    rules: FORM_REQUIRED,
-    component: 'Select',
-    componentProps: {
-      options: MENU_MODULE(t),
-    },
-  },
-  {
-    label: t('system.controller'),
-    name: 'controller',
-    rules: FORM_REQUIRED,
-    component: 'Input',
-  },
-  {
-    label: t('system.createMenu'),
-    name: 'actions',
-    hidden: !!id,
-    component: 'CheckboxGroup',
-    componentProps: {
-      options: MENU_ACTIONS(t),
     },
   },
 ]

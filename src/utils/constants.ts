@@ -24,11 +24,20 @@ export interface Constant extends Omit<DefaultOptionType, 'children'> {
 }
 
 /**
+ * 全局启用状态枚举（后端查询已统一以数字返回，直接比较即可）
+ * 1 开启 / 0 关闭
+ */
+export enum GlobalStatus {
+  Disable = 0,
+  Enable = 1,
+}
+
+/**
  * 开启状态
  */
 export const OPEN_CLOSE = (t: TFunction): Constant[] => [
-  { label: t('public.open'), value: 1 },
-  { label: t('public.close'), value: 0 },
+  { label: t('public.open'), value: GlobalStatus.Enable },
+  { label: t('public.close'), value: GlobalStatus.Disable },
 ]
 
 /**

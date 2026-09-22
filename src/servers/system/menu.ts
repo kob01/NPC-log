@@ -2,8 +2,6 @@ import { request } from '@/servers/request'
 
 import type { FormData } from '#/form'
 import type { PageServerResult, PaginationData, SideMenu } from '#/public'
-import type { DataNode } from 'antd/es/tree'
-import type { Key } from 'react'
 
 enum API {
   URL = '/api/authority/menu',
@@ -53,27 +51,14 @@ export function deleteMenu(id: string) {
 }
 
 /**
- * 获取权限列表
- * @param data - 搜索数据
+ * 获取全部菜单（供父级选择）
  */
-interface PermissionResult {
-  treeData: DataNode[]
-  defaultCheckedKeys: Key[]
-}
-export function getPermission(data: object) {
-  return request.get<PermissionResult>(`${API.URL}/tree`, { params: data })
+export function getAllMenus() {
+  return request.get<FormData[]>(`${API.URL}/all`)
 }
 
 /**
- * 保存权限列表
- * @param data - 权限数据
- */
-export function savePermission(data: object) {
-  return request.put(`${API.URL}/authorize/save`, data)
-}
-
-/**
- * 获取当前菜单数据
+ * 获取当前菜单数据（侧边栏）
  * @param data - 请求数据
  */
 export function getMenuList() {

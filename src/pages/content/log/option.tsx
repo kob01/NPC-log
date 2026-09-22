@@ -5,22 +5,23 @@ import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
 import { useLocation } from 'react-router-dom'
 
+import { createList } from './model'
+
+import type { FormData } from '#/form'
+import type { PagePermission } from '#/public'
+import type { AppDispatch } from '@/stores'
+
 import SubmitBottom from '@/components/Bottom/SubmitBottom'
 import BasicContent from '@/components/Content/BasicContent'
 import BasicForm from '@/components/Form/BasicForm'
 import { useCommonStore } from '@/hooks/useCommonStore'
 import { useSingleTab } from '@/hooks/useSingleTab'
 import { getNPCEventById, createNPCEvent, updateNPCEvent } from '@/servers/content/event'
+import { getMyOrgs } from '@/servers/system/organization'
 import { setRefreshPage } from '@/stores/public'
 import { closeTabGoNext } from '@/stores/tabs'
 import { getUrlParam } from '@/utils/helper'
 import { checkPermission } from '@/utils/permissions'
-
-import { createList } from './model'
-
-import type { FormData } from '#/form'
-import type { PagePermission } from '#/public'
-import type { AppDispatch } from '@/stores'
 
 // 初始化新增数据
 const initCreate = {
@@ -33,6 +34,8 @@ const initCreate = {
   experience: '',
   position: '',
   witness: '',
+  visibility: 0,
+  visibleOrgIds: [],
 }
 
 // 父路径
@@ -48,8 +51,24 @@ const Page = () => {
   const [isLoading, setLoading] = useState(false)
   const [createId, setCreateId] = useState('')
   const [createData, setCreateData] = useState<FormData>(initCreate)
+  const [orgOptions, setOrgOptions] = useState<{ label: string; value: number }[]>([])
   const { permissions } = useCommonStore()
   useSingleTab(fatherPath)
+
+  // 加载“我加入的组织”（仅已通过）作为可见组织选项
+  useEffect(() => {
+    const loadOrgs = async () => {
+      const { code, data } = await getMyOrgs()
+      if (Number(code) === 200) {
+        setOrgOptions(
+          (data || [])
+            .filter((o: FormData) => Number(o.my_status) === 1)
+            .map((o: FormData) => ({ label: o.org_name as string, value: o.id as number }))
+        )
+      }
+    }
+    loadOrgs()
+  }, [])
 
   // 权限前缀
   const permissionPrefix = '/content/log'
@@ -146,7 +165,7 @@ const Page = () => {
         <Spin spinning={isLoading}>
           <BasicForm
             ref={createFormRef}
-            list={createList(t)}
+            list={createList(t, orgOptions)}
             data={createData}
             labelCol={{ span: 5 }}
             handleFinish={handleFinish}
