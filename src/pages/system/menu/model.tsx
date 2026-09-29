@@ -1,10 +1,12 @@
-import { FORM_REQUIRED } from '@/utils/config'
-import { MENU_STATUS } from '@/utils/constants'
-import { valueToLabel } from '@/utils/helper'
+import dayjs from 'dayjs'
 
 import type { FormList } from '#/form'
 import type { TableColumn, TableOptions } from '#/public'
 import type { TFunction } from 'i18next'
+
+import { FORM_REQUIRED } from '@/utils/config'
+import { MENU_STATUS } from '@/utils/constants'
+import { valueToLabel } from '@/utils/helper'
 
 // 搜索数据
 export const searchList = (t: TFunction): FormList[] => [
@@ -67,6 +69,8 @@ export const tableColumns = (t: TFunction, optionRender: TableOptions<object>): 
     title: t('public.createTime'),
     dataIndex: 'created_at',
     width: 180,
+    // 接口返回的是 ISO 串，与其它列表的时间格式保持一致
+    render: (value: string) => (value ? dayjs(value).format('YYYY-MM-DD HH:mm') : '-'),
   },
   {
     title: t('public.operate'),
@@ -86,7 +90,7 @@ export const createList = (
   {
     label: t('system.parentMenu'),
     name: 'parent_id',
-    rules: FORM_REQUIRED,
+    // 顶级菜单应可直接留空（后端默认 parent_id=0）；此前强制必填，必须显式选一次「顶级菜单」才能提交
     component: 'Select',
     componentProps: {
       options: [{ label: t('system.topLevel'), value: 0 }, ...parentOptions],
@@ -128,7 +132,8 @@ export const createList = (
     name: 'rule',
     component: 'Input',
     componentProps: {
-      placeholder: '/authority/user/index',
+      // 留空即所有登录用户可见（与后端菜单剪枝语义一致）
+      placeholder: '/authority/user/index（留空则所有登录用户可见）',
     },
   },
   {

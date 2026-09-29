@@ -3,6 +3,9 @@ import dayjs from 'dayjs'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import type { FormData } from '#/form'
+import type { ColumnsType } from 'antd/es/table'
+
 import BasicContent from '@/components/Content/BasicContent'
 import {
   applyJoin,
@@ -14,9 +17,6 @@ import {
   leaveOrg,
   setOrgManager,
 } from '@/servers/system/organization'
-
-import type { FormData } from '#/form'
-import type { ColumnsType } from 'antd/es/table'
 
 const Page = () => {
   const { t } = useTranslation()
@@ -35,8 +35,12 @@ const Page = () => {
 
   /** 角色文案 */
   const roleText = (role: number) => {
-    if (Number(role) === 2) return t('system.creator')
-    if (Number(role) === 1) return t('system.manager')
+    if (Number(role) === 2) {
+      return t('system.creator')
+    }
+    if (Number(role) === 1) {
+      return t('system.manager')
+    }
     return t('system.member')
   }
 
@@ -44,7 +48,9 @@ const Page = () => {
     try {
       setLoading(true)
       const { code, data } = await getMyOrgs()
-      if (Number(code) === 200) setMyOrgs(data || [])
+      if (Number(code) === 200) {
+        setMyOrgs(data || [])
+      }
     } finally {
       setLoading(false)
     }
@@ -52,12 +58,16 @@ const Page = () => {
 
   const loadSquare = useCallback(async () => {
     const { code, data } = await getPublicOrgs()
-    if (Number(code) === 200) setSquare(data || [])
+    if (Number(code) === 200) {
+      setSquare(data || [])
+    }
   }, [])
 
   const loadPendingAll = useCallback(async () => {
     const { code, data } = await getPendingRequests()
-    if (Number(code) === 200) setPendingAll(data || [])
+    if (Number(code) === 200) {
+      setPendingAll(data || [])
+    }
   }, [])
 
   useEffect(() => {
@@ -65,6 +75,23 @@ const Page = () => {
     loadSquare()
     loadPendingAll()
   }, [loadMyOrgs, loadSquare, loadPendingAll])
+
+  /**
+   * 切换页签时拉对应数据
+   * 此前三个页签只在挂载时各拉一次，审批通过后切到「组织广场」看到的还是旧成员数
+   * @param key - 页签 key
+   */
+  const onTabChange = (key: string) => {
+    if (key === 'mine') {
+      loadMyOrgs()
+    }
+    if (key === 'square') {
+      loadSquare()
+    }
+    if (key === 'pending') {
+      loadPendingAll()
+    }
+  }
 
   /** 申请加入 */
   const handleApply = async (id: number) => {
@@ -82,15 +109,21 @@ const Page = () => {
       message.success(msg || t('system.leftOrg'))
       loadMyOrgs()
       loadSquare()
-      if (Number(curOrg?.id) === id) setManageOpen(false)
+      if (Number(curOrg?.id) === id) {
+        setManageOpen(false)
+      }
     }
   }
 
   /** 刷新当前管理组织数据 */
   const refreshManage = useCallback(async (orgId: number) => {
     const [req, mem] = await Promise.all([getPendingRequests(orgId), getOrgMembers(String(orgId))])
-    if (Number(req.code) === 200) setRequests(req.data || [])
-    if (Number(mem.code) === 200) setMembers(mem.data || [])
+    if (Number(req.code) === 200) {
+      setRequests(req.data || [])
+    }
+    if (Number(mem.code) === 200) {
+      setMembers(mem.data || [])
+    }
   }, [])
 
   /** 打开管理弹窗 */
@@ -122,7 +155,9 @@ const Page = () => {
       message.success(msg || t('public.successfulOperation'))
       loadPendingAll()
       loadMyOrgs()
-      if (Number(curOrg?.id) === orgId) refreshManage(orgId)
+      if (Number(curOrg?.id) === orgId) {
+        refreshManage(orgId)
+      }
     }
   }
 
@@ -180,7 +215,10 @@ const Page = () => {
             </Button>
           )}
           {Number(record.my_status) === 1 && (
-            <Popconfirm title={t('system.confirmLeave')} onConfirm={() => handleLeave(Number(record.id))}>
+            <Popconfirm
+              title={t('system.confirmLeave')}
+              onConfirm={() => handleLeave(Number(record.id))}
+            >
               <Button danger size='small'>
                 {t('system.leave')}
               </Button>
@@ -204,7 +242,10 @@ const Page = () => {
         const relation = record.relation as string
         if (relation === 'joined') {
           return (
-            <Popconfirm title={t('system.confirmLeave')} onConfirm={() => handleLeave(Number(record.id))}>
+            <Popconfirm
+              title={t('system.confirmLeave')}
+              onConfirm={() => handleLeave(Number(record.id))}
+            >
               <Button danger size='small'>
                 {t('system.leave')}
               </Button>
@@ -215,7 +256,10 @@ const Page = () => {
           return <Tag color='orange'>{t('system.pending')}</Tag>
         }
         return (
-          <Popconfirm title={t('system.confirmApply')} onConfirm={() => handleApply(Number(record.id))}>
+          <Popconfirm
+            title={t('system.confirmApply')}
+            onConfirm={() => handleApply(Number(record.id))}
+          >
             <Button type='primary' size='small'>
               {t('system.applyJoin')}
             </Button>
@@ -232,15 +276,26 @@ const Page = () => {
     {
       title: t('public.operate'),
       key: 'operate',
-      width: 160,
+      width: 200,
+      // 审批直接影响他人能否加入组织，属于不可逆操作，与同页「退出/申请」保持一致加二次确认
       render: (_: unknown, record) => (
         <Space>
-          <Button type='primary' size='small' onClick={() => handleAudit(Number(record.userId), true)}>
-            {t('system.approve')}
-          </Button>
-          <Button danger size='small' onClick={() => handleAudit(Number(record.userId), false)}>
-            {t('system.reject')}
-          </Button>
+          <Popconfirm
+            title={t('system.confirmApprove')}
+            onConfirm={() => handleAudit(Number(record.userId), true)}
+          >
+            <Button type='primary' size='small'>
+              {t('system.approve')}
+            </Button>
+          </Popconfirm>
+          <Popconfirm
+            title={t('system.confirmReject')}
+            onConfirm={() => handleAudit(Number(record.userId), false)}
+          >
+            <Button danger size='small'>
+              {t('system.reject')}
+            </Button>
+          </Popconfirm>
         </Space>
       ),
     },
@@ -259,18 +314,29 @@ const Page = () => {
     {
       title: t('public.operate'),
       key: 'operate',
-      width: 140,
+      width: 160,
+      // 变更管理者同样加二次确认，避免一行只能三个成员名额时误点
       render: (_: unknown, record) => {
         const role = Number(record.role)
-        if (role === 2) return '-' // 创建者不可变更
+        if (role === 2) {
+          return '-'
+        } // 创建者不可变更
         return role === 1 ? (
-          <Button size='small' onClick={() => handleSetManager(Number(record.id), 0)}>
-            {t('system.demote')}
-          </Button>
+          <Popconfirm
+            title={t('system.confirmDemote')}
+            onConfirm={() => handleSetManager(Number(record.id), 0)}
+          >
+            <Button size='small'>{t('system.demote')}</Button>
+          </Popconfirm>
         ) : (
-          <Button size='small' type='primary' onClick={() => handleSetManager(Number(record.id), 1)}>
-            {t('system.promote')}
-          </Button>
+          <Popconfirm
+            title={t('system.confirmPromote')}
+            onConfirm={() => handleSetManager(Number(record.id), 1)}
+          >
+            <Button size='small' type='primary'>
+              {t('system.promote')}
+            </Button>
+          </Popconfirm>
         )
       },
     },
@@ -295,20 +361,22 @@ const Page = () => {
       width: 160,
       render: (_: unknown, record) => (
         <Space>
-          <Button
-            type='primary'
-            size='small'
-            onClick={() => handleAuditGlobal(Number(record.orgId), Number(record.userId), true)}
+          <Popconfirm
+            title={t('system.confirmApprove')}
+            onConfirm={() => handleAuditGlobal(Number(record.orgId), Number(record.userId), true)}
           >
-            {t('system.approve')}
-          </Button>
-          <Button
-            danger
-            size='small'
-            onClick={() => handleAuditGlobal(Number(record.orgId), Number(record.userId), false)}
+            <Button type='primary' size='small'>
+              {t('system.approve')}
+            </Button>
+          </Popconfirm>
+          <Popconfirm
+            title={t('system.confirmReject')}
+            onConfirm={() => handleAuditGlobal(Number(record.orgId), Number(record.userId), false)}
           >
-            {t('system.reject')}
-          </Button>
+            <Button danger size='small'>
+              {t('system.reject')}
+            </Button>
+          </Popconfirm>
         </Space>
       ),
     },
@@ -319,6 +387,7 @@ const Page = () => {
       <Card>
         <Tabs
           defaultActiveKey='mine'
+          onChange={onTabChange}
           items={[
             {
               key: 'mine',

@@ -12,6 +12,14 @@ import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 
+import Nav from './Nav'
+import UpdatePassword from './UpdatePassword'
+import styles from '../index.module.less'
+
+import type { PasswordModal } from './UpdatePassword'
+import type { AppDispatch } from '@/stores'
+import type { MenuProps } from 'antd'
+
 import Avatar from '@/assets/images/avatar.png'
 import Fullscreen from '@/components/Fullscreen'
 import Github from '@/components/Github'
@@ -21,17 +29,9 @@ import Theme from '@/components/Theme'
 import { useCommonStore } from '@/hooks/useCommonStore'
 import { useToken } from '@/hooks/useToken'
 import { logout } from '@/servers/login'
-import { toggleCollapsed } from '@/stores/menu'
+import { toggleCollapsed, setMenuList } from '@/stores/menu'
 import { closeAllTab, setActiveKey } from '@/stores/tabs'
 import { clearInfo } from '@/stores/user'
-
-import Nav from './Nav'
-import UpdatePassword from './UpdatePassword'
-import styles from '../index.module.less'
-
-import type { PasswordModal } from './UpdatePassword'
-import type { AppDispatch } from '@/stores'
-import type { MenuProps } from 'antd'
 
 type MenuKey = 'password' | 'logout'
 
@@ -88,6 +88,9 @@ const Header = () => {
           dispatch(clearInfo())
           dispatch(closeAllTab())
           dispatch(setActiveKey(''))
+          // 菜单数据源存于 store，不清空的话：下一个账号（权限不同）登录后，
+          // layout 因 userId 已由登录响应回填而不会重拉菜单，侧边栏会停留在上一个账号的入口
+          dispatch(setMenuList([]))
           clear() // 清除keepalive缓存
           removeToken()
           navigate('/login')

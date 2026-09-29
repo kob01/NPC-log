@@ -3,6 +3,11 @@ import { message } from 'antd'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { createList, searchList, tableColumns } from './model'
+
+import type { FormData } from '#/form'
+import type { PagePermission } from '#/public'
+
 import { UpdateBtn, DeleteBtn } from '@/components/Buttons'
 import BasicContent from '@/components/Content/BasicContent'
 import BasicForm from '@/components/Form/BasicForm'
@@ -13,16 +18,11 @@ import BasicTable from '@/components/Table/BasicTable'
 import FilterButton from '@/components/TableFilter'
 import { useFiler } from '@/components/TableFilter/hooks/useFiler'
 import { useCommonStore } from '@/hooks/useCommonStore'
-import { createUser, deleteUser, getUserById, getUserPage, updateUser } from '@/servers/system/user'
 import { getAllOrgs, getUserOrgs, setUserOrgs } from '@/servers/system/organization'
+import { createUser, deleteUser, getUserById, getUserPage, updateUser } from '@/servers/system/user'
 import { ADD_TITLE, EDIT_TITLE, INIT_PAGINATION } from '@/utils/config'
 import { encryptMd5 } from '@/utils/crypto'
 import { checkPermission } from '@/utils/permissions'
-
-import { createList, searchList, tableColumns } from './model'
-
-import type { FormData } from '#/form'
-import type { PagePermission } from '#/public'
 
 // 当前行数据
 interface RowData {
@@ -100,10 +100,12 @@ const Page = () => {
     try {
       const { code, data } = await getAllOrgs()
       if (Number(code) === 200) {
-        setOrgOptions((data || []).map((org: FormData) => ({
-          label: org.org_name as string,
-          value: org.id as number,
-        })))
+        setOrgOptions(
+          (data || []).map((org: FormData) => ({
+            label: org.org_name as string,
+            value: org.id as number,
+          }))
+        )
       }
     } catch (error) {
       console.error('加载组织选项失败:', error)
@@ -142,7 +144,8 @@ const Page = () => {
     setCreateOpen(true)
     setCreateTitle(ADD_TITLE(t))
     setCreateId('')
-    setCreateData(initCreate)
+    // 传入新对象：同一引用不会触发 BasicForm 的 resetFields，第二次「新增」会沿用上个用户的姓名/手机/邮箱
+    setCreateData({ ...initCreate })
   }
 
   /**

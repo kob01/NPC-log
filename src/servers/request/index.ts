@@ -1,10 +1,11 @@
 import axios from 'axios'
 
-import { TOKEN } from '@/utils/config'
-import { getLocalInfo, removeLocalInfo } from '@/utils/local'
-import { message } from '@/utils/staticAntd'
-
 import AxiosRequest from './request'
+
+import { ONLY_MINE_HEADER, TOKEN } from '@/utils/config'
+import { getLocalInfo, removeLocalInfo } from '@/utils/local'
+import { getOnlyMine } from '@/utils/onlyMine'
+import { message } from '@/utils/staticAntd'
 
 // 请求配置
 export const request = creteRequest()
@@ -27,6 +28,10 @@ function creteRequest() {
         if (res?.headers && token) {
           res.headers.Authorization = `Bearer ${token}`
         }
+        // “只看自己日志”开关：全局注入，后端在所有可见性查询中统一生效
+        if (res?.headers && getOnlyMine()) {
+          res.headers[ONLY_MINE_HEADER] = '1'
+        }
         return res
       },
       // 请求拦截超时
@@ -37,18 +42,11 @@ function creteRequest() {
       // 接口响应拦截
       responseInterceptors(res) {
         const { data } = res
-        // 权限不足
-        if (data?.code === 401) {
-          message.error({ content: '权限不足，请重新登录！', duration: 3 })
-          removeLocalInfo(TOKEN)
-          setTimeout(() => {
-            window.location.href = '/'
-          }, 1000)
-          handleError(data?.message)
-          return res
-        }
-
-        // 错误处理
+        // 业务失败统一弹提示。
+        // 注意：body 里的 code:401 只会来自登录/注册接口（账密错误、账号被禁用），
+        // 属于“本次登录失败”而不是“当前会话过期”。此前在这里当作会话过期处理，
+        // 会额外弹「权限不足，请重新登录！」并 1s 后整页跳转，把刚填的表单冲掉。
+        // 真正的登录态失效由下方 responseInterceptorsCatch 按 HTTP 401 统一处理。
         if (data?.code !== 200) {
           handleError(data?.message)
           return res
@@ -57,15 +55,17 @@ function creteRequest() {
         return res
       },
       responseInterceptorsCatch(err) {
-        const { response } = err
-        if (response.status === 401) {
+        // 网络层错误（后端未启动/断网）时 err.response 为 undefined，
+        // 直接解构读取 status 会抛 TypeError 并导致界面完全无提示
+        const status = err?.response?.status
+        if (status === 401) {
           message.error({ content: '登录过期，请重新登录！', duration: 3 })
           removeLocalInfo(TOKEN)
           setTimeout(() => {
             window.location.href = '/'
           }, 1000)
           handleError('登录过期，请重新登录！')
-          return
+          return err
         }
         // 取消重复请求则不报错
         if (axios.isCancel(err)) {
@@ -73,7 +73,11 @@ function creteRequest() {
           return err
         }
 
-        handleError('服务器错误！')
+        // 优先透出后端返回的业务错误文案，便于定位问题
+        const serverMessage = err?.response?.data?.message
+        handleError(
+          status ? serverMessage || `请求失败（${status}）` : '网络异常，请检查服务是否可用！'
+        )
         return err
       },
     },

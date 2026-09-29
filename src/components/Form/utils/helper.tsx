@@ -63,6 +63,14 @@ export function initCompProps(
     case 'CheckboxGroup':
       return {}
 
+    // 图片上传（自定义受控组件）
+    case 'ImageUpload':
+      return {}
+
+    // 作品链接列表（自定义受控组件）
+    case 'LinkList':
+      return {}
+
     // 日期
     case 'DatePicker':
       return {

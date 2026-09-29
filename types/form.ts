@@ -1,4 +1,7 @@
 import type { BusinessComponents } from '@/components/Business'
+import type { ImageUploadProps } from '@/components/ImageUpload'
+import type { LinkListProps } from '@/components/LinkList'
+import type { LocationPickerProps } from '@/components/LocationPicker'
 import type { EditorProps } from '@/components/WangEditor'
 import type { ServerResult } from '@/servers/request/types'
 import type {
@@ -19,6 +22,7 @@ import type {
 } from 'antd'
 import type { RangePickerProps } from 'antd/lib/date-picker'
 import type { RuleObject } from 'antd/lib/form'
+import type { TextAreaProps } from 'antd/lib/input/TextArea'
 import type { DefaultOptionType } from 'antd/lib/select'
 import type { FC, Key, ReactNode } from 'react'
 
@@ -27,12 +31,7 @@ export type FormData = Record<string, unknown>
 
 // 基础数据组件
 type DefaultDataComponents =
-  | 'Input'
-  | 'InputNumber'
-  | 'TextArea'
-  | 'InputPassword'
-  | 'AutoComplete'
-  | 'customize'
+  'Input' | 'InputNumber' | 'TextArea' | 'InputPassword' | 'AutoComplete' | 'customize'
 
 // 下拉组件
 type SelectComponents = 'Select' | 'TreeSelect' | 'ApiSelect' | 'ApiTreeSelect'
@@ -64,6 +63,9 @@ type CustomizeComponents = 'Customize'
 // 富文本编辑器
 type EditorComponents = 'Editor'
 
+// 图片/链接/地点等媒体组件
+type MediaComponents = 'ImageUpload' | 'LinkList' | 'LocationPicker'
+
 // 密码强度组件
 type PasswordStrength = 'PasswordStrength'
 
@@ -81,6 +83,7 @@ export type ComponentType =
   | EditorComponents
   | PasswordStrength
   | TransferComponents
+  | MediaComponents
   | BusinessComponents
 
 export interface ApiResult extends Omit<DefaultOptionType, 'value'> {
@@ -115,6 +118,7 @@ export type ApiTreeSelectProps = ApiParam & TreeSelectProps
 export type ComponentProps =
   | InputProps
   | InputNumberProps
+  | TextAreaProps
   | SelectProps
   | TreeSelectProps
   | CheckboxProps
@@ -130,6 +134,9 @@ export type ComponentProps =
   | ApiSelectProps
   | ApiTreeSelectProps
   | EditorProps
+  | ImageUploadProps
+  | LinkListProps
+  | LocationPickerProps
 
 // 表单规则
 export type FormRule = RuleObject & {

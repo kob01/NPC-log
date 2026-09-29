@@ -12,21 +12,24 @@ import {
   Upload,
 } from 'antd'
 
+import { initCompProps } from './helper'
+
+import type { ComponentType, FormList } from '#/form'
+import type { TFunction } from 'i18next'
+
 import { CreateBusiness } from '@/components/Business'
 import BasicDatePicker from '@/components/Dates/BasicDatePicker'
 import BasicRangePicker from '@/components/Dates/BasicRangePicker'
 import BasicTimePicker from '@/components/Dates/BasicTimePicker'
 import BasicTimeRangePicker from '@/components/Dates/BasicTimeRangePicker'
+import ImageUpload from '@/components/ImageUpload'
+import LinkList from '@/components/LinkList'
+import LocationPicker from '@/components/LocationPicker'
 import PasswordStrength from '@/components/PasswordStrength'
 import ApiSelect from '@/components/Selects/ApiSelect'
 import ApiTreeSelect from '@/components/Selects/ApiTreeSelect'
 import BasicTransfer from '@/components/Transfer/BasicTransfer'
 import WangEditor from '@/components/WangEditor'
-
-import { initCompProps } from './helper'
-
-import type { ComponentType, FormList } from '#/form'
-import type { TFunction } from 'i18next'
 
 const componentMap = new Map()
 
@@ -54,6 +57,9 @@ componentMap.set('ApiSelect', ApiSelect)
 componentMap.set('ApiTreeSelect', ApiTreeSelect)
 componentMap.set('PasswordStrength', PasswordStrength)
 componentMap.set('Editor', WangEditor)
+componentMap.set('ImageUpload', ImageUpload)
+componentMap.set('LinkList', LinkList)
+componentMap.set('LocationPicker', LocationPicker)
 
 // 业务组件注入
 CreateBusiness()

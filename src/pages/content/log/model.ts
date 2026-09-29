@@ -142,6 +142,11 @@ export const searchList = (t: TFunction): FormList[] => [
     component: 'Input',
   },
   {
+    label: t('content.logTagFilter'),
+    name: 'tag',
+    component: 'Input',
+  },
+  {
     label: '见证者',
     name: 'witness',
     component: 'Input',
@@ -151,11 +156,20 @@ export const searchList = (t: TFunction): FormList[] => [
 /**
  * 表格数据
  * @param optionRender - 渲染操作函数
+ * @param TooltipRender - 文本溢出提示渲染
+ * @param imageRender - 图片列渲染（JSX 由页面注入，model.ts 为纯 ts）
+ * @param linkRender - 作品列渲染
+ * @param positionRender - 地点列渲染（导航链接）
+ * @param tagRender - AI 标签列渲染
  */
 export const tableColumns = (
   t: TFunction,
   optionRender: TableOptions<object>,
-  TooltipRender: (text: string) => JSX.Element
+  TooltipRender: (text: string) => JSX.Element,
+  imageRender: (record: object) => JSX.Element,
+  linkRender: (record: object) => JSX.Element,
+  positionRender?: (record: object) => JSX.Element,
+  tagRender?: (record: object) => JSX.Element
 ): TableColumn => [
   {
     title: '时间',
@@ -205,11 +219,31 @@ export const tableColumns = (
     title: '地点',
     dataIndex: 'position',
     width: 100,
+    render: (_value: unknown, record: object) =>
+      positionRender ? positionRender(record) : (_value as string) || '-',
   },
   {
     title: '见证者',
     dataIndex: 'witness',
     width: 100,
+  },
+  {
+    title: '图片',
+    dataIndex: 'firstThumb',
+    width: 72,
+    render: (_value: unknown, record: object) => imageRender(record),
+  },
+  {
+    title: '作品',
+    dataIndex: 'linkCount',
+    width: 72,
+    render: (_value: unknown, record: object) => linkRender(record),
+  },
+  {
+    title: t('content.logTagColumn'),
+    dataIndex: 'tags',
+    width: 140,
+    render: (_value: unknown, record: object) => (tagRender ? tagRender(record) : '—'),
   },
   {
     title: '作者',
@@ -240,7 +274,9 @@ export const tableColumns = (
 // 新增数据
 export const createList = (
   t: TFunction,
-  orgOptions: { label: string; value: number }[] = []
+  orgOptions: { label: string; value: number }[] = [],
+  onGpsExtracted?: (gps: { lng: number; lat: number }) => void,
+  initialCoordinate?: { lng: number; lat: number } | null
 ): FormList[] => [
   {
     label: t('public.date'),
@@ -304,8 +340,11 @@ export const createList = (
   },
   {
     label: '地点',
-    name: 'position',
-    component: 'Input',
+    name: 'location',
+    component: 'LocationPicker',
+    componentProps: {
+      initialCoordinate,
+    },
   },
   {
     label: '见证者',
@@ -331,5 +370,19 @@ export const createList = (
       allowClear: true,
       placeholder: '默认所有已加入组织可见（可多选指定组织）',
     },
+  },
+  {
+    label: t('content.imageField'),
+    name: 'images',
+    component: 'ImageUpload',
+    componentProps: {
+      maxCount: 9,
+      onGpsExtracted,
+    },
+  },
+  {
+    label: t('content.linkField'),
+    name: 'links',
+    component: 'LinkList',
   },
 ]

@@ -1,9 +1,11 @@
-import { FORM_REQUIRED } from '@/utils/config'
-import { OPEN_CLOSE, GlobalStatus } from '@/utils/constants'
+import dayjs from 'dayjs'
 
 import type { FormList } from '#/form'
 import type { TableColumn, TableOptions } from '#/public'
 import type { TFunction } from 'i18next'
+
+import { FORM_REQUIRED } from '@/utils/config'
+import { OPEN_CLOSE, GlobalStatus } from '@/utils/constants'
 
 // 账号类型选项
 const ACCOUNT_TYPE = (t: TFunction) => [
@@ -90,6 +92,8 @@ export const tableColumns = (t: TFunction, optionRender: TableOptions<object>): 
     title: t('public.createTime'),
     dataIndex: 'created_at',
     width: 180,
+    // 接口返回的是 ISO 串（2026-09-29T16:58:31.000Z），与其它列表的时间格式保持一致
+    render: (value: string) => (value ? dayjs(value).format('YYYY-MM-DD HH:mm') : '-'),
   },
   {
     title: t('public.operate'),

@@ -76,6 +76,10 @@ export default {
   orgMembers: '组织成员',
   approve: '通过',
   reject: '拒绝',
+  confirmApprove: '确定通过该成员的申请吗？',
+  confirmReject: '确定拒绝该成员的申请吗？',
+  confirmPromote: '确定将其设为管理者吗？',
+  confirmDemote: '确定取消其管理者身份吗？',
   promote: '设为管理者',
   demote: '取消管理者',
 }

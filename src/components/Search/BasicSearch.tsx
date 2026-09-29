@@ -62,8 +62,20 @@ const BasicSearch = forwardRef((props: Props, ref: LegacyRef<FormInstance>) => {
 
   /** 点击清除 */
   const onClear = () => {
-    form?.resetFields()
-    form?.setFieldsValue(data ? { ...data } : {})
+    // resetFields 只会回到 initialValues（也就是上一次已提交的 data），
+    // 再 setFieldsValue(data) 更是把条件原封不动写回去，导致「清除」什么也没清。
+    // 这里按搜索项列表逐个置空，再提交一次以拉取全部数据。
+    const emptyValues = (list || []).reduce((acc: FormData, item) => {
+      if (Array.isArray(item.name)) {
+        item.name.forEach((key) => {
+          acc[key] = undefined
+        })
+      } else {
+        acc[item.name] = undefined
+      }
+      return acc
+    }, {})
+    form?.setFieldsValue(emptyValues)
     form?.submit()
   }
 

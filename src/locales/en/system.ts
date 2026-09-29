@@ -76,6 +76,10 @@ export default {
   orgMembers: 'Members',
   approve: 'Approve',
   reject: 'Reject',
+  confirmApprove: 'Approve this member request?',
+  confirmReject: 'Reject this member request?',
+  confirmPromote: 'Set this member as manager?',
+  confirmDemote: 'Revoke this member as manager?',
   promote: 'Set as Manager',
   demote: 'Revoke Manager',
 }

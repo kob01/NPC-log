@@ -1,4 +1,4 @@
-import { CompassOutlined } from '@ant-design/icons'
+import { CompassOutlined, ThunderboltFilled } from '@ant-design/icons'
 import { Icon } from '@iconify/react'
 import { Badge, Menu } from 'antd'
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
@@ -6,27 +6,19 @@ import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
 import { useNavigate, useLocation } from 'react-router-dom'
 
-import Logo from '@/assets/images/logo.svg'
-import { useCommonStore } from '@/hooks/useCommonStore'
-import {
-  filterMenus,
-  getFirstMenu,
-  getMenuByKey,
-  getMenuName,
-  getOpenMenuByRouter,
-  handleFilterMenus,
-  splitPath,
-} from '@/menus/utils/helper'
-import { getPendingCount } from '@/servers/system/organization'
-import { setOpenKeys, setSelectedKeys, toggleCollapsed } from '@/stores/menu'
-import { addTabs, setNav, setActiveKey, setMenuClick } from '@/stores/tabs'
-import { setTitle } from '@/utils/helper'
-
 import styles from '../index.module.less'
 
 import type { SideMenu } from '#/public'
 import type { AppDispatch } from '@/stores'
 import type { MenuProps } from 'antd'
+
+import Logo from '@/assets/images/logo.svg'
+import { useCommonStore } from '@/hooks/useCommonStore'
+import { filterMenus, getFirstMenu, getMenuByKey, getMenuName, getOpenMenuByMenus, handleFilterMenus, splitPath } from '@/menus/utils/helper'
+import { getPendingCount } from '@/servers/system/organization'
+import { setOpenKeys, setSelectedKeys, toggleCollapsed } from '@/stores/menu'
+import { addTabs, setNav, setActiveKey, setMenuClick } from '@/stores/tabs'
+import { setTitle } from '@/utils/helper'
 
 // “我的组织”菜单 key，用于挂载待审批红点
 const ORG_MY_KEY = '/org/my'
@@ -74,18 +66,17 @@ const LayoutMenu = () => {
   // 获取当前语言
   const currentLanguage = i18n.language
 
-  const { isMaximize, isCollapsed, isPhone, openKeys, selectedKeys, permissions, menuList } =
-    useCommonStore()
+  const { isMaximize, isCollapsed, isPhone, openKeys, selectedKeys, permissions, menuList } = useCommonStore()
 
-  // 处理默认展开
+  // 处理默认展开（按菜单树匹配，保证“超级记忆”这类父级key与子路由不同前缀的菜单不会收起）
   useEffect(() => {
-    const newOpenKey = getOpenMenuByRouter(pathname)
+    const newOpenKey = getOpenMenuByMenus(menus, pathname)
     if (!isPhone && !isCollapsed) {
       dispatch(setOpenKeys(newOpenKey))
       dispatch(setSelectedKeys(pathname))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname])
+  }, [pathname, menus])
 
   /**
    * 设置浏览器标签
@@ -125,6 +116,40 @@ const LayoutMenu = () => {
     if (permissions.length > 0) {
       const newMenus = filterMenus(menuList, permissions)
       filterMenuIcon(newMenus)
+      // 超级记忆家族（回忆/年度回顾/人物图谱/地图足迹）：同“NPC 专属日志”一样硬编码前置（不依赖 note_menus），
+      // 权限由后端 NORMAL_PERMISSIONS 下发 /content/* 控制，人人可用
+      newMenus.unshift({
+        icon: <ThunderboltFilled />,
+        label: t('content.aiGroupTitle'),
+        labelEn: 'Super Memory',
+        key: '/content/ai',
+        children: [
+          {
+            label: t('content.memoryTitle'),
+            labelEn: 'AI Memory',
+            key: '/content/memory',
+            rule: '/content/memory',
+          },
+          {
+            label: t('content.reportTitle'),
+            labelEn: 'Annual Review',
+            key: '/content/report',
+            rule: '/content/report',
+          },
+          {
+            label: t('content.personsTitle'),
+            labelEn: 'People Graph',
+            key: '/content/persons',
+            rule: '/content/persons',
+          },
+          {
+            label: t('content.footprintTitle'),
+            labelEn: 'Footprints',
+            key: '/content/footprint',
+            rule: '/content/footprint',
+          },
+        ],
+      })
       newMenus.unshift({
         icon: <CompassOutlined />,
         label: t('content.logTitle'),
@@ -251,12 +276,8 @@ const LayoutMenu = () => {
 
   // 注入待审批红点后的菜单项
   const menuItems = useMemo(
-    () =>
-      withPendingBadge(
-        handleFilterMenus(menus) as unknown as RawMenuItem[],
-        pendingCount
-      ) as unknown as MenuProps['items'],
-    [menus, pendingCount]
+    () => withPendingBadge(handleFilterMenus(menus) as unknown as RawMenuItem[], pendingCount) as unknown as MenuProps['items'],
+    [menus, pendingCount],
   )
 
   return (

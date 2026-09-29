@@ -1,7 +1,7 @@
-import { LANG } from '@/utils/config'
-
 import type { SideMenu } from '#/public'
 import type { Langs } from '@/components/I18n'
+
+import { LANG } from '@/utils/config'
 
 /**
  * 根据路由获取展开菜单数组
@@ -29,7 +29,64 @@ export function getOpenMenuByRouter(router: string): string[] {
 }
 
 /**
+ * 收集菜单树中所有节点的key及其父级链路
+ * @param menus - 菜单树
+ * @param parents - 父级key链路
+ * @param result - 返回值
+ */
+function collectMenuChain(
+  menus: SideMenu[],
+  parents: string[] = [],
+  result: { key: string; parents: string[] }[] = []
+): { key: string; parents: string[] }[] {
+  for (let i = 0; i < menus.length; i++) {
+    const { key, children } = menus[i]
+    if (key) {
+      result.push({ key, parents })
+    }
+    if (children?.length) {
+      collectMenuChain(children, key ? [...parents, key] : parents, result)
+    }
+  }
+
+  return result
+}
+
+/**
+ * 根据菜单树获取展开菜单数组
+ * 父级菜单的key与子级路由前缀不一致时（如“超级记忆”下的 /content/xxx），无法通过路径推导，需按菜单树匹配
+ * @param menus - 菜单树
+ * @param router - 当前路由
+ */
+export function getOpenMenuByMenus(menus: SideMenu[] | undefined, router: string): string[] {
+  if (!menus?.length || !router) {
+    return getOpenMenuByRouter(router)
+  }
+
+  const chainList = collectMenuChain(menus)
+  let lastKey = '' // 命中的最长菜单key
+  let result: string[] = []
+
+  for (let i = 0; i < chainList.length; i++) {
+    const { key, parents } = chainList[i]
+    // 精确匹配或为其子路由，且取层级最深的菜单
+    if ((router === key || router.startsWith(`${key}/`)) && key.length > lastKey.length) {
+      lastKey = key
+      result = parents
+    }
+  }
+
+  // 菜单树中不存在该路由时（如未挂在菜单下的页面），回退为路径推导
+  if (!lastKey) {
+    return getOpenMenuByRouter(router)
+  }
+
+  return result
+}
+
+/**
  * 匹配路径内的字段
+ * @param lang - 当前语言
  * @param path - 路径
  * @param arr - 路径经过数组
  */
@@ -318,16 +375,24 @@ export function filterMenus(menus: SideMenu[], permissions: string[]): SideMenu[
 
   for (let i = 0; i < newMenus.length; i++) {
     const item = newMenus[i]
-    // 处理子数组
-    if (hasChildren(item)) {
-      const result = filterMenus(item.children as SideMenu[], permissions)
+    // 先记录它原本是不是分组（递归后 children 会被清空，事后无法区分）
+    const isGroup = hasChildren(item)
 
-      // 有子权限数据则保留
-      item.children = result?.length ? result : undefined
+    if (isGroup) {
+      const children = filterMenus(item.children as SideMenu[], permissions)
+
+      // 分组本身不对应页面，只有底下还有可见子项时才保留，避免侧边栏出现空目录
+      if (children.length) {
+        item.children = children
+        if (lang === 'en') {
+          item.label = item.labelEn
+        }
+        result.push(item)
+      }
+      continue
     }
 
-    // 有权限或有子数据累加
-    if (hasPermission(item, permissions) || hasChildren(item)) {
+    if (hasPermission(item, permissions)) {
       if (lang === 'en') {
         item.label = item.labelEn
       }
@@ -464,7 +529,12 @@ export function handleFilterNav(list: string[]): NavData[] {
  * @param permissions - 权限
  */
 function hasPermission(route: SideMenu, permissions: string[]): boolean {
-  return permissions?.includes(route?.rule || '')
+  // 未配置权限标识视为“公开菜单”：此前用 permissions.includes(rule || '') 判定，
+  // 导致在菜单管理里不填权限标识新建的菜单永远不显示（includes('') 恒为 false）
+  if (!route?.rule) {
+    return true
+  }
+  return Boolean(permissions?.includes(route.rule))
 }
 
 /**

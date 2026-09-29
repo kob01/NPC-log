@@ -3,6 +3,11 @@ import { message } from 'antd'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { createList, searchList, tableColumns } from './model'
+
+import type { FormData } from '#/form'
+import type { PagePermission } from '#/public'
+
 import { UpdateBtn, DeleteBtn } from '@/components/Buttons'
 import BasicContent from '@/components/Content/BasicContent'
 import BasicForm from '@/components/Form/BasicForm'
@@ -20,11 +25,6 @@ import {
 } from '@/servers/system/organization'
 import { ADD_TITLE, EDIT_TITLE, INIT_PAGINATION } from '@/utils/config'
 import { checkPermission } from '@/utils/permissions'
-
-import { createList, searchList, tableColumns } from './model'
-
-import type { FormData } from '#/form'
-import type { PagePermission } from '#/public'
 
 // 当前行数据
 interface RowData {
@@ -107,7 +107,8 @@ const Page = () => {
     setCreateOpen(true)
     setCreateTitle(ADD_TITLE(t))
     setCreateId('')
-    setCreateData(initCreate)
+    // 传入新对象：同一引用不会触发 BasicForm 的 resetFields，第二次「新增」会沿用上个组织的名称/描述
+    setCreateData({ ...initCreate })
   }
 
   /** 点击编辑 */

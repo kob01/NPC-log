@@ -1,6 +1,12 @@
 import { type FormInstance, message } from 'antd'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useDispatch } from 'react-redux'
+
+import { searchList, createList, tableColumns } from './model'
+
+import type { FormData } from '#/form'
+import type { PagePermission } from '#/public'
 
 import { UpdateBtn, DeleteBtn } from '@/components/Buttons'
 import BasicContent from '@/components/Content/BasicContent'
@@ -12,14 +18,18 @@ import BasicTable from '@/components/Table/BasicTable'
 import FilterButton from '@/components/TableFilter'
 import { useFiler } from '@/components/TableFilter/hooks/useFiler'
 import { useCommonStore } from '@/hooks/useCommonStore'
-import { getMenuPage, getMenuById, createMenu, updateMenu, deleteMenu, getAllMenus } from '@/servers/system/menu'
+import {
+  getMenuPage,
+  getMenuById,
+  createMenu,
+  updateMenu,
+  deleteMenu,
+  getAllMenus,
+  getMenuList,
+} from '@/servers/system/menu'
+import { setMenuList } from '@/stores/menu'
 import { ADD_TITLE, EDIT_TITLE, INIT_PAGINATION } from '@/utils/config'
 import { checkPermission } from '@/utils/permissions'
-
-import { searchList, createList, tableColumns } from './model'
-
-import type { FormData } from '#/form'
-import type { PagePermission } from '#/public'
 
 // 当前行数据
 interface RowData {
@@ -33,6 +43,7 @@ const initCreate = {
 
 const Page = () => {
   const { t } = useTranslation()
+  const dispatch = useDispatch()
   const createFormRef = useRef<FormInstance>(null)
   const columns = tableColumns(t, optionRender)
   const [isFetch, setFetch] = useState(false)
@@ -102,22 +113,43 @@ const Page = () => {
     try {
       const { code, data } = await getAllMenus()
       if (Number(code) === 200) {
-        setParentOptions((data || []).map((m: FormData) => ({
-          label: m.label as string,
-          value: m.id as number,
-        })))
+        setParentOptions(
+          (data || []).map((m: FormData) => ({
+            label: m.label as string,
+            value: m.id as number,
+          }))
+        )
       }
     } catch (error) {
       console.error('加载菜单选项失败:', error)
     }
   }
 
+  /**
+   * 菜单增删改后同步刷新两侧数据：
+   * 左侧导航数据源存于 store（仅 layout 挂载时拉一次），父级下拉也只在首次进入拉取，
+   * 不主动刷新就会出现“新建菜单要重登才看得到”、“新建的菜单当不了父级”。
+   */
+  const refreshMenuCache = useCallback(async () => {
+    try {
+      const { code, data } = await getMenuList()
+      if (Number(code) === 200) {
+        dispatch(setMenuList(data || []))
+      }
+    } catch (error) {
+      console.error('刷新导航菜单失败:', error)
+    }
+    loadParentOptions()
+  }, [dispatch])
+
   /** 点击新增 */
   const onCreate = () => {
     setCreateOpen(true)
     setCreateTitle(ADD_TITLE(t))
     setCreateId('')
-    setCreateData(initCreate)
+    // 必须传入新对象：initCreate 是模块级常量，重复使用同一引用时 BasicForm 的
+    // useEffect 不会触发 resetFields，导致第二次「新增」沿用上次的路由地址/排序
+    setCreateData({ ...initCreate })
   }
 
   /**
@@ -185,6 +217,7 @@ const Page = () => {
       message.success(msg || t('public.successfulOperation'))
       setCreateOpen(false)
       getPage()
+      refreshMenuCache()
     } finally {
       setCreateLoading(false)
     }
@@ -201,6 +234,7 @@ const Page = () => {
       if (Number(code) === 200) {
         message.success(msg || t('public.successfullyDeleted'))
         getPage()
+        refreshMenuCache()
       }
     } finally {
       setLoading(false)
@@ -246,7 +280,6 @@ const Page = () => {
 
   return (
     <BasicContent isPermission={pagePermission.page}>
-
       <BasicSearch
         list={searchList(t)}
         data={searchData}

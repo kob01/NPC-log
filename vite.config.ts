@@ -32,6 +32,11 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_API_BASE_URL,
           changeOrigin: true,
         },
+        // 后端静态图片资源代理（dev 环境下 /uploads 相对路径可访问）
+        '/uploads': {
+          target: env.VITE_API_BASE_URL,
+          changeOrigin: true,
+        },
       },
     },
     build: buildOptions(),
