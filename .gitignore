@@ -1,4 +1,4 @@
-# Logs
+public/version.json
 logs
 *.log
 npm-debug.log*

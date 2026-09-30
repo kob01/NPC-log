@@ -4,6 +4,8 @@
  *   以便 html-to-image 导出时不依赖外部样式表（Tailwind/Uno class 复制不可靠）。
  * - Phase 1 仅实现 single；summary / footprint 暂复用 single 布局，Phase 2 再各自细化。
  */
+import { useEffect, useState } from 'react'
+
 import type { FC, CSSProperties } from 'react'
 
 import { resolveFileUrl } from '@/utils/config'
@@ -57,10 +59,16 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: 18,
     overflow: 'hidden',
     boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-    fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif',
+    fontFamily:
+      '-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif',
     color: '#2c3e50',
   },
-  cover: { width: '100%', height: 200, objectFit: 'cover', display: 'block' },
+  /** 横图在上：全宽自然高度，不用 objectFit（html-to-image 导出时会忽略它导致拉伸） */
+  coverH: { width: '100%', height: 'auto', display: 'block' },
+  /** 竖图在左：图文双栏 */
+  vWrap: { display: 'flex', alignItems: 'flex-start', gap: 12, padding: '18px 20px 8px' },
+  vImg: { width: 108, height: 'auto', display: 'block', borderRadius: 10, flexShrink: 0 },
+  vText: { flex: 1, minWidth: 0 },
   body: { padding: '18px 20px 8px' },
   meta: {
     display: 'flex',
@@ -94,41 +102,92 @@ const styles: Record<string, CSSProperties> = {
   place: { display: 'flex', alignItems: 'center', gap: 4, color: '#e05a5a' },
 }
 
-/** 单篇日记分享卡 */
+/** 单篇日记分享卡：横图在上、竖图在左，均保持原图宽高比不拉伸 */
 export const SingleCard: FC<TemplateProps> = ({ data, hideImages, watermark }) => {
-  const cover = (data.images || []).map((img) => resolveFileUrl(img.url || img.thumbUrl)).filter(Boolean)[0]
+  const cover = (data.images || [])
+    .map((img) => resolveFileUrl(img.url || img.thumbUrl))
+    .filter(Boolean)[0]
   const title = data.copy?.title || data.event || ''
   const body = data.copy?.body || data.summary || (data.content || '').slice(0, 200) || ''
   const hashtags = data.copy?.hashtags || []
   const place = data.position || data.address || ''
 
+  // 预加载探测封面横竖（加载前默认横图）
+  const [vertical, setVertical] = useState(false)
+  useEffect(() => {
+    if (!cover) {
+      setVertical(false)
+      return
+    }
+    let alive = true
+    const probe = new Image()
+    probe.onload = () => {
+      if (alive) {
+        setVertical(probe.naturalHeight > probe.naturalWidth)
+      }
+    }
+    probe.onerror = () => {
+      if (alive) {
+        setVertical(false)
+      }
+    }
+    probe.src = cover
+    return () => {
+      alive = false
+    }
+  }, [cover])
+
+  const textBlock = (
+    <>
+      <div style={styles.meta}>
+        {data.type && <span style={styles.typeTag}>{data.type}</span>}
+        <span>{data.time || ''}</span>
+      </div>
+      {title && <div style={styles.title}>{title}</div>}
+      {body && <p style={styles.text}>{body}</p>}
+      {hashtags.length > 0 && (
+        <div style={styles.tags}>
+          {hashtags.map((h, i) => (
+            <span key={`${h}-${i}`} style={styles.tag}>
+              {h}
+            </span>
+          ))}
+        </div>
+      )}
+    </>
+  )
+
+  const footer = (
+    <div style={styles.footer}>
+      <span>{data.author ? `@${data.author}` : ''}</span>
+      <div style={styles.place}>
+        {place && <span>📍 {place}</span>}
+        <span style={{ marginLeft: 8, color: '#c0c6cf' }}>{watermark}</span>
+      </div>
+    </div>
+  )
+
+  const showCover = !hideImages && !!cover
+
+  if (showCover && vertical) {
+    // 竖图在左，文案排在右侧
+    return (
+      <div style={styles.card}>
+        <div style={styles.vWrap}>
+          <img style={styles.vImg} src={cover} alt='' />
+          <div style={styles.vText}>{textBlock}</div>
+        </div>
+        {footer}
+      </div>
+    )
+  }
+
+  // 横图在上（或无图/隐藏图）
   return (
     <div style={styles.card}>
-      {!hideImages && cover && <img style={styles.cover} src={cover} alt='' />}
-      <div style={styles.body}>
-        <div style={styles.meta}>
-          {data.type && <span style={styles.typeTag}>{data.type}</span>}
-          <span>{data.time || ''}</span>
-        </div>
-        {title && <div style={styles.title}>{title}</div>}
-        {body && <p style={styles.text}>{body}</p>}
-        {hashtags.length > 0 && (
-          <div style={styles.tags}>
-            {hashtags.map((h, i) => (
-              <span key={`${h}-${i}`} style={styles.tag}>
-                {h}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-      <div style={styles.footer}>
-        <span>{data.author ? `@${data.author}` : ''}</span>
-        <div style={styles.place}>
-          {place && <span>📍 {place}</span>}
-          <span style={{ marginLeft: 8, color: '#c0c6cf' }}>{watermark}</span>
-        </div>
-      </div>
+      {showCover && <img style={styles.coverH} src={cover} alt='' />}
+      <div style={styles.body}>{textBlock}</div>
+      {footer}
     </div>
   )
 }
