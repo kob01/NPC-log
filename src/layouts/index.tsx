@@ -13,6 +13,7 @@ import { getPermissions } from '@/servers/permissions'
 import { getMenuList } from '@/servers/system/menu'
 import { setMenuList, toggleCollapsed, togglePhone } from '@/stores/menu'
 import { setPermissions, setUserInfo } from '@/stores/user'
+import { MOBILE_MAX_WIDTH } from '@/utils/config'
 
 import Header from './components/Header'
 import Menu from './components/Menu'
@@ -30,7 +31,6 @@ const Layout = () => {
   const token = getToken()
   const outlet = useOutlet()
   const [isLoading, setLoading] = useState(true)
-
 
   const { permissions, userId, isMaximize, isCollapsed, isPhone, isRefresh } = useCommonStore()
 
@@ -93,14 +93,15 @@ const Layout = () => {
   /** 判断是否是手机端 */
   const handleIsPhone = useDebounceFn(
     () => {
-      const isPhone = window.innerWidth <= 768
+      // 仅做响应式降级（收缩菜单）；是否要走移动版页面由 useMobileRedirect 按设备判定
+      const isPhone = window.innerWidth <= MOBILE_MAX_WIDTH
       // 手机首次进来收缩菜单
       if (isPhone) {
         dispatch(toggleCollapsed(true))
       }
       dispatch(togglePhone(isPhone))
     },
-    { wait: 500 }
+    { wait: 500 },
   )
 
   // 监听是否是手机端
@@ -142,9 +143,7 @@ const Layout = () => {
             ${isPhone ? `!left-0 !w-full` : ''}
           `}
         >
-          {isLoading && permissions.length === 0 && (
-            <Skeleton active className='p-30px' paragraph={{ rows: 10 }} />
-          )}
+          {isLoading && permissions.length === 0 && <Skeleton active className='p-30px' paragraph={{ rows: 10 }} />}
           {!isLoading && permissions.length === 0 && <Forbidden />}
           {isRefresh && (
             <div

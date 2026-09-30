@@ -10,13 +10,8 @@ import { useTranslation } from 'react-i18next'
 
 import type { MenuProps } from 'antd'
 
-import {
-  buildAmapMarkerUrl,
-  buildAmapNavigationUrl,
-  buildAmapSearchUrl,
-  buildFallbackNavUrls,
-  isMobileDevice,
-} from '@/utils/nav'
+import { isMobileDevice } from '@/utils/device'
+import { buildAmapMarkerUrl, buildAmapNavigationUrl, buildAmapSearchUrl, buildFallbackNavUrls } from '@/utils/nav'
 
 export interface NavLinksProps {
   /** GCJ-02 经度 */
@@ -52,9 +47,7 @@ const NavLinks = (props: NavLinksProps) => {
   const amapNavUrl = hasCoord ? buildAmapNavigationUrl({ lng, lat, name: position }) : ''
   const amapMarkerUrl = hasCoord ? buildAmapMarkerUrl({ lng, lat, name: position }) : ''
   const amapSearchUrl = !hasCoord && position ? buildAmapSearchUrl(position) : ''
-  const fallbackUrls = hasCoord
-    ? buildFallbackNavUrls({ lng, lat, name: position })
-    : { google: '', apple: '' }
+  const fallbackUrls = hasCoord ? buildFallbackNavUrls({ lng, lat, name: position }) : { google: '', apple: '' }
 
   // 主链接（点击行为）
   const primaryUrl = amapNavUrl || amapMarkerUrl || amapSearchUrl || ''

@@ -3,54 +3,36 @@ import {
   HistoryOutlined,
   ReloadOutlined,
   SearchOutlined,
+  ShareAltOutlined,
   TagsOutlined,
   ThunderboltOutlined,
   UserOutlined,
 } from '@ant-design/icons'
-import {
-  Alert,
-  Button,
-  Card,
-  Empty,
-  Image,
-  Input,
-  Space,
-  Spin,
-  Tag,
-  Typography,
-  message,
-} from 'antd'
+import { Alert, Button, Card, Empty, Image, Input, Space, Spin, Tag, Typography, message } from 'antd'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
-import type {
-  MemoryAskResult,
-  MemorySearchItem,
-  MemorySummaryResult,
-  TagCountItem,
-} from '@/servers/content/memory'
+import type { CardData } from '@/components/ShareCard/templates'
+import type { ShareCopyResult, SocialPlatform } from '@/servers/content/event'
+import type { MemoryAskResult, MemorySearchItem, MemorySummaryResult, TagCountItem } from '@/servers/content/memory'
 
 import BasicContent from '@/components/Content/BasicContent'
 import NavLinks from '@/components/NavLinks'
+import ShareCardModal from '@/components/ShareCard'
 import { useCommonStore } from '@/hooks/useCommonStore'
-import { askMemory, getMemorySummary, getMemoryTags, searchMemory } from '@/servers/content/memory'
+import { useMobileRedirect } from '@/hooks/useMobileRedirect'
+import { askMemory, generateMemoryShareCopy, getMemorySummary, getMemoryTags, isAiNotConfigured, searchMemory } from '@/servers/content/memory'
 import { EMPTY_VALUE, resolveFileUrl } from '@/utils/config'
 import { checkPermission } from '@/utils/permissions'
-
-// AI 未配置时后端返回的业务错误关键字（用于降级提示而非红色报错）
-const NOT_CONFIGURED_HINT = 'AI 未配置'
-
-/**
- * 判断接口错误是否为“AI 未配置”降级场景
- * @param msg - 后端 message
- */
-const isNotConfigured = (msg?: string) => !!msg && msg.includes(NOT_CONFIGURED_HINT)
 
 const Page = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { permissions } = useCommonStore()
+
+  // 手机访问记忆页时切到移动版（单列布局）
+  const toMobile = useMobileRedirect('/m/memory')
 
   // ==================== 问答 ====================
   const [question, setQuestion] = useState('')
@@ -74,9 +56,32 @@ const Page = () => {
   const [summary, setSummary] = useState<MemorySummaryResult | null>(null)
   const [summaryLoading, setSummaryLoading] = useState(false)
   const [summaryNotConfigured, setSummaryNotConfigured] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
+
+  /** 月度回顾分享卡：把当前摘要交给 AI 改写 */
+  const summaryCardData: CardData = {
+    time: summary?.period,
+    event: `${summary?.period || ''} 月度回顾`,
+    summary: summary?.summary,
+    tags: summary?.keywords,
+  }
+
+  const getSummaryCopy = useCallback(
+    async (platform: SocialPlatform): Promise<ShareCopyResult | null> => {
+      const { code, data } = await generateMemoryShareCopy({
+        month: summary?.period,
+        platform,
+      })
+      return Number(code) === 200 && data ? data : null
+    },
+    [summary?.period],
+  )
 
   // 热门标签：进入页面即拉取（不依赖 AI 密钥）
   useEffect(() => {
+    if (toMobile) {
+      return
+    }
     const loadTags = async () => {
       try {
         const { code, data } = await getMemoryTags()
@@ -116,7 +121,7 @@ const Page = () => {
       const { code, message: msg, data } = await askMemory(q)
       if (Number(code) === 200 && data) {
         setAskResult(data)
-      } else if (isNotConfigured(msg)) {
+      } else if (isAiNotConfigured(msg)) {
         setAskNotConfigured(true)
       } else {
         setAskError(msg || t('content.memoryAiFailed'))
@@ -159,7 +164,7 @@ const Page = () => {
         setSearching(false)
       }
     },
-    [keyword, limit, t]
+    [keyword, limit, t],
   )
 
   /**
@@ -179,7 +184,7 @@ const Page = () => {
       const { code, message: msg, data } = await getMemorySummary()
       if (Number(code) === 200 && data) {
         setSummary(data)
-      } else if (isNotConfigured(msg)) {
+      } else if (isAiNotConfigured(msg)) {
         setSummaryNotConfigured(true)
       } else {
         message.warning(msg || t('content.memorySummaryEmpty'))
@@ -206,24 +211,9 @@ const Page = () => {
   const renderCard = (item: MemorySearchItem) => {
     const thumb = resolveFileUrl(item.firstThumb)
     return (
-      <Card
-        key={item.id}
-        size='small'
-        hoverable
-        className='mb-3'
-        onClick={() => goDetail(item.id)}
-        styles={{ body: { padding: 12 } }}
-      >
+      <Card key={item.id} size='small' hoverable className='mb-3' onClick={() => goDetail(item.id)} styles={{ body: { padding: 12 } }}>
         <div className='flex gap-3'>
-          {thumb ? (
-            <Image
-              src={thumb}
-              width={72}
-              height={72}
-              style={{ objectFit: 'cover', borderRadius: 6 }}
-              preview={false}
-            />
-          ) : null}
+          {thumb ? <Image src={thumb} width={72} height={72} style={{ objectFit: 'cover', borderRadius: 6 }} preview={false} /> : null}
           <div className='flex-1 min-w-0'>
             <div className='flex items-center justify-between gap-2'>
               <Typography.Text strong ellipsis className='flex-1'>
@@ -256,13 +246,7 @@ const Page = () => {
             </Space>
 
             <div className='mt-1 flex items-center justify-between'>
-              <NavLinks
-                lng={item.lng}
-                lat={item.lat}
-                position={item.position}
-                address={item.address}
-                compact
-              />
+              <NavLinks lng={item.lng} lat={item.lat} position={item.position} address={item.address} compact />
               <Typography.Text type='secondary' style={{ fontSize: 12 }}>
                 {t('content.memoryRelevance')} {Math.round(item.score * 100)}%
               </Typography.Text>
@@ -271,6 +255,11 @@ const Page = () => {
         </div>
       </Card>
     )
+  }
+
+  // 已判定走移动版，等重定向生效，不再渲染桌面双栏
+  if (toMobile) {
+    return null
   }
 
   return (
@@ -303,12 +292,7 @@ const Page = () => {
               }}
             />
             <div className='mt-3'>
-              <Button
-                type='primary'
-                icon={<ThunderboltOutlined />}
-                loading={asking}
-                onClick={handleAsk}
-              >
+              <Button type='primary' icon={<ThunderboltOutlined />} loading={asking} onClick={handleAsk}>
                 {t('content.memoryAskBtn')}
               </Button>
             </div>
@@ -319,25 +303,13 @@ const Page = () => {
               </div>
             )}
 
-            {askNotConfigured && (
-              <Alert
-                className='mt-3'
-                type='info'
-                showIcon
-                message={t('content.memoryAskNotConfigured')}
-              />
-            )}
+            {askNotConfigured && <Alert className='mt-3' type='info' showIcon message={t('content.memoryAskNotConfigured')} />}
 
             {askError && <Alert className='mt-3' type='error' showIcon message={askError} />}
 
             {askResult && (
               <div className='mt-3'>
-                <Alert
-                  type='success'
-                  showIcon
-                  message={askResult.answer}
-                  style={{ whiteSpace: 'pre-wrap', alignItems: 'flex-start' }}
-                />
+                <Alert type='success' showIcon message={askResult.answer} style={{ whiteSpace: 'pre-wrap', alignItems: 'flex-start' }} />
                 {askResult.references?.length > 0 && (
                   <div className='mt-2'>
                     <Typography.Text type='secondary' style={{ fontSize: 12 }}>
@@ -345,14 +317,8 @@ const Page = () => {
                     </Typography.Text>
                     <div className='mt-1 flex flex-col gap-1'>
                       {askResult.references.map((ref) => (
-                        <Typography.Link
-                          key={ref.id}
-                          onClick={() => goDetail(ref.id)}
-                          ellipsis
-                          style={{ fontSize: 12 }}
-                        >
-                          {ref.time || EMPTY_VALUE} 《{ref.event || EMPTY_VALUE}》
-                          {ref.summary ? ` — ${ref.summary}` : ''}
+                        <Typography.Link key={ref.id} onClick={() => goDetail(ref.id)} ellipsis style={{ fontSize: 12 }}>
+                          {ref.time || EMPTY_VALUE} 《{ref.event || EMPTY_VALUE}》{ref.summary ? ` — ${ref.summary}` : ''}
                         </Typography.Link>
                       ))}
                     </div>
@@ -380,12 +346,7 @@ const Page = () => {
             {tags.length ? (
               <Space size={[6, 8]} wrap>
                 {tags.map((item) => (
-                  <Tag
-                    key={item.tag}
-                    color='geekblue'
-                    style={{ cursor: 'pointer', marginRight: 0 }}
-                    onClick={() => onTagClick(item.tag)}
-                  >
+                  <Tag key={item.tag} color='geekblue' style={{ cursor: 'pointer', marginRight: 0 }} onClick={() => onTagClick(item.tag)}>
                     {item.tag} · {item.count}
                   </Tag>
                 ))}
@@ -406,36 +367,28 @@ const Page = () => {
             }
             size='small'
             extra={
-              <Button
-                type='link'
-                size='small'
-                icon={<ReloadOutlined />}
-                loading={summaryLoading}
-                onClick={handleSummary}
-              >
-                {summary ? t('public.reload') : t('content.memorySummaryGenBtn')}
-              </Button>
+              <Space size={4}>
+                {summary?.summary ? (
+                  <Button type='link' size='small' icon={<ShareAltOutlined />} onClick={() => setShareOpen(true)}>
+                    {t('content.shareBtn')}
+                  </Button>
+                ) : null}
+                <Button type='link' size='small' icon={<ReloadOutlined />} loading={summaryLoading} onClick={handleSummary}>
+                  {summary ? t('public.reload') : t('content.memorySummaryGenBtn')}
+                </Button>
+              </Space>
             }
           >
-            {summaryNotConfigured && (
-              <Alert type='info' showIcon message={t('content.memorySummaryNotConfigured')} />
-            )}
+            {summaryNotConfigured && <Alert type='info' showIcon message={t('content.memorySummaryNotConfigured')} />}
 
             {summary && summary.summary ? (
               <div>
-                <Typography.Text style={{ whiteSpace: 'pre-wrap' }}>
-                  {summary.summary}
-                </Typography.Text>
+                <Typography.Text style={{ whiteSpace: 'pre-wrap' }}>{summary.summary}</Typography.Text>
                 {summary.keywords?.length > 0 && (
                   <div className='mt-2'>
                     <Space size={[4, 4]} wrap>
                       {summary.keywords.map((k) => (
-                        <Tag
-                          key={k}
-                          color='cyan'
-                          style={{ cursor: 'pointer', marginRight: 0 }}
-                          onClick={() => onTagClick(k)}
-                        >
+                        <Tag key={k} color='cyan' style={{ cursor: 'pointer', marginRight: 0 }} onClick={() => onTagClick(k)}>
                           {k}
                         </Tag>
                       ))}
@@ -445,9 +398,7 @@ const Page = () => {
                 <div className='mt-2'>
                   <Typography.Text type='secondary' style={{ fontSize: 12 }}>
                     {summary.period}
-                    {summary.generatedAt
-                      ? ` · ${t('content.memorySummaryGenerated')} ${summary.generatedAt}`
-                      : ''}
+                    {summary.generatedAt ? ` · ${t('content.memorySummaryGenerated')} ${summary.generatedAt}` : ''}
                     {summary.cached ? ` · ${t('content.memorySummaryCached')}` : ''}
                   </Typography.Text>
                 </div>
@@ -470,12 +421,7 @@ const Page = () => {
             </Space>
           }
         >
-          <Search
-            inputKeyword={keyword}
-            searching={searching}
-            onChangeKeyword={setKeyword}
-            onSearch={handleSearch}
-          />
+          <Search inputKeyword={keyword} searching={searching} onChangeKeyword={setKeyword} onSearch={handleSearch} />
 
           <Spin spinning={searching}>
             <div className='mt-4'>
@@ -494,17 +440,15 @@ const Page = () => {
                   )}
                 </>
               ) : (
-                <Empty
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description={
-                    searched ? t('content.memorySearchEmpty') : t('content.memorySearchHint')
-                  }
-                />
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={searched ? t('content.memorySearchEmpty') : t('content.memorySearchHint')} />
               )}
             </div>
           </Spin>
         </Card>
       </div>
+
+      {/* 月度回顾分享卡 */}
+      <ShareCardModal open={shareOpen} onClose={() => setShareOpen(false)} type='summary' data={summaryCardData} getCopy={getSummaryCopy} />
     </BasicContent>
   )
 }
@@ -514,11 +458,7 @@ const Page = () => {
  * @param text - 摘要文本
  */
 const ParagraphEllipsis = ({ text }: { text: string }) => (
-  <Typography.Paragraph
-    ellipsis={{ rows: 2 }}
-    type='secondary'
-    style={{ fontSize: 12, marginBottom: 4, marginTop: 2 }}
-  >
+  <Typography.Paragraph ellipsis={{ rows: 2 }} type='secondary' style={{ fontSize: 12, marginBottom: 4, marginTop: 2 }}>
     {text}
   </Typography.Paragraph>
 )
@@ -526,12 +466,7 @@ const ParagraphEllipsis = ({ text }: { text: string }) => (
 /**
  * 搜索输入区
  */
-const Search = (props: {
-  inputKeyword: string
-  searching: boolean
-  onChangeKeyword: (v: string) => void
-  onSearch: (v?: string) => void
-}) => {
+const Search = (props: { inputKeyword: string; searching: boolean; onChangeKeyword: (v: string) => void; onSearch: (v?: string) => void }) => {
   const { inputKeyword, searching, onChangeKeyword, onSearch } = props
   const { t } = useTranslation()
   return (

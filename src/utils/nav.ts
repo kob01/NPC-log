@@ -68,16 +68,6 @@ export function buildFallbackNavUrls({ lng, lat, name }: NavTarget): {
 }
 
 /**
- * 判断当前是否为移动设备
- */
-export function isMobileDevice(): boolean {
-  if (typeof navigator === 'undefined') {
-    return false
-  }
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-}
-
-/**
  * 获取最佳导航 URL（根据是否有坐标选择策略）
  * - 有坐标：高德精确导航
  * - 无坐标但有关键词：高德搜索

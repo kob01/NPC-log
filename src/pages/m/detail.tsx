@@ -2,9 +2,9 @@
  * 移动端详情页（/m/detail?id=）
  * - 大图浏览：Image.PreviewGroup 点击全屏
  * - 地点卡片：有坐标时提供高德驾车/公交/步行导航入口（唤起 App / 网页版）
- * - 纯浏览定位：编辑请去桌面端（底部提示条）
+ * - 底部编辑入口：跳 /m/edit，与桌面端共用同一套表单逻辑
  */
-import { EditOutlined, EnvironmentOutlined, LeftOutlined } from '@ant-design/icons'
+import { EditOutlined, EnvironmentOutlined, LeftOutlined, ShareAltOutlined } from '@ant-design/icons'
 import { Image, Spin, Tag } from 'antd'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -13,9 +13,11 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import type { EventImageDetail } from '@/servers/content/event'
 
 import NavLinks from '@/components/NavLinks'
+import ShareCardModal from '@/components/ShareCard'
 import { getNPCEventById } from '@/servers/content/event'
 import { EMPTY_VALUE, resolveFileUrl } from '@/utils/config'
-import { buildAmapNavigationUrl, isMobileDevice } from '@/utils/nav'
+import { isMobileDevice } from '@/utils/device'
+import { buildAmapNavigationUrl } from '@/utils/nav'
 
 interface DetailData {
   time?: string
@@ -44,6 +46,7 @@ const MobileDetail = () => {
   const [data, setData] = useState<DetailData | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
 
   // 用 useLocation 读 search（与桌面页一致，兼容未来 hash 路由）
   const { search } = useLocation()
@@ -85,10 +88,7 @@ const MobileDetail = () => {
     return (
       <div className='text-center mt-100px text-gray-500'>
         <p>{t('content.mobileNotFound')}</p>
-        <button
-          className='text-blue-500 bg-transparent border-none text-14px'
-          onClick={() => navigate('/m')}
-        >
+        <button className='text-blue-500 bg-transparent border-none text-14px' onClick={() => navigate('/m')}>
           {t('content.mobileBackTimeline')}
         </button>
       </div>
@@ -122,6 +122,13 @@ const MobileDetail = () => {
         )}
         <span>{data.time || EMPTY_VALUE}</span>
         {data.author && <span>@{data.author}</span>}
+        <button
+          type='button'
+          onClick={() => setShareOpen(true)}
+          className='ml-auto inline-flex items-center gap-1 px-3 py-1 rounded-full text-12px text-white bg-blue-500 border-none cursor-pointer'
+        >
+          <ShareAltOutlined /> {t('content.shareBtn')}
+        </button>
       </div>
 
       {/* AI 摘要 */}
@@ -137,22 +144,11 @@ const MobileDetail = () => {
         <div className='mb-3 rounded-10px overflow-hidden'>
           <Image.PreviewGroup>
             {images.length === 1 ? (
-              <Image
-                src={images[0]}
-                alt=''
-                className='w-full object-cover'
-                style={{ maxHeight: '60vh' }}
-              />
+              <Image src={images[0]} alt='' className='w-full object-cover' style={{ maxHeight: '60vh' }} />
             ) : (
               <div className='grid grid-cols-3 gap-2'>
                 {images.map((src, idx) => (
-                  <Image
-                    key={`${src}-${idx}`}
-                    src={src}
-                    alt=''
-                    className='w-full aspect-square object-cover'
-                    style={{ borderRadius: 8 }}
-                  />
+                  <Image key={`${src}-${idx}`} src={src} alt='' className='w-full aspect-square object-cover' style={{ borderRadius: 8 }} />
                 ))}
               </div>
             )}
@@ -191,9 +187,7 @@ const MobileDetail = () => {
           </div>
           <div className='text-13px text-gray-600'>
             {data.position || data.address || EMPTY_VALUE}
-            {data.address && data.position && data.address !== data.position && (
-              <div className='text-12px text-gray-400 mt-1'>{data.address}</div>
-            )}
+            {data.address && data.position && data.address !== data.position && <div className='text-12px text-gray-400 mt-1'>{data.address}</div>}
           </div>
           {hasCoord ? (
             <div className='mt-3 flex flex-col gap-2'>
@@ -232,12 +226,7 @@ const MobileDetail = () => {
                   </div>
                 </>
               ) : (
-                <NavLinks
-                  lng={data.lng}
-                  lat={data.lat}
-                  position={data.position}
-                  address={data.address}
-                />
+                <NavLinks lng={data.lng} lat={data.lat} position={data.position} address={data.address} />
               )}
             </div>
           ) : (
@@ -248,11 +237,24 @@ const MobileDetail = () => {
         </div>
       )}
 
-      {/* 编辑入口提示（纯浏览定位） */}
-      <div className='mt-5 py-3 text-center text-12px text-gray-400 border-t border-gray-200'>
-        <EditOutlined className='mr-1' />
-        {t('content.mobileEditTip')}
+      {/* 编辑入口 */}
+      <div className='mt-5 pt-3 border-t border-gray-200'>
+        <button
+          type='button'
+          onClick={() => navigate(`/m/edit?id=${id}`)}
+          className='
+            w-full flex items-center justify-center gap-1 py-2
+            rounded-8px text-14px bg-blue-500 text-white
+            border-none cursor-pointer
+          '
+        >
+          <EditOutlined />
+          {t('content.mobileEditBtn')}
+        </button>
       </div>
+
+      {/* 社媒分享卡片弹窗 */}
+      <ShareCardModal open={shareOpen} onClose={() => setShareOpen(false)} data={{ ...data, id: id ?? undefined, images: data.images }} />
     </div>
   )
 }

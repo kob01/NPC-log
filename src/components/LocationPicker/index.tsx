@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { isAmapConfigured, loadAmap } from '@/utils/amap'
+import { isNarrowViewport } from '@/utils/device'
 
 /** 地点复合值 */
 export interface LocationValue {
@@ -84,6 +85,8 @@ const LocationPicker = (props: LocationPickerProps) => {
   const mapSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   // 用户是否手动修改过 position
   const userModifiedPosition = useRef(false)
+  // 地图 Modal 初始化时的坐标（用 ref 避免 initMap 依赖 tempCoord 导致重建）
+  const initCoordRef = useRef<{ lng: number; lat: number } | null>(null)
   // 已处理过的 initialCoordinate
   const processedCoord = useRef<string>('')
 
@@ -111,7 +114,11 @@ const LocationPicker = (props: LocationPickerProps) => {
     try {
       const AMap = await loadAmap()
       if (!geocoderRef.current) {
-        geocoderRef.current = new (AMap as unknown as { Geocoder: new (opts?: { extensions?: string; radius?: number }) => unknown }).Geocoder({
+        geocoderRef.current = new (
+          AMap as unknown as {
+            Geocoder: new (opts?: { extensions?: string; radius?: number }) => unknown
+          }
+        ).Geocoder({
           extensions: 'all',
           radius: 200,
         })
@@ -364,7 +371,9 @@ const LocationPicker = (props: LocationPickerProps) => {
       return
     }
     setMapSearchOptions([])
-    setTempCoord(value?.lng != null && value?.lat != null ? { lng: value.lng, lat: value.lat } : null)
+    const initialCoord = value?.lng != null && value?.lat != null ? { lng: value.lng, lat: value.lat } : null
+    initCoordRef.current = initialCoord
+    setTempCoord(initialCoord)
     setTempAddress(value?.address || '')
     setTempPosition(value?.position || '')
     setMapError(false)
@@ -389,11 +398,11 @@ const LocationPicker = (props: LocationPickerProps) => {
         markerRef.current = null
       }
 
-      const center = tempCoord ? [tempCoord.lng, tempCoord.lat] : DEFAULT_CENTER
+      const center = initCoordRef.current ? [initCoordRef.current.lng, initCoordRef.current.lat] : DEFAULT_CENTER
 
       const MapConstructor = AMapNS.Map as new (el: HTMLElement, opts: Record<string, unknown>) => unknown
       const map = new MapConstructor(mapContainerRef.current, {
-        zoom: tempCoord ? 15 : DEFAULT_ZOOM,
+        zoom: initCoordRef.current ? 15 : DEFAULT_ZOOM,
         center,
         resizeEnable: true,
       })
@@ -436,19 +445,19 @@ const LocationPicker = (props: LocationPickerProps) => {
       ;(map as { addControl: (c: unknown) => void }).addControl(toolbar)
 
       // 如果没有初始坐标，尝试浏览器定位
-      if (!tempCoord) {
+      if (!initCoordRef.current) {
         tryGeolocation(AMapNS, map)
       }
 
       // 如果有初始坐标，做逆地理编码
-      if (tempCoord) {
-        doReverseGeocode(tempCoord.lng, tempCoord.lat)
+      if (initCoordRef.current) {
+        doReverseGeocode(initCoordRef.current.lng, initCoordRef.current.lat)
       }
     } catch {
       setMapError(true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tempCoord])
+  }, [])
 
   /**
    * 尝试浏览器定位
@@ -643,7 +652,7 @@ const LocationPicker = (props: LocationPickerProps) => {
         title={t('content.mapPicker')}
         open={mapVisible}
         onCancel={handleMapCancel}
-        width={720}
+        width={mapVisible && isNarrowViewport() ? '94%' : 720}
         destroyOnClose
         footer={[
           <Button key='clear' onClick={handleClearCoord}>
@@ -678,7 +687,14 @@ const LocationPicker = (props: LocationPickerProps) => {
                 {tempCoord ? ` · ${tempCoord.lng.toFixed(6)}, ${tempCoord.lat.toFixed(6)}` : ''}
               </Typography.Text>
             </Spin>
-            <div ref={mapContainerRef} style={{ width: '100%', height: 400, borderRadius: 6 }} />
+            <div
+              ref={mapContainerRef}
+              style={{
+                width: '100%',
+                height: mapVisible && isNarrowViewport() ? '45vh' : 400,
+                borderRadius: 6,
+              }}
+            />
           </div>
         )}
       </Modal>

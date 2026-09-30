@@ -19,6 +19,7 @@ import BasicPagination from '@/components/Pagination/BasicPagination'
 import BasicSearch from '@/components/Search/BasicSearch'
 import BasicTable from '@/components/Table/BasicTable'
 import { useCommonStore } from '@/hooks/useCommonStore'
+import { useMobileRedirect } from '@/hooks/useMobileRedirect'
 import { getNPCEventPage, getAllNPCEvents, deleteNPCEvent } from '@/servers/content/event'
 import { setRefreshPage } from '@/stores/public'
 import { setMenuClick } from '@/stores/tabs'
@@ -35,8 +36,7 @@ interface RowData {
 
 // “只看自己日志”开关的提示文案
 const ONLY_MINE_TIP =
-  '开启后全局只看自己的日志：列表/导出、AI 记忆检索与问答、月度/年度摘要、' +
-  '热门标签、人物图谱、地图足迹都只统计本人数据，避开他人日志干扰分析'
+  '开启后全局只看自己的日志：列表/导出、AI 记忆检索与问答、月度/年度摘要、' + '热门标签、人物图谱、地图足迹都只统计本人数据，避开他人日志干扰分析'
 
 const Page = () => {
   const { t } = useTranslation()
@@ -70,11 +70,13 @@ const Page = () => {
   // 管理员（可操作他人日志）
   const isAdmin = checkPermission('/authority/user/index', permissions)
 
+  // 手机访问桌面列表：重定向到移动浏览页，并跳过硬渲染表格/拉取列表
+  const toMobile = useMobileRedirect()
+
   // 页面首次加载或从菜单点击进入时请求数据
   useEffect(() => {
-    // 窄视口（手机）访问桌面列表时自动重定向到移动浏览页
-    if (window.innerWidth <= 768) {
-      navigate('/m', { replace: true })
+    // 已判定走移动版，等重定向生效，不再发起本页的数据请求
+    if (toMobile) {
       return
     }
     // 首次进入页面（未请求过数据）
@@ -238,12 +240,7 @@ const Page = () => {
         exportColumns.forEach((col) => {
           if (col.key === 'visibility') {
             const orgNames = (item.visibleOrgNames as string) || ''
-            formatted[col.title] =
-              Number(item[col.key]) === 1
-                ? orgNames
-                  ? `组织可见·${orgNames}`
-                  : '组织可见'
-                : '仅自己可见'
+            formatted[col.title] = Number(item[col.key]) === 1 ? (orgNames ? `组织可见·${orgNames}` : '组织可见') : '仅自己可见'
           } else {
             formatted[col.title] = (item[col.key] as string) ?? ''
           }
@@ -252,11 +249,7 @@ const Page = () => {
       })
 
       // 导出
-      const success = exportToExcel(
-        exportData,
-        `事件记录_${new Date().toLocaleDateString()}`,
-        '事件记录'
-      )
+      const success = exportToExcel(exportData, `事件记录_${new Date().toLocaleDateString()}`, '事件记录')
       if (success) {
         message.success('导出成功', 3)
       } else {
@@ -278,16 +271,8 @@ const Page = () => {
     const canOperate = row.is_mine || isAdmin
     return (
       <>
-        {pagePermission.update === true && canOperate && (
-          <UpdateBtn className='mr-5px' isLoading={isLoading} onClick={() => onUpdate(row.id)} />
-        )}
-        {pagePermission.delete === true && canOperate && (
-          <DeleteBtn
-            className='mr-5px'
-            isLoading={isLoading}
-            handleDelete={() => onDelete(row.id)}
-          />
-        )}
+        {pagePermission.update === true && canOperate && <UpdateBtn className='mr-5px' isLoading={isLoading} onClick={() => onUpdate(row.id)} />}
+        {pagePermission.delete === true && canOperate && <DeleteBtn className='mr-5px' isLoading={isLoading} handleDelete={() => onDelete(row.id)} />}
       </>
     )
   }
@@ -351,12 +336,7 @@ const Page = () => {
     }
     const color = colorMap[first.platform] || '#8c8c8c'
     return (
-      <a
-        href={first.url}
-        target='_blank'
-        rel='noopener noreferrer'
-        onClick={(e) => e.stopPropagation()}
-      >
+      <a href={first.url} target='_blank' rel='noopener noreferrer' onClick={(e) => e.stopPropagation()}>
         <Tag color={color} style={{ marginRight: 0 }}>
           <LinkOutlined /> {count}
         </Tag>
@@ -396,15 +376,7 @@ const Page = () => {
    */
   const positionRender = (record: object) => {
     const row = record as EventListItem
-    return (
-      <NavLinks
-        lng={row.lng}
-        lat={row.lat}
-        position={row.position as string}
-        address={row.address}
-        compact
-      />
-    )
+    return <NavLinks lng={row.lng} lat={row.lat} position={row.position as string} address={row.address} compact />
   }
 
   return (
@@ -423,38 +395,18 @@ const Page = () => {
           </Tooltip>
           <span>只看自己</span>
         </Space>
-        <Button
-          type='primary'
-          icon={<FileExcelOutlined />}
-          loading={isLoading}
-          onClick={handleExportExcel}
-          className='ml-2'
-        >
+        <Button type='primary' icon={<FileExcelOutlined />} loading={isLoading} onClick={handleExportExcel} className='ml-2'>
           导出Excel
         </Button>
       </BasicSearch>
 
       <BasicTable
         loading={isLoading}
-        columns={tableColumns(
-          t,
-          optionRender,
-          TooltipRender,
-          imageRender,
-          linkRender,
-          positionRender,
-          tagRender
-        )}
+        columns={tableColumns(t, optionRender, TooltipRender, imageRender, linkRender, positionRender, tagRender)}
         dataSource={tableData}
       />
 
-      <BasicPagination
-        disabled={isLoading}
-        current={page}
-        pageSize={pageSize}
-        total={total}
-        onChange={onChangePagination}
-      />
+      <BasicPagination disabled={isLoading} current={page} pageSize={pageSize} total={total} onChange={onChangePagination} />
     </BasicContent>
   )
 }

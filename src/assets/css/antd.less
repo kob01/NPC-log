@@ -1,4 +1,4 @@
-@import url("./default.less");
+@import url('./default.less');
 
 /* 全屏:开始 */
 .full-modal {
@@ -136,8 +136,6 @@
   }
 }
 
-
-
 .ant-tabs-card > .ant-tabs-nav .ant-tabs-tab,
 .ant-tabs-card > div > .ant-tabs-nav .ant-tabs-tab {
   padding: 5px 16px 8px !important;
@@ -149,3 +147,18 @@
   margin-right: 10px !important;
 }
 /* 表单:结束 */
+
+/* 窄屏适配:开始 */
+/* 带时分秒的日期面板默认日历+时间列横向并排（≈ 560px）， */
+/* 手机上会横向溢出屏幕，改为换行堆叠（移动端编辑页 /m/edit 依赖此行为） */
+@media (max-width: 768px) {
+  .ant-picker-datetime-panel {
+    flex-wrap: wrap;
+  }
+
+  .ant-picker-time-panel {
+    border-top: 1px solid #f0f0f0;
+    border-left: 0;
+  }
+}
+/* 窄屏适配:结束 */

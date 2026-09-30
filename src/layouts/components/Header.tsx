@@ -1,11 +1,6 @@
-import {
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-  LogoutOutlined,
-  FormOutlined,
-  ExclamationCircleOutlined,
-} from '@ant-design/icons'
-import { App, Dropdown } from 'antd'
+import { MenuFoldOutlined, MenuUnfoldOutlined, LogoutOutlined, FormOutlined, ExclamationCircleOutlined } from '@ant-design/icons'
+import { Icon } from '@iconify/react'
+import { App, Dropdown, Tooltip } from 'antd'
 import { useRef } from 'react'
 import { useAliveController } from 'react-activation'
 import { useTranslation } from 'react-i18next'
@@ -32,6 +27,8 @@ import { logout } from '@/servers/login'
 import { toggleCollapsed, setMenuList } from '@/stores/menu'
 import { closeAllTab, setActiveKey } from '@/stores/tabs'
 import { clearInfo } from '@/stores/user'
+import { MOBILE_HOME } from '@/utils/config'
+import { isDesktopModeForced, isPhoneDevice, setDesktopModeForced } from '@/utils/device'
 
 type MenuKey = 'password' | 'logout'
 
@@ -99,26 +96,33 @@ const Header = () => {
     })
   }
 
+  // 手机用户点了“桌面版”后会被标记留在桌面，这里给出一个回到移动版的入口
+  const showMobileEntry = isDesktopModeForced() && isPhoneDevice()
+
+  /** 回到移动版：清除强制桌面标记，否则桌面页会被 useMobileRedirect 再次拦回 */
+  const handleBackMobile = () => {
+    setDesktopModeForced(false)
+    navigate(MOBILE_HOME, { replace: true })
+  }
+
   /** 右侧组件抽离减少重复渲染 */
   const RightRender = () => (
     <div className='flex items-center'>
       <Github />
       <GlobalSearch />
+      {showMobileEntry && (
+        <Tooltip title={t('content.backToMobile')}>
+          <div className='flex items-center justify-center text-lg mr-3 cursor-pointer' onClick={handleBackMobile}>
+            <Icon icon='gridicons-mobile' />
+          </div>
+        </Tooltip>
+      )}
       <Fullscreen />
       <I18n />
       <Theme />
       <Dropdown className='min-w-50px' menu={{ items, onClick }}>
-        <div
-          className='ant-dropdown-link flex items-center cursor-pointer'
-          onClick={(e) => e.preventDefault()}
-        >
-          <img
-            src={Avatar}
-            width={27}
-            height={27}
-            alt='Avatar'
-            className='rounded-1/2 overflow-hidden object-cover bg-light-500'
-          />
+        <div className='ant-dropdown-link flex items-center cursor-pointer' onClick={(e) => e.preventDefault()}>
+          <img src={Avatar} width={27} height={27} alt='Avatar' className='rounded-1/2 overflow-hidden object-cover bg-light-500' />
           <span className='ml-2 text-15px min-w-50px truncate'>{username || 'south-admin'}</span>
         </div>
       </Dropdown>

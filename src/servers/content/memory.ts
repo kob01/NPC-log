@@ -8,7 +8,7 @@ import axios from 'axios'
 
 import type { AxiosInstance } from 'axios'
 
-import { ONLY_MINE_HEADER, TOKEN } from '@/utils/config'
+import { API_PREFIX, ONLY_MINE_HEADER, TOKEN } from '@/utils/config'
 import { getLocalInfo } from '@/utils/local'
 import { getOnlyMine } from '@/utils/onlyMine'
 
@@ -128,6 +128,14 @@ export interface FootprintsResult {
   points: FootprintPoint[]
 }
 
+/** 回顾分享文案结果 */
+export interface MemoryShareCopyResult {
+  title: string
+  body: string
+  hashtags: string[]
+  degraded?: boolean
+}
+
 /** 统一响应结构 */
 export interface MemoryResponse<T> {
   code: number
@@ -145,6 +153,10 @@ const memoryRequest: AxiosInstance = axios.create({
 })
 
 memoryRequest.interceptors.request.use((config) => {
+  // 生产临时指向本地 node 服务时，统一拼接 API 绝对前缀（与全局实例保持一致）
+  if (API_PREFIX && typeof config.url === 'string' && config.url.startsWith('/')) {
+    config.url = `${API_PREFIX}${config.url}`
+  }
   const token = getLocalInfo<string>(TOKEN) || ''
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
@@ -163,19 +175,23 @@ memoryRequest.interceptors.request.use((config) => {
 
 const MEMORY_API = '/api/memory'
 
+/** AI 未配置时后端返回的业务错误关键字 */
+const AI_NOT_CONFIGURED_HINT = 'AI 未配置'
+
+/**
+ * 判断接口错误是否为“AI 未配置”降级场景
+ * 桌面与移动端共用：命中时应展示灰色提示而非红色报错
+ * @param msg - 后端 message
+ */
+export const isAiNotConfigured = (msg?: string) => !!msg && msg.includes(AI_NOT_CONFIGURED_HINT)
+
 /**
  * 记忆搜索（不依赖 AI 密钥，LIKE + 全文检索）
  * @param q - 搜索关键词
  * @param limit - 返回条数，默认8，钳制1~20
  */
-export async function searchMemory(
-  q: string,
-  limit = 8
-): Promise<MemoryResponse<MemorySearchResult>> {
-  const { data } = await memoryRequest.get<MemoryResponse<MemorySearchResult>>(
-    `${MEMORY_API}/search`,
-    { params: { q, limit } }
-  )
+export async function searchMemory(q: string, limit = 8): Promise<MemoryResponse<MemorySearchResult>> {
+  const { data } = await memoryRequest.get<MemoryResponse<MemorySearchResult>>(`${MEMORY_API}/search`, { params: { q, limit } })
   return data
 }
 
@@ -184,10 +200,7 @@ export async function searchMemory(
  * @param question - 问题
  * @param limit - 引用条数，默认8
  */
-export async function askMemory(
-  question: string,
-  limit = 8
-): Promise<MemoryResponse<MemoryAskResult>> {
+export async function askMemory(question: string, limit = 8): Promise<MemoryResponse<MemoryAskResult>> {
   const { data } = await memoryRequest.post<MemoryResponse<MemoryAskResult>>(`${MEMORY_API}/ask`, {
     question,
     limit,
@@ -199,14 +212,9 @@ export async function askMemory(
  * 月度摘要（依赖 AI 密钥，未配置且当月有日志时 code:1）
  * @param month - 格式 YYYY-MM，缺省为当月
  */
-export async function getMemorySummary(
-  month?: string
-): Promise<MemoryResponse<MemorySummaryResult>> {
+export async function getMemorySummary(month?: string): Promise<MemoryResponse<MemorySummaryResult>> {
   const params = month ? { month } : {}
-  const { data } = await memoryRequest.get<MemoryResponse<MemorySummaryResult>>(
-    `${MEMORY_API}/summary`,
-    { params }
-  )
+  const { data } = await memoryRequest.get<MemoryResponse<MemorySummaryResult>>(`${MEMORY_API}/summary`, { params })
   return data
 }
 
@@ -222,24 +230,31 @@ export async function getMemoryTags(): Promise<MemoryResponse<MemoryTagsResult>>
  * 年度回顾（统计部分不依赖 AI；AI 总结懒生成后缓存，重复请求命中缓存）
  * @param year - 年份 YYYY，缺省为当年
  */
-export async function getYearReport(
-  year?: number | string
-): Promise<MemoryResponse<YearReportResult>> {
+export async function getYearReport(year?: number | string): Promise<MemoryResponse<YearReportResult>> {
   const params = year ? { year } : {}
-  const { data } = await memoryRequest.get<MemoryResponse<YearReportResult>>(
-    `${MEMORY_API}/report`,
-    { params }
-  )
+  const { data } = await memoryRequest.get<MemoryResponse<YearReportResult>>(`${MEMORY_API}/report`, { params })
   return data
+}
+
+/**
+ * 周/月或年度回顾的社媒分享文案（依赖 AI 密钥；未配置时后端降级返回原文）
+ * @param data - { month? YYYY-MM, year? YYYY, platform?, tone? }
+ */
+export async function generateMemoryShareCopy(data: {
+  month?: string
+  year?: string | number
+  platform?: string
+  tone?: string
+}): Promise<MemoryResponse<MemoryShareCopyResult>> {
+  const { data: resp } = await memoryRequest.post<MemoryResponse<MemoryShareCopyResult>>(`${MEMORY_API}/share-copy`, data)
+  return resp
 }
 
 /**
  * 人物图谱列表（按 event_persons 聚合，不依赖 AI 密钥但人物由 AI 抽取）
  */
 export async function getMemoryPersons(): Promise<MemoryResponse<{ persons: PersonItem[] }>> {
-  const { data } = await memoryRequest.get<MemoryResponse<{ persons: PersonItem[] }>>(
-    `${MEMORY_API}/persons`
-  )
+  const { data } = await memoryRequest.get<MemoryResponse<{ persons: PersonItem[] }>>(`${MEMORY_API}/persons`)
   return data
 }
 
@@ -248,18 +263,12 @@ export async function getMemoryPersons(): Promise<MemoryResponse<{ persons: Pers
  * @param name - 人物称呼（精确匹配 CSV 边界）
  * @param year - 可选年份过滤
  */
-export async function getPersonTimeline(
-  name: string,
-  year?: number | string
-): Promise<MemoryResponse<PersonTimelineResult>> {
+export async function getPersonTimeline(name: string, year?: number | string): Promise<MemoryResponse<PersonTimelineResult>> {
   const params: Record<string, string | number> = { name }
   if (year) {
     params.year = year
   }
-  const { data } = await memoryRequest.get<MemoryResponse<PersonTimelineResult>>(
-    `${MEMORY_API}/person`,
-    { params }
-  )
+  const { data } = await memoryRequest.get<MemoryResponse<PersonTimelineResult>>(`${MEMORY_API}/person`, { params })
   return data
 }
 
@@ -272,11 +281,8 @@ export async function getFootprints(
   filters: {
     year?: number | string
     tag?: string
-  } = {}
+  } = {},
 ): Promise<MemoryResponse<FootprintsResult>> {
-  const { data } = await memoryRequest.get<MemoryResponse<FootprintsResult>>(
-    `${MEMORY_API}/footprints`,
-    { params: filters }
-  )
+  const { data } = await memoryRequest.get<MemoryResponse<FootprintsResult>>(`${MEMORY_API}/footprints`, { params: filters })
   return data
 }

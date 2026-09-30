@@ -12,6 +12,9 @@ export const EMPTY_VALUE = '-' // 空值显示
 export const THEME_KEY = 'theme_key' // 主题
 export const ONLY_MINE_KEY = 'npc_only_mine' // “只看自己日志”开关（本地缓存）
 export const ONLY_MINE_HEADER = 'X-Only-Mine' // “只看自己日志”请求头（后端全局识别）
+export const MOBILE_HOME = '/m' // 移动版（H5）首页路径
+// UA 识别失败时的兜底阈值：视口窄于此值且无精确指针（非鼠标）才按手机处理
+export const MOBILE_MAX_WIDTH = 768
 
 // 公共组件默认值
 export const MAX_TAG_COUNT = 'responsive' // 最多显示多少个标签，responsive：自适应
@@ -31,11 +34,21 @@ export const INIT_PAGINATION = {
 const ENV = import.meta.env.VITE_ENV as string
 // 生成环境所用的接口
 const URL = import.meta.env.VITE_BASE_URL as string
+
+/**
+ * API 前缀：dev 走 vite 代理（相对路径 /api），
+ * prod 默认同源（Nginx 反代 /api），若 VITE_API_BASE_URL 配置了绝对地址
+ * （如临时调试本地 node 服务 http://localhost:3000）则统一拼接到 /api、/uploads 之前。
+ * 由两个 axios 实例的请求拦截器统一应用，接口定义处无需改动。
+ */
+export const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || ''
+export const API_PREFIX = ENV === 'development' || !API_BASE ? '' : API_BASE
+
 // 上传地址
-export const FILE_API = `${ENV === 'development' ? '/api' : URL}/authority/file/upload-file`
+export const FILE_API = `${API_PREFIX}/api/authority/file/upload-file`
 
 // 静态资源（图片）地址前缀：dev 走 vite 代理（相对路径），prod 走线上地址
-const FILE_URL_PREFIX = ENV === 'development' ? '' : URL || ''
+const FILE_URL_PREFIX = ENV === 'development' ? API_BASE : URL || API_BASE
 
 /**
  * 解析后端返回的相对图片路径为可访问地址
@@ -55,10 +68,8 @@ export function resolveFileUrl(path?: string | null): string {
 }
 
 // 新增/编辑标题
-export const ADD_TITLE = (t: TFunction, title?: string) =>
-  t('public.createTitle', { title: title ?? '' })
-export const EDIT_TITLE = (t: TFunction, name: string, title?: string) =>
-  `${t('public.editTitle', { title: title ?? '' })}${name ? `(${name})` : ''}`
+export const ADD_TITLE = (t: TFunction, title?: string) => t('public.createTitle', { title: title ?? '' })
+export const EDIT_TITLE = (t: TFunction, name: string, title?: string) => `${t('public.editTitle', { title: title ?? '' })}${name ? `(${name})` : ''}`
 
 // 密码规则
 export const PASSWORD_RULE = (t: TFunction) => ({

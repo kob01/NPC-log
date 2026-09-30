@@ -2,7 +2,7 @@ import axios from 'axios'
 
 import AxiosRequest from './request'
 
-import { ONLY_MINE_HEADER, TOKEN } from '@/utils/config'
+import { API_PREFIX, ONLY_MINE_HEADER, TOKEN } from '@/utils/config'
 import { getLocalInfo, removeLocalInfo } from '@/utils/local'
 import { getOnlyMine } from '@/utils/onlyMine'
 import { message } from '@/utils/staticAntd'
@@ -24,6 +24,10 @@ function creteRequest() {
     interceptors: {
       // 接口请求拦截
       requestInterceptors(res) {
+        // 生产临时指向本地 node 服务时，为 /api 相对路径统一拼接绝对前缀
+        if (API_PREFIX && typeof res.url === 'string' && res.url.startsWith('/')) {
+          res.url = `${API_PREFIX}${res.url}`
+        }
         const token = getLocalInfo(TOKEN) || ''
         if (res?.headers && token) {
           res.headers.Authorization = `Bearer ${token}`
@@ -75,9 +79,7 @@ function creteRequest() {
 
         // 优先透出后端返回的业务错误文案，便于定位问题
         const serverMessage = err?.response?.data?.message
-        handleError(
-          status ? serverMessage || `请求失败（${status}）` : '网络异常，请检查服务是否可用！'
-        )
+        handleError(status ? serverMessage || `请求失败（${status}）` : '网络异常，请检查服务是否可用！')
         return err
       },
     },
