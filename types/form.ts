@@ -30,8 +30,7 @@ import type { FC, Key, ReactNode } from 'react'
 export type FormData = Record<string, unknown>
 
 // 基础数据组件
-type DefaultDataComponents =
-  'Input' | 'InputNumber' | 'TextArea' | 'InputPassword' | 'AutoComplete' | 'customize'
+type DefaultDataComponents = 'Input' | 'InputNumber' | 'TextArea' | 'InputPassword' | 'AutoComplete' | 'customize'
 
 // 下拉组件
 type SelectComponents = 'Select' | 'TreeSelect' | 'ApiSelect' | 'ApiTreeSelect'
@@ -89,11 +88,7 @@ export interface ApiResult extends Omit<DefaultOptionType, 'value'> {
   value?: string | number
 }
 
-export type ApiFn = (
-  params?: object,
-  params2?: object,
-  params3?: object
-) => Promise<ServerResult<unknown>>
+export type ApiFn = (params?: object, params2?: object, params3?: object) => Promise<ServerResult<unknown>>
 
 // api参数
 interface ApiParam {

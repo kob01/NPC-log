@@ -1,16 +1,4 @@
-import {
-  Input,
-  InputNumber,
-  AutoComplete,
-  Select,
-  TreeSelect,
-  Checkbox,
-  Radio,
-  Switch,
-  Rate,
-  Slider,
-  Upload,
-} from 'antd'
+import { Input, InputNumber, AutoComplete, Select, TreeSelect, Checkbox, Radio, Switch, Rate, Slider, Upload } from 'antd'
 
 import { initCompProps } from './helper'
 
