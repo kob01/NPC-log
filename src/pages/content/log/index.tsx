@@ -1,5 +1,5 @@
-import { FileExcelOutlined, LinkOutlined } from '@ant-design/icons'
-import { message, Tooltip, Button, Image, Tag, Switch, Space } from 'antd'
+import { EyeOutlined, FileExcelOutlined, LinkOutlined, SoundOutlined } from '@ant-design/icons'
+import { message, Tooltip, Button, Image, Tag, Switch, Space, Popover } from 'antd'
 import { useEffect, useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch, useSelector } from 'react-redux'
@@ -20,7 +20,7 @@ import BasicSearch from '@/components/Search/BasicSearch'
 import BasicTable from '@/components/Table/BasicTable'
 import { useCommonStore } from '@/hooks/useCommonStore'
 import { useMobileRedirect } from '@/hooks/useMobileRedirect'
-import { getNPCEventPage, getAllNPCEvents, deleteNPCEvent } from '@/servers/content/event'
+import { getNPCEventPage, getAllNPCEvents, deleteNPCEvent, getNPCEventImages } from '@/servers/content/event'
 import { setRefreshPage } from '@/stores/public'
 import { setMenuClick } from '@/stores/tabs'
 import { EMPTY_VALUE, INIT_PAGINATION, resolveFileUrl } from '@/utils/config'
@@ -38,6 +38,18 @@ interface RowData {
 const ONLY_MINE_TIP =
   '开启后全局只看自己的日志：列表/导出、AI 记忆检索与问答、月度/年度摘要、' + '热门标签、人物图谱、地图足迹都只统计本人数据，避开他人日志干扰分析'
 
+/**
+ * 录音时长展示：1 分钟内只报秒，超过则分:秒
+ * @param seconds - 后端回传的 audioDuration（秒，可能为 null）
+ */
+const formatAudioDuration = (seconds?: number | null): string => {
+  const s = Number(seconds || 0)
+  if (!Number.isFinite(s) || s <= 0) {
+    return ''
+  }
+  return s < 60 ? `${s}s` : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+}
+
 const Page = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -50,6 +62,8 @@ const Page = () => {
   const [pageSize, setPageSize] = useState(INIT_PAGINATION.pageSize)
   const [total, setTotal] = useState(0)
   const [tableData, setTableData] = useState<FormData[]>([])
+  // 多图日志的完整图片集（按日志 id 存）：列表接口只回首图+数量，这里异步回填全部缩略图供行内浏览
+  const [imagesMap, setImagesMap] = useState<Record<string, { thumb: string; full: string }[]>>({})
   // “只看自己日志”全局开关：状态真值存在本地缓存（请求拦截器要读），这里只做展示与切换
   const [onlyMine, setOnlyMineState] = useState(getOnlyMine())
   const isRefreshPage = useSelector((state: RootState) => state.public.isRefreshPage)
@@ -128,10 +142,39 @@ const Page = () => {
         const { items, total } = data
         setTotal(total)
         setTableData(items)
+        hydrateImages(items)
       }
     } finally {
       setFetch(false)
       setLoading(false)
+    }
+  }
+
+  /**
+   * 回填多图日志的完整图片集（复用详情接口并发拉取，内部已限并发 6）
+   * @param rows - 当前页行数据
+   */
+  const hydrateImages = async (rows: EventListItem[]) => {
+    const need = rows.filter((r) => Number(r.imageCount || 0) > 1).map((r) => r.id)
+    if (!need.length) {
+      return
+    }
+    try {
+      const map = await getNPCEventImages(need)
+      setImagesMap((prev) => {
+        const next = { ...prev }
+        Object.entries(map).forEach(([id, imgs]) => {
+          next[id] = (imgs || [])
+            .map((img) => ({
+              thumb: resolveFileUrl(img.thumbUrl || img.url),
+              full: resolveFileUrl(img.url),
+            }))
+            .filter((item) => item.thumb)
+        })
+        return next
+      })
+    } catch (error) {
+      console.error('回填日志图片失败（已忽略）:', error)
     }
   }
 
@@ -224,9 +267,8 @@ const Page = () => {
         { key: 'time', title: '时间' },
         { key: 'event', title: '事件' },
         { key: 'type', title: '分类' },
-        { key: 'content', title: '进度/记录' },
+        { key: 'content', title: '内容' },
         { key: 'rating', title: '评价' },
-        { key: 'feeling', title: '感受' },
         { key: 'experience', title: '经验教训' },
         { key: 'position', title: '地点' },
         { key: 'witness', title: '见证者' },
@@ -283,20 +325,73 @@ const Page = () => {
     </Tooltip>
   )
 
+  // 列表行内最多平铺的缩略图数，超出折叠为 +N（点开仍可翻页看全部）
+  const MAX_THUMB = 3
+
   /**
-   * 图片列渲染：首图缩略图 + 数量角标
+   * 图片列渲染：多图平铺缩略图条（点击组内预览可翻全部），单图/未回填时首图 + 数量角标
    * @param record - 当前行数据
    */
   const imageRender = (record: object) => {
     const row = record as EventListItem
     const count = Number(row.imageCount || 0)
+    if (count <= 0) {
+      return <span>{EMPTY_VALUE}</span>
+    }
+    const thumbs = imagesMap[row.id]
+    if (thumbs && thumbs.length > 1) {
+      const shown = thumbs.slice(0, MAX_THUMB)
+      const rest = thumbs.slice(MAX_THUMB)
+      return (
+        <div style={{ position: 'relative', display: 'inline-flex', gap: 4 }} onClick={(e) => e.stopPropagation()}>
+          <Image.PreviewGroup>
+            {shown.map((img, idx) => (
+              <Image
+                key={idx}
+                src={img.thumb}
+                width={44}
+                height={44}
+                style={{ objectFit: 'cover', borderRadius: 4 }}
+                // 缩略图太窄，默认遮罩里的“预览”二字会被截成省略号，只留眼睛图标
+                preview={{ src: img.full, mask: <EyeOutlined /> }}
+              />
+            ))}
+            {/* 隐藏图同样注册进预览组，打开大图后可翻页浏览全部 */}
+            {rest.map((img, idx) => (
+              <div key={`rest-${idx}`} style={{ width: 0, height: 0, overflow: 'hidden' }}>
+                <Image src={img.full} />
+              </div>
+            ))}
+          </Image.PreviewGroup>
+          {rest.length > 0 && (
+            <span
+              style={{
+                position: 'absolute',
+                right: 0,
+                bottom: 0,
+                padding: '0 4px',
+                fontSize: 10,
+                lineHeight: '14px',
+                color: '#fff',
+                background: 'rgba(0, 0, 0, 0.6)',
+                borderRadius: '4px 0 4px 0',
+                pointerEvents: 'none',
+              }}
+            >
+              +{rest.length}
+            </span>
+          )}
+        </div>
+      )
+    }
+    // 单图或详情图片未回填：降级为首图缩略图 + 数量角标
     const thumb = resolveFileUrl(row.firstThumb)
-    if (!thumb || count <= 0) {
+    if (!thumb) {
       return <span>{EMPTY_VALUE}</span>
     }
     return (
       <div style={{ position: 'relative', width: 48, height: 48 }}>
-        <Image src={thumb} width={48} height={48} style={{ objectFit: 'cover', borderRadius: 4 }} />
+        <Image src={thumb} width={48} height={48} style={{ objectFit: 'cover', borderRadius: 4 }} preview={{ mask: <EyeOutlined /> }} />
         {count > 1 && (
           <span
             style={{
@@ -379,6 +474,37 @@ const Page = () => {
     return <NavLinks lng={row.lng} lat={row.lat} position={row.position as string} address={row.address} compact />
   }
 
+  /**
+   * 录音列渲染：小程序语音日志随条留存的录音，行内只放一个轻入口，
+   * 点开才在浮层里挂原生 audio 控件（不预加载，避免一页行同时拉音频）
+   * 注：录音是用户自己念的口语，没有字幕可提，故关掉 media-has-caption
+   * @param record - 当前行数据
+   */
+  const audioRender = (record: object) => {
+    const row = record as EventListItem
+    const src = resolveFileUrl(row.audioUrl)
+    if (!src) {
+      return <span>{EMPTY_VALUE}</span>
+    }
+    const duration = formatAudioDuration(row.audioDuration)
+    return (
+      <Popover
+        trigger='click'
+        placement='left'
+        title='录音回放'
+        destroyTooltipOnHide
+        content={
+          // eslint-disable-next-line jsx-a11y/media-has-caption
+          <audio src={src} controls autoPlay preload='none' style={{ width: 280, height: 36, display: 'block' }} />
+        }
+      >
+        <Button size='small' icon={<SoundOutlined />} onClick={(e) => e.stopPropagation()}>
+          {duration || '播放'}
+        </Button>
+      </Popover>
+    )
+  }
+
   return (
     <BasicContent isPermission={pagePermission.page}>
       <BasicSearch
@@ -402,7 +528,7 @@ const Page = () => {
 
       <BasicTable
         loading={isLoading}
-        columns={tableColumns(t, optionRender, TooltipRender, imageRender, linkRender, positionRender, tagRender)}
+        columns={tableColumns(t, optionRender, TooltipRender, imageRender, linkRender, positionRender, tagRender, audioRender)}
         dataSource={tableData}
       />
 

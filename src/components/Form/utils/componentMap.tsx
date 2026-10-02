@@ -25,7 +25,6 @@ import BasicTimeRangePicker from '@/components/Dates/BasicTimeRangePicker'
 import ImageUpload from '@/components/ImageUpload'
 import LinkList from '@/components/LinkList'
 import LocationPicker from '@/components/LocationPicker'
-import PasswordStrength from '@/components/PasswordStrength'
 import ApiSelect from '@/components/Selects/ApiSelect'
 import ApiTreeSelect from '@/components/Selects/ApiTreeSelect'
 import BasicTransfer from '@/components/Transfer/BasicTransfer'
@@ -55,7 +54,6 @@ componentMap.set('TimePicker', BasicTimePicker)
 componentMap.set('TimeRangePicker', BasicTimeRangePicker)
 componentMap.set('ApiSelect', ApiSelect)
 componentMap.set('ApiTreeSelect', ApiTreeSelect)
-componentMap.set('PasswordStrength', PasswordStrength)
 componentMap.set('Editor', WangEditor)
 componentMap.set('ImageUpload', ImageUpload)
 componentMap.set('LinkList', LinkList)

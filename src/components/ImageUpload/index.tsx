@@ -135,8 +135,10 @@ const ImageUpload = (props: ImageUploadProps) => {
     const ext = useWebp ? 'webp' : 'jpg'
     try {
       const blob = await imageCompression(file, {
-        maxSizeMB: 0.2,
-        maxWidthOrHeight: 1920,
+        // 0.2MB 会把大图压成肉眼可见的糊（浏览器侧先压一道，服务端 webp 再压一道），
+        // 放宽到 0.8MB 并与后端长边上限（2560）对齐，清晰度明显改善而体积仍可控
+        maxSizeMB: 0.8,
+        maxWidthOrHeight: 2560,
         useWebWorker: true,
         fileType,
       })

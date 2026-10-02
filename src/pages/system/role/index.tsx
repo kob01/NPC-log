@@ -145,7 +145,7 @@ const Page = () => {
 
       // 转换菜单数据为树形结构
       const treeData = convertMenuToTree(menuData)
-      
+
       setPromiseId(id)
       setPromiseTreeData(treeData)
       setPromiseCheckedKeys(roleMenus || [])
@@ -157,10 +157,10 @@ const Page = () => {
 
   /** 将菜单数据转换为树形结构 */
   const convertMenuToTree = (menus: any[]): DataNode[] => {
-    return menus.map(menu => ({
+    return menus.map((menu) => ({
       title: menu.label,
       key: menu.id?.toString() || menu.key,
-      children: menu.children ? convertMenuToTree(menu.children) : undefined
+      children: menu.children ? convertMenuToTree(menu.children) : undefined,
     }))
   }
 
@@ -177,7 +177,7 @@ const Page = () => {
       setLoading(true)
       const params = {
         roleId: promiseId,
-        menuIds: checked.map(key => key.toString()),
+        menuIds: checked.map((key) => key.toString()),
       }
       const { code, message: msg } = await saveRoleMenus(params)
       if (Number(code) !== 200) {
@@ -236,11 +236,11 @@ const Page = () => {
     try {
       setCreateLoading(true)
       const functions = () => (createId ? updateRole(createId, values) : createRole(values))
-      const { code, message } = await functions()
+      const { code, message: msg } = await functions()
       if (Number(code) !== 200) {
         return
       }
-      message.success(message || t('public.successfulOperation'))
+      message.success(msg || t('public.successfulOperation'))
       setCreateOpen(false)
       getPage()
     } finally {
@@ -255,9 +255,9 @@ const Page = () => {
   const onDelete = async (id: string) => {
     try {
       setLoading(true)
-      const { code, message } = await deleteRole(id as string)
+      const { code, message: msg } = await deleteRole(id as string)
       if (Number(code) === 200) {
-        message.success(message || t('public.successfullyDeleted'))
+        message.success(msg || t('public.successfullyDeleted'))
         getPage()
       }
     } finally {
@@ -295,19 +295,9 @@ const Page = () => {
             />
           </Tooltip>
         )}
-        {pagePermission.update === true && (
-          <UpdateBtn
-            className='mr-5px'
-            isLoading={isLoading}
-            onClick={() => onUpdate((record as RowData).id)}
-          />
-        )}
+        {pagePermission.update === true && <UpdateBtn className='mr-5px' isLoading={isLoading} onClick={() => onUpdate((record as RowData).id)} />}
         {pagePermission.delete === true && (
-          <DeleteBtn
-            className='mr-5px'
-            isLoading={isLoading}
-            handleDelete={() => onDelete((record as RowData).id)}
-          />
+          <DeleteBtn className='mr-5px' isLoading={isLoading} handleDelete={() => onDelete((record as RowData).id)} />
         )}
       </>
     )
@@ -318,7 +308,6 @@ const Page = () => {
 
   return (
     <BasicContent isPermission={pagePermission.page}>
-
       <BasicSearch
         list={searchList(t)}
         data={searchData}
@@ -330,35 +319,12 @@ const Page = () => {
         <FilterButton columns={columns} className='!mb-5px' getTableChecks={getTableChecks} />
       </BasicSearch>
 
-      <BasicTable
-        loading={isLoading}
-        columns={handleFilterTable(columns, tableFilters)}
-        dataSource={tableData}
-      />
+      <BasicTable loading={isLoading} columns={handleFilterTable(columns, tableFilters)} dataSource={tableData} />
 
-      <BasicPagination
-        disabled={isLoading}
-        current={page}
-        pageSize={pageSize}
-        total={total}
-        onChange={onChangePagination}
-      />
+      <BasicPagination disabled={isLoading} current={page} pageSize={pageSize} total={total} onChange={onChangePagination} />
 
-      <BasicModal
-        title={createTitle}
-        open={isCreateOpen}
-        confirmLoading={isCreateLoading}
-        onOk={createSubmit}
-        onCancel={closeCreate}
-        width={600}
-      >
-        <BasicForm
-          ref={createFormRef}
-          list={createList(t, !!createId)}
-          data={createData}
-          labelCol={{ span: 6 }}
-          handleFinish={handleCreate}
-        />
+      <BasicModal title={createTitle} open={isCreateOpen} confirmLoading={isCreateLoading} onOk={createSubmit} onCancel={closeCreate} width={600}>
+        <BasicForm ref={createFormRef} list={createList(t, !!createId)} data={createData} labelCol={{ span: 6 }} handleFinish={handleCreate} />
       </BasicModal>
 
       <PermissionDrawer

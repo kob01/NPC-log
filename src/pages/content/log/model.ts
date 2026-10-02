@@ -114,7 +114,7 @@ export const searchList = (t: TFunction): FormList[] => [
     },
   },
   {
-    label: '进度/记录',
+    label: '内容',
     name: 'content',
     component: 'Input',
   },
@@ -125,11 +125,6 @@ export const searchList = (t: TFunction): FormList[] => [
     componentProps: {
       options: ratingOptions,
     },
-  },
-  {
-    label: '感受',
-    name: 'feeling',
-    component: 'Input',
   },
   {
     label: '经验教训',
@@ -161,6 +156,7 @@ export const searchList = (t: TFunction): FormList[] => [
  * @param linkRender - 作品列渲染
  * @param positionRender - 地点列渲染（导航链接）
  * @param tagRender - AI 标签列渲染
+ * @param audioRender - 录音列渲染（播放浮层由页面注入）
  */
 export const tableColumns = (
   t: TFunction,
@@ -169,7 +165,8 @@ export const tableColumns = (
   imageRender: (record: object) => JSX.Element,
   linkRender: (record: object) => JSX.Element,
   positionRender?: (record: object) => JSX.Element,
-  tagRender?: (record: object) => JSX.Element
+  tagRender?: (record: object) => JSX.Element,
+  audioRender?: (record: object) => JSX.Element,
 ): TableColumn => [
   {
     title: '时间',
@@ -190,9 +187,9 @@ export const tableColumns = (
     width: 80,
   },
   {
-    title: '进度/记录',
+    title: '内容',
     dataIndex: 'content',
-    width: 120,
+    width: 220,
     ellipsis: true,
     render: (value) => TooltipRender(value),
   },
@@ -200,13 +197,6 @@ export const tableColumns = (
     title: '评价',
     dataIndex: 'rating',
     width: 80,
-  },
-  {
-    title: '感受',
-    dataIndex: 'feeling',
-    width: 120,
-    ellipsis: true,
-    render: (value) => TooltipRender(value),
   },
   {
     title: '经验教训',
@@ -219,8 +209,7 @@ export const tableColumns = (
     title: '地点',
     dataIndex: 'position',
     width: 100,
-    render: (_value: unknown, record: object) =>
-      positionRender ? positionRender(record) : (_value as string) || '-',
+    render: (_value: unknown, record: object) => (positionRender ? positionRender(record) : (_value as string) || '-'),
   },
   {
     title: '见证者',
@@ -230,8 +219,14 @@ export const tableColumns = (
   {
     title: '图片',
     dataIndex: 'firstThumb',
-    width: 72,
+    width: 150,
     render: (_value: unknown, record: object) => imageRender(record),
+  },
+  {
+    title: '录音',
+    dataIndex: 'audioUrl',
+    width: 96,
+    render: (_value: unknown, record: object) => (audioRender ? audioRender(record) : null),
   },
   {
     title: '作品',
@@ -276,7 +271,7 @@ export const createList = (
   t: TFunction,
   orgOptions: { label: string; value: number }[] = [],
   onGpsExtracted?: (gps: { lng: number; lat: number }) => void,
-  initialCoordinate?: { lng: number; lat: number } | null
+  initialCoordinate?: { lng: number; lat: number } | null,
 ): FormList[] => [
   {
     label: t('public.date'),
@@ -307,11 +302,14 @@ export const createList = (
     },
   },
   {
-    label: '进度/记录',
+    label: '内容',
     name: 'content',
     component: 'TextArea',
     componentProps: {
-      autoSize: { minRows: 2, maxRows: 6 },
+      autoSize: { minRows: 4, maxRows: 12 },
+      maxLength: 4000,
+      showCount: true,
+      placeholder: '详细经过与当时的感受，两段写在同一个框里',
     },
   },
   {
@@ -320,14 +318,6 @@ export const createList = (
     component: 'Select',
     componentProps: {
       options: ratingOptions,
-    },
-  },
-  {
-    label: '感受',
-    name: 'feeling',
-    component: 'TextArea',
-    componentProps: {
-      autoSize: { minRows: 2, maxRows: 4 },
     },
   },
   {

@@ -25,11 +25,3 @@ export function register(data: RegisterData) {
 export function logout() {
   return request.post<LoginResult>('/api/user/logout')
 }
-
-/**
- * 修改密码
- * @param data - 请求数据
- */
-export function updatePassword(data: object) {
-  return request.post('/update-password', data)
-}

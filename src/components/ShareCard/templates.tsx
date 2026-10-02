@@ -31,7 +31,6 @@ export interface CardData {
   type?: string
   content?: string
   summary?: string
-  feeling?: string
   position?: string | null
   address?: string | null
   tags?: string[]
@@ -59,8 +58,7 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: 18,
     overflow: 'hidden',
     boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-    fontFamily:
-      '-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif',
+    fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif',
     color: '#2c3e50',
   },
   /** 横图在上：全宽自然高度，不用 objectFit（html-to-image 导出时会忽略它导致拉伸） */
@@ -104,9 +102,7 @@ const styles: Record<string, CSSProperties> = {
 
 /** 单篇日记分享卡：横图在上、竖图在左，均保持原图宽高比不拉伸 */
 export const SingleCard: FC<TemplateProps> = ({ data, hideImages, watermark }) => {
-  const cover = (data.images || [])
-    .map((img) => resolveFileUrl(img.url || img.thumbUrl))
-    .filter(Boolean)[0]
+  const cover = (data.images || []).map((img) => resolveFileUrl(img.url || img.thumbUrl)).filter(Boolean)[0]
   const title = data.copy?.title || data.event || ''
   const body = data.copy?.body || data.summary || (data.content || '').slice(0, 200) || ''
   const hashtags = data.copy?.hashtags || []

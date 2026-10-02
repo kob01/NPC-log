@@ -25,7 +25,6 @@ interface DetailData {
   type?: string
   content?: string
   rating?: string
-  feeling?: string
   experience?: string
   position?: string
   address?: string | null
@@ -38,6 +37,9 @@ interface DetailData {
   persons?: string[]
   images?: EventImageDetail[]
   links?: { id?: number; platform: string; url: string; title?: string }[]
+  /** 随日志留存的录音（小程序录音录入产生） */
+  audioUrl?: string | null
+  audioDuration?: number | null
 }
 
 const MobileDetail = () => {
@@ -96,6 +98,7 @@ const MobileDetail = () => {
   }
 
   const images = (data.images || []).map((img) => resolveFileUrl(img.url || img.thumbUrl))
+  const audioSrc = resolveFileUrl(data.audioUrl)
   const hasCoord = data.lng != null && data.lat != null
   const toNumber = (v: unknown) => Number(v)
 
@@ -156,9 +159,17 @@ const MobileDetail = () => {
         </div>
       )}
 
+      {/* 录音回放（小程序语音日志随条留存的录音；口语录音无字幕可提） */}
+      {audioSrc && (
+        <div className='p-3 mb-3 rounded-10px bg-gray-50'>
+          <div className='text-12px font-bold text-gray-400 mb-1'>{t('content.mobileAudio')}</div>
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          <audio src={audioSrc} controls preload='none' style={{ width: '100%', height: 40, display: 'block' }} />
+        </div>
+      )}
+
       {/* 正文区块 */}
       <Section title={t('content.mobileContent')} text={data.content} />
-      <Section title={t('content.mobileFeeling')} text={data.feeling} />
       <Section title={t('content.mobileExperience')} text={data.experience} />
       {data.rating && <Section title={t('content.mobileRating')} text={data.rating} />}
       {data.witness && <Section title={t('content.mobileWitness')} text={data.witness} />}

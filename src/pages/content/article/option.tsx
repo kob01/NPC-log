@@ -126,11 +126,11 @@ const Page = () => {
     try {
       setLoading(true)
       const functions = () => (createId ? updateArticle(createId, values) : createArticle(values))
-      const { code, message } = await functions()
+      const { code, message: msg } = await functions()
       if (Number(code) !== 200) {
         return
       }
-      message.success(message || t('public.successfulOperation'))
+      message.success(msg || t('public.successfulOperation'))
       createFormRef.current?.resetFields()
       goBack(true)
     } finally {

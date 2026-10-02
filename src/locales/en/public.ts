@@ -19,7 +19,6 @@ export default {
   fullScreen: 'Full screen',
   exitFullscreen: 'Exit fullscreen',
   themes: 'Themes',
-  changePassword: 'Change Password',
   signOut: 'Sign Out',
   signOutMessage: 'Are you sure to log out of the system?',
   kindTips: 'Kind Tips',

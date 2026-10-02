@@ -38,7 +38,7 @@ export interface EventLinkDetail extends EventLinkItem {
   id?: number
 }
 
-/** 日志新增/编辑提交数据 */
+/** 日志新增/编辑提交数据（「感受」已并入 content，不再单列） */
 export interface EventPayload {
   id?: string
   time?: string
@@ -46,7 +46,6 @@ export interface EventPayload {
   type?: string
   content?: string
   rating?: string
-  feeling?: string
   experience?: string
   position?: string
   witness?: string
@@ -78,6 +77,9 @@ export interface EventListItem extends FormData {
   lng?: number | null
   lat?: number | null
   aiStatus?: number
+  /** 随日志留存的录音（小程序录音录入产生），Web 端可回放 */
+  audioUrl?: string | null
+  audioDuration?: number | null
 }
 
 /**

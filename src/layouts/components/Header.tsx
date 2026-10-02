@@ -1,17 +1,14 @@
-import { MenuFoldOutlined, MenuUnfoldOutlined, LogoutOutlined, FormOutlined, ExclamationCircleOutlined } from '@ant-design/icons'
+import { MenuFoldOutlined, MenuUnfoldOutlined, LogoutOutlined, ExclamationCircleOutlined } from '@ant-design/icons'
 import { Icon } from '@iconify/react'
 import { App, Dropdown, Tooltip } from 'antd'
-import { useRef } from 'react'
 import { useAliveController } from 'react-activation'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 
 import Nav from './Nav'
-import UpdatePassword from './UpdatePassword'
 import styles from '../index.module.less'
 
-import type { PasswordModal } from './UpdatePassword'
 import type { AppDispatch } from '@/stores'
 import type { MenuProps } from 'antd'
 
@@ -30,7 +27,7 @@ import { clearInfo } from '@/stores/user'
 import { MOBILE_HOME } from '@/utils/config'
 import { isDesktopModeForced, isPhoneDevice, setDesktopModeForced } from '@/utils/device'
 
-type MenuKey = 'password' | 'logout'
+type MenuKey = 'logout'
 
 const Header = () => {
   const [, , removeToken] = useToken()
@@ -38,18 +35,11 @@ const Header = () => {
   const { clear } = useAliveController()
   const { modal } = App.useApp()
   const { isCollapsed, isMaximize, username, nav } = useCommonStore()
-  // 是否窗口最大化
-  const passwordRef = useRef<PasswordModal>(null)
   const dispatch: AppDispatch = useDispatch()
   const navigate = useNavigate()
 
   // 下拉菜单内容
   const items: MenuProps['items'] = [
-    {
-      key: 'password',
-      label: <span>{t('public.changePassword')}</span>,
-      icon: <FormOutlined className='mr-1' />,
-    },
     {
       key: 'logout',
       label: <span>{t('public.signOut')}</span>,
@@ -60,10 +50,6 @@ const Header = () => {
   /** 点击菜单 */
   const onClick: MenuProps['onClick'] = (e) => {
     switch (e.key as MenuKey) {
-      case 'password':
-        passwordRef.current?.open()
-        break
-
       case 'logout':
         handleLogout()
         break
@@ -123,7 +109,7 @@ const Header = () => {
       <Dropdown className='min-w-50px' menu={{ items, onClick }}>
         <div className='ant-dropdown-link flex items-center cursor-pointer' onClick={(e) => e.preventDefault()}>
           <img src={Avatar} width={27} height={27} alt='Avatar' className='rounded-1/2 overflow-hidden object-cover bg-light-500' />
-          <span className='ml-2 text-15px min-w-50px truncate'>{username || 'south-admin'}</span>
+          <span className='ml-2 text-15px min-w-50px truncate'>{username || ''}</span>
         </div>
       </Dropdown>
     </div>
@@ -161,8 +147,6 @@ const Header = () => {
 
         <RightRender />
       </header>
-
-      <UpdatePassword passwordRef={passwordRef} />
     </>
   )
 }

@@ -124,9 +124,9 @@ const Page = () => {
   const onDelete = async (id: string) => {
     try {
       setLoading(true)
-      const { code, message } = await deleteArticle(id as string)
+      const { code, message: msg } = await deleteArticle(id as string)
       if (Number(code) === 200) {
-        message.success(message || t('public.successfullyDeleted'))
+        message.success(msg || t('public.successfullyDeleted'))
         getPage()
       }
     } finally {

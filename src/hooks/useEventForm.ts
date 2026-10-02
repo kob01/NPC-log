@@ -13,14 +13,13 @@ import { isValidLinkUrl } from '@/components/LinkList'
 import { getNPCEventById, createNPCEvent, updateNPCEvent } from '@/servers/content/event'
 import { getMyOrgs } from '@/servers/system/organization'
 
-/** 新增日志的初始值 */
+/** 新增日志的初始值（「感受」已并入 content 一个正文框） */
 export const INIT_EVENT_FORM: FormData = {
   time: dayjs().format('YYYY-MM-DD HH:mm'),
   event: '',
   type: '',
   content: '',
   rating: '',
-  feeling: '',
   experience: '',
   location: { position: null, address: null, lng: null, lat: null },
   witness: '',
@@ -49,7 +48,18 @@ function readDraft(): FormData | null {
   }
   try {
     const parsed = JSON.parse(raw)
-    return parsed && typeof parsed === 'object' ? (parsed as FormData) : null
+    if (!parsed || typeof parsed !== 'object') {
+      return null
+    }
+    const draft = parsed as FormData
+    // 旧草稿可能带着已下线的 feeling 字段：并进正文，否则提交时感受半段静默丢失
+    const feeling = typeof draft.feeling === 'string' ? draft.feeling.trim() : ''
+    if (feeling) {
+      const content = typeof draft.content === 'string' ? draft.content.trim() : ''
+      draft.content = content ? `${content}\n\n${feeling}` : feeling
+    }
+    delete draft.feeling
+    return draft
   } catch {
     return null
   }

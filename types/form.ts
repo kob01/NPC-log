@@ -66,9 +66,6 @@ type EditorComponents = 'Editor'
 // 图片/链接/地点等媒体组件
 type MediaComponents = 'ImageUpload' | 'LinkList' | 'LocationPicker'
 
-// 密码强度组件
-type PasswordStrength = 'PasswordStrength'
-
 // 组件集合
 export type ComponentType =
   | DefaultDataComponents
@@ -81,7 +78,6 @@ export type ComponentType =
   | RateComponents
   | SliderComponents
   | EditorComponents
-  | PasswordStrength
   | TransferComponents
   | MediaComponents
   | BusinessComponents
