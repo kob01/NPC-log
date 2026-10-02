@@ -14,10 +14,11 @@ import type { MenuProps } from 'antd'
 
 import Logo from '@/assets/images/logo.svg'
 import { useCommonStore } from '@/hooks/useCommonStore'
-import { filterMenus, getFirstMenu, getMenuByKey, getMenuName, getOpenMenuByMenus, handleFilterMenus, splitPath } from '@/menus/utils/helper'
+import { filterMenus, getMenuByKey, getMenuName, getOpenMenuByMenus, handleFilterMenus, splitPath } from '@/menus/utils/helper'
 import { getPendingCount } from '@/servers/system/organization'
 import { setOpenKeys, setSelectedKeys, toggleCollapsed } from '@/stores/menu'
 import { addTabs, setNav, setActiveKey, setMenuClick } from '@/stores/tabs'
+import { HOME_PATH } from '@/utils/config'
 import { setTitle } from '@/utils/helper'
 
 // “我的组织”菜单 key，用于挂载待审批红点
@@ -262,8 +263,7 @@ const LayoutMenu = () => {
 
   /** 点击logo */
   const onClickLogo = () => {
-    const firstMenu = getFirstMenu(menus, permissions)
-    goPath(firstMenu, true) // true 表示从菜单点击进入，需要刷新数据
+    goPath(HOME_PATH, true) // true 表示从菜单点击进入，需要刷新数据
     if (isPhone) {
       hiddenMenu()
     }

@@ -9,14 +9,13 @@ import Logo from '@/assets/images/logo.svg'
 import I18n from '@/components/I18n'
 import { useCommonStore } from '@/hooks/useCommonStore'
 import { useToken } from '@/hooks/useToken'
-import { getFirstMenu } from '@/menus/utils/helper'
 import { login } from '@/servers/login'
 import { getPermissions } from '@/servers/permissions'
 import { getMenuList } from '@/servers/system/menu'
 import { setMenuList } from '@/stores/menu'
 import { setThemeValue } from '@/stores/public'
 import { setPermissions, setUserInfo } from '@/stores/user'
-import { PASSWORD_RULE, THEME_KEY } from '@/utils/config'
+import { PASSWORD_RULE, THEME_KEY, HOME_PATH } from '@/utils/config'
 import { encryptMd5 } from '@/utils/crypto'
 
 import type { SideMenu } from '#/public'
@@ -50,7 +49,7 @@ const Login = () => {
     // 如果存在token，则直接进入页面
     const localToken = localStorage.getItem('NPC_token')
     if (localToken) {
-      navigate('/content/log')
+      navigate(HOME_PATH)
     }
 
     if (getToken()) {
@@ -59,7 +58,7 @@ const Login = () => {
         getUserPermissions()
       } else {
         // 有权限则直接跳转
-        handleGoMenu(permissions)
+        handleGoMenu()
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -76,7 +75,7 @@ const Login = () => {
       const { user, permissions } = data
       dispatch(setUserInfo(user))
       dispatch(setPermissions(permissions))
-      handleGoMenu(permissions)
+      handleGoMenu()
     } finally {
       setLoading(false)
     }
@@ -105,20 +104,12 @@ const Login = () => {
     return result
   }
 
-  /** 菜单跳转 */
-  const handleGoMenu = async (permissions: string[]) => {
-    let menuData: SideMenu[] = menuList
-    if (!menuData?.length) {
-      menuData = (await getMenuData()) as SideMenu[]
+  /** 菜单跳转（确保菜单数据已缓存后跳首页） */
+  const handleGoMenu = async () => {
+    if (!menuList?.length) {
+      await getMenuData()
     }
-
-    // 有权限则直接跳转
-    const firstMenu = getFirstMenu(menuData, permissions)
-    if (!firstMenu) {
-      return message.error({ content: t('login.notPermissions'), key: 'permissions' })
-    }
-    // navigate(firstMenu);
-    navigate('/content/log')
+    navigate(HOME_PATH)
   }
 
   /**
@@ -145,7 +136,7 @@ const Login = () => {
       setToken(token)
       dispatch(setUserInfo(user))
       dispatch(setPermissions(permissions))
-      handleGoMenu(permissions)
+      handleGoMenu()
     } finally {
       setLoading(false)
     }

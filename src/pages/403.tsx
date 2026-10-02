@@ -4,8 +4,9 @@ import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 
 import { useCommonStore } from '@/hooks/useCommonStore'
-import { getFirstMenu, getMenuByKey } from '@/menus/utils/helper'
+import { getMenuByKey } from '@/menus/utils/helper'
 import { addTabs, setActiveKey } from '@/stores/tabs'
+import { HOME_PATH } from '@/utils/config'
 
 import styles from './all.module.less'
 
@@ -19,9 +20,8 @@ const Forbidden = () => {
 
   /** 跳转首页 */
   const goIndex = () => {
-    const firstMenu = getFirstMenu(menuList, permissions)
-    navigate(firstMenu)
-    const menuByKeyProps = { menus: menuList, permissions, key: firstMenu }
+    navigate(HOME_PATH)
+    const menuByKeyProps = { menus: menuList, permissions, key: HOME_PATH }
     const newItems = getMenuByKey(menuByKeyProps)
     if (newItems?.key) {
       dispatch(setActiveKey(newItems.key))

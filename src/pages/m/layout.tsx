@@ -13,7 +13,7 @@ import { useLocation, useNavigate, useOutlet } from 'react-router-dom'
 
 import { useToken } from '@/hooks/useToken'
 import { logout } from '@/servers/login'
-import { TOKEN } from '@/utils/config'
+import { TOKEN, HOME_PATH } from '@/utils/config'
 import { setDesktopModeForced } from '@/utils/device'
 import { removeLocalInfo } from '@/utils/local'
 
@@ -65,7 +65,7 @@ const MobileLayout = () => {
   /** 切换到桌面版：标记本次会话强留桌面，避免进桌面页又被自动跳回移动版 */
   const onSwitchDesktop = () => {
     setDesktopModeForced(true)
-    navigate('/content/log', { replace: true })
+    navigate(HOME_PATH, { replace: true })
   }
 
   return (

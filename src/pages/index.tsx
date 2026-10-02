@@ -1,29 +1,26 @@
 import { useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { useCommonStore } from '@/hooks/useCommonStore'
 import { useToken } from '@/hooks/useToken'
-import { getFirstMenu } from '@/menus/utils/helper'
+import { HOME_PATH } from '@/utils/config'
 
 const Page = () => {
   const [getToken] = useToken()
-  const { permissions, menuList } = useCommonStore()
   const token = getToken()
   const navigate = useNavigate()
 
-  /** 跳转第一个有效菜单路径 */
-  const goFirstMenu = useCallback(() => {
-    const firstMenu = getFirstMenu(menuList, permissions)
-    navigate(firstMenu)
-  }, [menuList, navigate, permissions])
+  /** 跳转首页 */
+  const goHome = useCallback(() => {
+    navigate(HOME_PATH)
+  }, [navigate])
 
   useEffect(() => {
     if (!token) {
       return navigate('/login')
     }
 
-    // 跳转第一个有效菜单路径
-    goFirstMenu()
+    // 跳转默认首页
+    goHome()
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
