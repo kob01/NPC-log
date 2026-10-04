@@ -1,12 +1,13 @@
 import axios from 'axios'
 
 import type { RequestInterceptors, CreateRequestConfig, ServerResult } from './types'
-import type {
-  AxiosResponse,
-  AxiosInstance,
-  InternalAxiosRequestConfig,
-  AxiosRequestConfig,
-} from 'axios'
+import type { AxiosResponse, AxiosInstance, InternalAxiosRequestConfig, AxiosRequestConfig } from 'axios'
+
+// 带上去重键的请求配置：去重键在请求拦截器里算一次并回写到 config 上，
+// 响应侧直接取同一份，避免“请求拼了参数、响应只按 url 删除”导致两边键不一致
+interface TrackedConfig extends InternalAxiosRequestConfig {
+  __dedupeKey?: string
+}
 
 class AxiosRequest {
   // axios 实例
@@ -23,62 +24,70 @@ class AxiosRequest {
     this.interceptorsObj = config.interceptors
     // 拦截器执行顺序 接口请求 -> 实例请求 -> 全局请求 -> 实例响应 -> 全局响应 -> 接口响应
     this.instance.interceptors.request.use(
-      (res: InternalAxiosRequestConfig) => {
+      (res: TrackedConfig) => {
         const controller = new AbortController()
-        let url = res.method || ''
         res.signal = controller.signal
-
-        if (res.url) {
-          url += `^${res.url}`
-        }
-
-        // 如果存在参数
-        if (res.params) {
-          for (const key in res.params) {
-            url += `&${key}=${res.params[key]}`
-          }
-        }
-
-        // 如果存在post数据
-        if (res.data && res.data?.[0] === '{' && res.data?.[res.data?.length - 1] === '}') {
-          const obj = JSON.parse(res.data)
-          for (const key in obj) {
-            url += `#${key}=${obj[key]}`
-          }
-        }
+        const key = this.buildRequestKey(res)
+        res.__dedupeKey = key
 
         // 如果存在则删除该请求
-        if (this.abortControllerMap.get(url)) {
-          console.warn('取消重复请求：', url)
-          this.cancelRequest(url)
+        if (this.abortControllerMap.get(key)) {
+          console.warn('取消重复请求：', key)
+          this.cancelRequest(key)
         } else {
-          this.abortControllerMap.set(url, controller)
+          this.abortControllerMap.set(key, controller)
         }
 
         return res
       },
-      (err: object) => err
+      (err: object) => err,
     )
 
     // 使用实例拦截器
-    this.instance.interceptors.request.use(
-      this.interceptorsObj?.requestInterceptors,
-      this.interceptorsObj?.requestInterceptorsCatch
-    )
-    this.instance.interceptors.response.use(
-      this.interceptorsObj?.responseInterceptors,
-      this.interceptorsObj?.responseInterceptorsCatch
-    )
+    this.instance.interceptors.request.use(this.interceptorsObj?.requestInterceptors, this.interceptorsObj?.requestInterceptorsCatch)
+    this.instance.interceptors.response.use(this.interceptorsObj?.responseInterceptors, this.interceptorsObj?.responseInterceptorsCatch)
     // 全局响应拦截器保证最后执行
     this.instance.interceptors.response.use(
       // 因为我们接口的数据都在res.data下，所以我们直接返回res.data
       (res: AxiosResponse) => {
-        const url = res.config.url || ''
-        this.abortControllerMap.delete(url)
+        // 被取消的请求会以 err 对象形式走到这里，取不到去重键就跳过
+        const key = (res?.config as TrackedConfig)?.__dedupeKey
+        if (key) {
+          this.abortControllerMap.delete(key)
+        }
         return res.data
       },
-      (err: object) => err
+      (err: object) => err,
     )
+  }
+  /**
+   * 构造请求去重键（method + url + query + 请求体字段）
+   * @param config - 请求配置
+   */
+  buildRequestKey(config: AxiosRequestConfig) {
+    let key = config.method || ''
+
+    if (config.url) {
+      key += `^${config.url}`
+    }
+
+    // 如果存在参数
+    if (config.params) {
+      for (const item in config.params) {
+        key += `&${item}=${config.params[item]}`
+      }
+    }
+
+    // 如果存在post数据
+    const data = config.data
+    if (typeof data === 'string' && data[0] === '{' && data[data.length - 1] === '}') {
+      const obj = JSON.parse(data)
+      for (const item in obj) {
+        key += `#${item}=${obj[item]}`
+      }
+    }
+
+    return key
   }
   /**
    * 取消全部请求

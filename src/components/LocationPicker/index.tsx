@@ -2,7 +2,6 @@
  * 地点选择组件（受控）
  * - 搜索输入（AMap.AutoComplete）
  * - 地图选点 Modal（AMap.Marker + 逆地理编码 + PlaceSearch 联网搜索）
- * - EXIF GPS 联动（initialCoordinate）
  * - 未配置 Key 时优雅降级为纯 Input
  */
 import { EnvironmentOutlined } from '@ant-design/icons'
@@ -30,8 +29,6 @@ export interface LocationPickerProps {
   disabled?: boolean
   /** 占位符 */
   placeholder?: string
-  /** EXIF GPS 传入的初始坐标（GCJ-02），用于自动逆地理编码 */
-  initialCoordinate?: { lng: number; lat: number } | null
 }
 
 /** 默认地图中心（北京） */
@@ -42,13 +39,11 @@ const DEFAULT_ZOOM = 11
  * 地点选择组件
  */
 const LocationPicker = (props: LocationPickerProps) => {
-  const { value, onChange, disabled = false, placeholder, initialCoordinate } = props
+  const { value, onChange, disabled = false, placeholder } = props
   const { t } = useTranslation()
 
   // 是否可用高德
   const amapReady = isAmapConfigured()
-  // 加载状态
-  const [loading, setLoading] = useState(false)
   // 地图 Modal
   const [mapVisible, setMapVisible] = useState(false)
   // 搜索选项
@@ -87,8 +82,6 @@ const LocationPicker = (props: LocationPickerProps) => {
   const userModifiedPosition = useRef(false)
   // 地图 Modal 初始化时的坐标（用 ref 避免 initMap 依赖 tempCoord 导致重建）
   const initCoordRef = useRef<{ lng: number; lat: number } | null>(null)
-  // 已处理过的 initialCoordinate
-  const processedCoord = useRef<string>('')
 
   // 同步外部 value 到 searchText
   useEffect(() => {
@@ -158,42 +151,6 @@ const LocationPicker = (props: LocationPickerProps) => {
       return { address: '', position: '' }
     }
   }, [])
-
-  /**
-   * EXIF GPS 联动：当 initialCoordinate 变化且当前无坐标时自动逆地理编码
-   */
-  useEffect(() => {
-    if (!initialCoordinate || !amapReady) {
-      return
-    }
-    const coordKey = `${initialCoordinate.lng},${initialCoordinate.lat}`
-    if (processedCoord.current === coordKey) {
-      return
-    }
-    processedCoord.current = coordKey
-
-    // 如果已有坐标，不覆盖
-    if (value?.lng != null && value?.lat != null) {
-      return
-    }
-
-    setLoading(true)
-    reverseGeocode(initialCoordinate.lng, initialCoordinate.lat)
-      .then(({ address, position }) => {
-        const next: LocationValue = {
-          ...value,
-          lng: initialCoordinate.lng,
-          lat: initialCoordinate.lat,
-          address: address || value?.address || null,
-        }
-        // 尊重用户已手动填写的 position
-        if (!userModifiedPosition.current && position) {
-          next.position = position
-        }
-        emitChange(next)
-      })
-      .finally(() => setLoading(false))
-  }, [initialCoordinate, amapReady, value, reverseGeocode, emitChange])
 
   /**
    * 搜索输入变化
@@ -599,33 +556,31 @@ const LocationPicker = (props: LocationPickerProps) => {
   // ============ 正常模式 ============
   return (
     <Space direction='vertical' style={{ width: '100%' }} size={2}>
-      <Spin spinning={loading} size='small'>
-        <AutoComplete
-          value={searchText}
-          options={options}
-          disabled={disabled}
-          placeholder={placeholder || t('content.locationPlaceholder')}
-          onSearch={handleSearch}
-          onSelect={handleSelect}
-          onChange={(val) => {
-            // 允许自由输入（不选建议时同步 position）
-            if (!options.find((o) => o.value === val)) {
-              setSearchText(val)
-              userModifiedPosition.current = true
-              emitChange({ ...value, position: val || null })
-            }
-          }}
-          style={{ width: '100%' }}
-        >
-          <Input
-            suffix={
-              <Tooltip title={t('content.mapPicker')}>
-                <EnvironmentOutlined style={{ cursor: disabled ? 'not-allowed' : 'pointer', color: '#1677ff' }} onClick={openMapModal} />
-              </Tooltip>
-            }
-          />
-        </AutoComplete>
-      </Spin>
+      <AutoComplete
+        value={searchText}
+        options={options}
+        disabled={disabled}
+        placeholder={placeholder || t('content.locationPlaceholder')}
+        onSearch={handleSearch}
+        onSelect={handleSelect}
+        onChange={(val) => {
+          // 允许自由输入（不选建议时同步 position）
+          if (!options.find((o) => o.value === val)) {
+            setSearchText(val)
+            userModifiedPosition.current = true
+            emitChange({ ...value, position: val || null })
+          }
+        }}
+        style={{ width: '100%' }}
+      >
+        <Input
+          suffix={
+            <Tooltip title={t('content.mapPicker')}>
+              <EnvironmentOutlined style={{ cursor: disabled ? 'not-allowed' : 'pointer', color: '#1677ff' }} onClick={openMapModal} />
+            </Tooltip>
+          }
+        />
+      </AutoComplete>
 
       {/* 已选坐标提示 */}
       {value?.lng != null && value?.lat != null && (

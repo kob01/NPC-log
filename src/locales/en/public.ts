@@ -1,5 +1,5 @@
 export default {
-  currentName: 'Background Management System',
+  currentName: 'NPC Save',
   total: 'total',
   date: 'date',
   search: 'Search',

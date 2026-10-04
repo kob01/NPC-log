@@ -68,7 +68,7 @@ const SharedView = () => {
       <div className='max-w-768px mx-auto px-4 py-5 bg-white min-h-100vh'>
         {/* 品牌头部 */}
         <div className='text-center mb-4'>
-          <div className='text-18px font-bold text-gray-800'>NPC 日志 · 分享</div>
+          <div className='text-18px font-bold text-gray-800'>NPC存档 · 分享</div>
           {data.author && <div className='text-12px text-gray-400 mt-1'>@{data.author}</div>}
         </div>
 
@@ -124,7 +124,7 @@ const SharedView = () => {
           </div>
         )}
 
-        <div className='text-center text-12px text-gray-400 mt-8 pt-4 border-t border-gray-200'>来自 NPC 日志</div>
+        <div className='text-center text-12px text-gray-400 mt-8 pt-4 border-t border-gray-200'>来自「NPC存档」</div>
       </div>
     </div>
   )

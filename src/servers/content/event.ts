@@ -51,7 +51,7 @@ export interface EventPayload {
   witness?: string
   visibility?: number
   visibleOrgIds?: number[]
-  // 地点坐标（GCJ-02），由 EXIF 自动识别，可为空
+  // 地点坐标（GCJ-02），由地图选点得到，可为空
   lng?: number | null
   lat?: number | null
   address?: string | null
@@ -67,7 +67,10 @@ export interface EventPayload {
 export interface EventListItem extends FormData {
   id: string
   is_mine?: boolean
+  /** 首图缩略图（300px，只用于行内小图展示） */
   firstThumb?: string | null
+  /** 首图原图地址：行内点开的灯箱预览要用它，用缩略图等于把小图放大到全屏 */
+  firstUrl?: string | null
   imageCount?: number
   firstLink?: EventLinkDetail | null
   linkCount?: number
@@ -80,6 +83,23 @@ export interface EventListItem extends FormData {
   /** 随日志留存的录音（小程序录音录入产生），Web 端可回放 */
   audioUrl?: string | null
   audioDuration?: number | null
+}
+
+/**
+ * 本会话内日志数据的写入版本号：任何一次成功的新增/修改/删除都会 +1。
+ * KeepAlive 恢复编辑页时用它判断“离开期间数据是否被动过”：
+ * 动过就必须重拉详情（否则看到的是上一次的缓存内容），没动过则保留用户正在填写的表单。
+ */
+let revision = 0
+
+/** 获取当前写入版本号 */
+export const getEventRevision = () => revision
+
+/** 写接口成功后累加版本号（失败不动，避免无意义的刷新） */
+const bumpRevision = (code?: number) => {
+  if (Number(code) === 200) {
+    revision += 1
+  }
 }
 
 /**
@@ -114,24 +134,30 @@ export function getNPCEventById(id: string) {
  * 新增数据
  * @param data - 请求数据
  */
-export function createNPCEvent(data: FormData & Partial<EventPayload>) {
-  return request.post(API.URL, data)
+export async function createNPCEvent(data: FormData & Partial<EventPayload>) {
+  const result = await request.post(API.URL, data)
+  bumpRevision(result?.code)
+  return result
 }
 
 /**
  * 修改数据
  * @param data - 请求数据
  */
-export function updateNPCEvent(data: FormData & Partial<EventPayload>) {
-  return request.put(`${API.URL}`, data)
+export async function updateNPCEvent(data: FormData & Partial<EventPayload>) {
+  const result = await request.put(`${API.URL}`, data)
+  bumpRevision(result?.code)
+  return result
 }
 
 /**
  * 删除
  * @param id - 删除id值
  */
-export function deleteNPCEvent(id: string) {
-  return request.delete(`${API.URL}?id=${id}`)
+export async function deleteNPCEvent(id: string) {
+  const result = await request.delete(`${API.URL}?id=${id}`)
+  bumpRevision(result?.code)
+  return result
 }
 
 /**

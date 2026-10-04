@@ -1,6 +1,6 @@
 export default {
   articleTitle: '文章管理',
-  logTitle: 'NPC日志',
+  logTitle: 'NPC存档',
   contentTitle: '内容管理',
   clipboard: '剪切板',
   clipboardMessage: '将“admin”传入复制按钮中',
@@ -21,7 +21,6 @@ export default {
   imageMaxCount: '最多上传 {{num}} 张图片',
   imageTypeInvalid: '仅支持 jpg/png/webp/heic 格式的图片',
   imageUploadFailed: '图片上传失败',
-  gpsExtracted: '已从照片自动识别位置',
   linkAdd: '添加链接',
   linkUrlPlaceholder: '粘贴链接或分享文案，自动识别平台',
   linkTitlePlaceholder: '作品标题（选填）',
@@ -83,7 +82,7 @@ export default {
   logHasLocationYes: '有坐标',
   logHasLocationNo: '无坐标',
   // 移动端浏览页
-  mobileTitle: 'NPC 日志',
+  mobileTitle: 'NPC存档',
   mobileTimeline: '时间线',
   mobileLogout: '退出',
   mLogoutConfirm: '确定退出登录吗？',
@@ -119,7 +118,7 @@ export default {
   shareSaveFailed: '海报保存失败',
   shareSaveOk: '海报已保存到本地',
   shareDegraded: 'AI 暂不可用，已用原文预览',
-  shareWatermark: '来自 NPC 日志',
+  shareWatermark: '来自「NPC存档」',
   shareClose: '关闭',
   platformMoments: '朋友圈',
   platformWeibo: '微博',
@@ -146,7 +145,7 @@ export default {
   personsAllYears: '全部年份',
   // 地图足迹
   footprintTitle: '地图足迹',
-  footprintEmpty: '暂无带坐标的记录（地图选点或照片 EXIF 自动定位后生成）',
+  footprintEmpty: '暂无带坐标的记录（地图选点后生成）',
   footprintLoadFailed: '足迹数据加载失败',
   footprintCount: '个足迹',
   footprintList: '足迹列表',

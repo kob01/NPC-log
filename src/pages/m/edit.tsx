@@ -23,7 +23,7 @@ const MobileEdit = () => {
   const id = new URLSearchParams(search).get('id')
   const formRef = useRef<FormInstance>(null)
 
-  const { isLoading, data, aiInfo, orgOptions, gpsTip, exifCoord, handleGpsExtracted, submit } = useEventForm(id)
+  const { isLoading, data, aiInfo, orgOptions, submit } = useEventForm(id)
 
   /**
    * 提交表单
@@ -78,18 +78,7 @@ const MobileEdit = () => {
       )}
 
       <div className='rounded-10px bg-white p-3 shadow-0_1px_4px_rgba(0,0,0,0.06)'>
-        <BasicForm
-          ref={formRef}
-          layout='vertical'
-          list={createList(t, orgOptions, handleGpsExtracted, exifCoord)}
-          data={data}
-          handleFinish={handleFinish}
-        />
-        {gpsTip && (
-          <Typography.Text type='secondary' style={{ display: 'block', fontSize: 12 }}>
-            {t('content.gpsExtracted')}
-          </Typography.Text>
-        )}
+        <BasicForm ref={formRef} layout='vertical' list={createList(t, orgOptions)} data={data} handleFinish={handleFinish} />
       </div>
 
       {/* 吸底操作栏：本页已隐藏底部导航，故贴着安全区底部放置 */}

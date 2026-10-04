@@ -1,6 +1,6 @@
 export default {
   login: '登录',
-  systemLogin: '系统登录',
+  systemLogin: '登录 NPC存档',
   password: '密码',
   username: '用户名',
   confirmPassword: '确认密码',
@@ -10,7 +10,7 @@ export default {
   pleaseEnterUsername: '请输入用户名',
   pleaseEnterPassword: '请输入密码',
   register: '注册',
-  systemRegister: '系统注册',
+  systemRegister: '注册新存档',
   registerSuccess: '注册成功，请登录',
   backToLogin: '返回登录',
   toRegister: '注册账号',

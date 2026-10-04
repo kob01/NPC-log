@@ -1,6 +1,6 @@
 export default {
   articleTitle: 'Article Management',
-  logTitle: 'NPC Log',
+  logTitle: 'NPC Save',
   contentTitle: 'Content Management',
   clipboard: 'Clipboard',
   clipboardMessage: 'Pass "admin" into the copy button',
@@ -21,7 +21,6 @@ export default {
   imageMaxCount: 'Upload at most {{num}} images',
   imageTypeInvalid: 'Only jpg/png/webp/heic images are supported',
   imageUploadFailed: 'Image upload failed',
-  gpsExtracted: 'Location detected from photo',
   linkAdd: 'Add Link',
   linkUrlPlaceholder: 'Paste a link or share text to auto-detect platform',
   linkTitlePlaceholder: 'Work title (optional)',
@@ -83,7 +82,7 @@ export default {
   logHasLocationYes: 'With coords',
   logHasLocationNo: 'Without coords',
   // Mobile view
-  mobileTitle: 'NPC Log',
+  mobileTitle: 'NPC Save',
   mobileTimeline: 'Timeline',
   mobileLogout: 'Logout',
   mLogoutConfirm: 'Sign out of your account?',
@@ -119,7 +118,7 @@ export default {
   shareSaveFailed: 'Failed to save image',
   shareSaveOk: 'Poster saved',
   shareDegraded: 'AI unavailable, showing original text',
-  shareWatermark: 'from NPC Log',
+  shareWatermark: 'from NPC Save',
   shareClose: 'Close',
   platformMoments: 'Moments',
   platformWeibo: 'Weibo',
@@ -146,7 +145,7 @@ export default {
   personsAllYears: 'All Years',
   // Map footprints
   footprintTitle: 'Map Footprints',
-  footprintEmpty: 'No records with coordinates yet (generated after map picking or photo EXIF geolocation)',
+  footprintEmpty: 'No records with coordinates yet (generated after map picking)',
   footprintLoadFailed: 'Failed to load footprints',
   footprintCount: 'footprints',
   footprintList: 'Footprint List',

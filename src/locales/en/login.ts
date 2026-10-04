@@ -1,6 +1,6 @@
 export default {
   login: 'Login',
-  systemLogin: 'System Login',
+  systemLogin: 'Sign in to NPC Save',
   password: 'password',
   username: 'username',
   confirmPassword: 'confirm password',
@@ -10,7 +10,7 @@ export default {
   pleaseEnterUsername: 'Please enter username',
   pleaseEnterPassword: 'Please enter password',
   register: 'Register',
-  systemRegister: 'System Register',
+  systemRegister: 'Register a New Save',
   registerSuccess: 'Register successful, please log in',
   backToLogin: 'Back to login',
   toRegister: 'Register Account',

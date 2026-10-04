@@ -384,14 +384,22 @@ const Page = () => {
         </div>
       )
     }
-    // 单图或详情图片未回填：降级为首图缩略图 + 数量角标
+    // 单图或详情图片未回填：行内仍用首图缩略图，但点开必须是原图（与编辑页一致）。
+    // 列表接口的 firstUrl 只是一个字符串、不传图字节，因此不增加列表流量
     const thumb = resolveFileUrl(row.firstThumb)
     if (!thumb) {
       return <span>{EMPTY_VALUE}</span>
     }
+    const full = imagesMap[row.id]?.[0]?.full || resolveFileUrl(row.firstUrl)
     return (
       <div style={{ position: 'relative', width: 48, height: 48 }}>
-        <Image src={thumb} width={48} height={48} style={{ objectFit: 'cover', borderRadius: 4 }} preview={{ mask: <EyeOutlined /> }} />
+        <Image
+          src={thumb}
+          width={48}
+          height={48}
+          style={{ objectFit: 'cover', borderRadius: 4 }}
+          preview={{ src: full || undefined, mask: <EyeOutlined /> }}
+        />
         {count > 1 && (
           <span
             style={{

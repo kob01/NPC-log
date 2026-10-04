@@ -117,7 +117,7 @@ const LayoutMenu = () => {
     if (permissions.length > 0) {
       const newMenus = filterMenus(menuList, permissions)
       filterMenuIcon(newMenus)
-      // 超级记忆家族（回忆/年度回顾/人物图谱/地图足迹）：同“NPC 专属日志”一样硬编码前置（不依赖 note_menus），
+      // 超级记忆家族（回忆/年度回顾/人物图谱/地图足迹）：同“NPC存档”一样硬编码前置（不依赖 note_menus），
       // 权限由后端 NORMAL_PERMISSIONS 下发 /content/* 控制，人人可用
       newMenus.unshift({
         icon: <ThunderboltFilled />,
@@ -154,7 +154,7 @@ const LayoutMenu = () => {
       newMenus.unshift({
         icon: <CompassOutlined />,
         label: t('content.logTitle'),
-        labelEn: 'NPC Log',
+        labelEn: 'NPC Save',
         key: '/content/log',
         rule: '/content/log',
       })
@@ -318,7 +318,7 @@ const LayoutMenu = () => {
           `}
           >
             {/* {t('public.currentName')} */}
-            NPC专属日志
+            NPC存档
           </span>
         </div>
 

@@ -1,8 +1,6 @@
 import { PlusOutlined } from '@ant-design/icons'
 import { Image, message, Upload } from 'antd'
 import imageCompression from 'browser-image-compression'
-import { wgs84togcj02 } from 'coordtransform'
-import exifr from 'exifr'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -23,8 +21,6 @@ export interface ImageUploadProps {
   value?: ImageUploadValue[]
   /** 值变更回调（仅包含上传成功的图片，按当前顺序生成 sort） */
   onChange?: (value: ImageUploadValue[]) => void
-  /** 成功从照片 EXIF 提取到 GPS（GCJ-02）时回调，多张图仅取第一张有效值 */
-  onGpsExtracted?: (gps: { lng: number; lat: number }) => void
   /** 最多上传数量，默认 9 */
   maxCount?: number
   /** 是否禁用 */
@@ -55,12 +51,11 @@ function supportsWebp(): boolean {
 }
 
 /**
- * 图片上传组件（压缩 + EXIF 取 GPS）
- * - 顺序：先用 exifr 读原图 GPS，再压缩（压缩会丢 EXIF）
+ * 图片上传组件（压缩）
  * - 受控 value/onChange，可接入 BasicForm 或 antd Form.Item
  */
 const ImageUpload = (props: ImageUploadProps) => {
-  const { value, onChange, onGpsExtracted, maxCount = 9, disabled = false, accept = DEFAULT_ACCEPT } = props
+  const { value, onChange, maxCount = 9, disabled = false, accept = DEFAULT_ACCEPT } = props
   const { t } = useTranslation()
 
   // 上传中的占位项（独立于已提交值，避免并发上传相互覆盖）
@@ -70,8 +65,6 @@ const ImageUpload = (props: ImageUploadProps) => {
   const [previewOpen, setPreviewOpen] = useState(false)
   // 始终指向最新已提交值，保证并发上传成功时链式追加正确
   const valueRef = useRef<ImageUploadValue[]>(value || [])
-  // 是否已抛出过 GPS（每次挂载仅取第一张有效 GPS）
-  const gpsEmittedRef = useRef(false)
 
   // 外部 value 变化（编辑回填/重置）时同步 ref
   useEffect(() => {
@@ -98,27 +91,6 @@ const ImageUpload = (props: ImageUploadProps) => {
   const fileList = [...doneList, ...pendingList]
 
   /**
-   * 尝试从原图读取 EXIF GPS 并转换为 GCJ-02
-   * @param file - 原始文件（压缩前）
-   */
-  const tryExtractGps = async (file: File) => {
-    if (gpsEmittedRef.current || !onGpsExtracted) {
-      return
-    }
-    try {
-      const gps = await exifr.gps(file)
-      if (gps && typeof gps.latitude === 'number' && typeof gps.longitude === 'number') {
-        // WGS-84 -> GCJ-02
-        const [lng, lat] = wgs84togcj02(gps.longitude, gps.latitude)
-        gpsEmittedRef.current = true
-        onGpsExtracted({ lng, lat })
-      }
-    } catch {
-      // 无 EXIF 或解析失败，忽略
-    }
-  }
-
-  /**
    * 压缩图片
    * @param file - 原始文件
    */
@@ -143,7 +115,7 @@ const ImageUpload = (props: ImageUploadProps) => {
   }
 
   /**
-   * 选择文件后：EXIF -> 压缩 -> 上传 -> 写入 value
+   * 选择文件后：压缩 -> 上传 -> 写入 value
    * @param file - antd 原始文件
    */
   const beforeUpload = async (file: RcFile) => {
@@ -164,14 +136,12 @@ const ImageUpload = (props: ImageUploadProps) => {
     setPendingList((prev) => [...prev, { uid, name: file.name, status: 'uploading', thumbUrl: previewUrl }])
 
     try {
-      // 1. 先读 EXIF GPS（压缩会丢失 EXIF）
-      await tryExtractGps(file)
-      // 2. 压缩
+      // 1. 压缩
       const { blob, ext } = await compress(file)
-      // 3. 上传
+      // 2. 上传
       const baseName = (file.name.replace(/\.[^.]+$/, '') || 'image').slice(0, 40)
       const { url, thumbUrl } = await uploadEventImage(blob, `${baseName}.${ext}`)
-      // 4. 写入受控值
+      // 3. 写入受控值
       emit([...valueRef.current, { url, thumbUrl }])
     } catch {
       message.error(t('content.imageUploadFailed'))

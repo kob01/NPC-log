@@ -44,7 +44,7 @@ const Page = () => {
   // 移动版已支持编辑：手机访问时带着同一个 id 跳到 /m/edit
   const toMobile = useMobileRedirect(`/m/edit${search}`)
 
-  const { isLoading, data, aiInfo, orgOptions, gpsTip, exifCoord, handleGpsExtracted, submit } = useEventForm(id)
+  const { isLoading, data, aiInfo, orgOptions, submit } = useEventForm(id)
 
   // 权限前缀
   const permissionPrefix = '/content/log'
@@ -138,19 +138,8 @@ const Page = () => {
           </Card>
         )}
         <Spin spinning={isLoading}>
-          <BasicForm
-            ref={createFormRef}
-            list={createList(t, orgOptions, handleGpsExtracted, exifCoord)}
-            data={data}
-            labelCol={{ span: 5 }}
-            handleFinish={handleFinish}
-          />
+          <BasicForm ref={createFormRef} list={createList(t, orgOptions)} data={data} labelCol={{ span: 5 }} handleFinish={handleFinish} />
         </Spin>
-        {gpsTip && (
-          <Typography.Text type='secondary' style={{ display: 'block', marginTop: 8, fontSize: 12 }}>
-            {t('content.gpsExtracted')}
-          </Typography.Text>
-        )}
       </div>
 
       <SubmitBottom isLoading={isLoading} goBack={goBack} handleSubmit={handleSubmit} />

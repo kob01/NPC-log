@@ -267,12 +267,7 @@ export const tableColumns = (
 ]
 
 // 新增数据
-export const createList = (
-  t: TFunction,
-  orgOptions: { label: string; value: number }[] = [],
-  onGpsExtracted?: (gps: { lng: number; lat: number }) => void,
-  initialCoordinate?: { lng: number; lat: number } | null,
-): FormList[] => [
+export const createList = (t: TFunction, orgOptions: { label: string; value: number }[] = []): FormList[] => [
   {
     label: t('public.date'),
     name: 'time',
@@ -332,9 +327,6 @@ export const createList = (
     label: '地点',
     name: 'location',
     component: 'LocationPicker',
-    componentProps: {
-      initialCoordinate,
-    },
   },
   {
     label: '见证者',
@@ -367,7 +359,6 @@ export const createList = (
     component: 'ImageUpload',
     componentProps: {
       maxCount: 9,
-      onGpsExtracted,
     },
   },
   {

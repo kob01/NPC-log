@@ -1,6 +1,7 @@
 import { message } from 'antd'
 import dayjs from 'dayjs'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useActivate } from 'react-activation'
 import { useTranslation } from 'react-i18next'
 
 import type { FormData } from '#/form'
@@ -10,7 +11,7 @@ import type { LocationValue } from '@/components/LocationPicker'
 import type { EventPayload } from '@/servers/content/event'
 
 import { isValidLinkUrl } from '@/components/LinkList'
-import { getNPCEventById, createNPCEvent, updateNPCEvent } from '@/servers/content/event'
+import { getNPCEventById, getEventRevision, createNPCEvent, updateNPCEvent } from '@/servers/content/event'
 import { getMyOrgs } from '@/servers/system/organization'
 
 /** 新增日志的初始值（「感受」已并入 content 一个正文框） */
@@ -80,10 +81,8 @@ export function useEventForm(id?: string | null) {
   const [data, setData] = useState<FormData>(INIT_EVENT_FORM)
   const [aiInfo, setAiInfo] = useState<EventAiInfo | null>(null)
   const [orgOptions, setOrgOptions] = useState<{ label: string; value: number }[]>([])
-  // 是否已从照片 EXIF 自动识别到位置
-  const [gpsTip, setGpsTip] = useState(false)
-  // EXIF GPS 坐标（GCJ-02），传给 LocationPicker 的 initialCoordinate
-  const [exifCoord, setExifCoord] = useState<{ lng: number; lat: number } | null>(null)
+  // 本次详情对应的数据写入版本号（-1 表示尚未加载）
+  const loadedRevision = useRef(-1)
 
   // 加载“我加入的组织”（仅已通过）作为可见组织选项
   useEffect(() => {
@@ -104,6 +103,47 @@ export function useEventForm(id?: string | null) {
     loadOrgs()
   }, [])
 
+  /** 拉取详情并回填表单（新增场景无 id 直接返回） */
+  const loadDetail = useCallback(async () => {
+    if (!id) {
+      return
+    }
+    try {
+      setLoading(true)
+      const { code, data: resp } = await getNPCEventById(id)
+      if (Number(code) !== 200 || !resp) {
+        return
+      }
+      // 将后端返回的 position/lng/lat/address 组装为 location 复合对象
+      const formData: FormData = { ...resp }
+      formData.location = {
+        position: resp.position || null,
+        address: resp.address || null,
+        lng: resp.lng != null ? Number(resp.lng) : null,
+        lat: resp.lat != null ? Number(resp.lat) : null,
+      } as LocationValue
+      // 移除旧的分散字段，避免干扰
+      delete formData.position
+      delete formData.lng
+      delete formData.lat
+      delete formData.address
+      setData(formData)
+      // 抽出 AI 字段做只读展示（不回填表单，避免提交时误覆盖）
+      setAiInfo({
+        summary: (resp.summary as string) || '',
+        tags: (resp.tags as string[]) || [],
+        persons: (resp.persons as string[]) || [],
+        aiStatus: Number(resp.aiStatus ?? 0),
+      })
+      // 记住这份数据对应的版本号，供激活时判断是否已过期
+      loadedRevision.current = getEventRevision()
+    } catch (error) {
+      console.error('获取日志详情失败:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [id])
+
   // 详情回填 / 新增初始化
   useEffect(() => {
     if (!id) {
@@ -116,54 +156,21 @@ export function useEventForm(id?: string | null) {
       }
       return
     }
-    const load = async () => {
-      try {
-        setLoading(true)
-        const { code, data: resp } = await getNPCEventById(id)
-        if (Number(code) !== 200 || !resp) {
-          return
-        }
-        // 将后端返回的 position/lng/lat/address 组装为 location 复合对象
-        const formData: FormData = { ...resp }
-        formData.location = {
-          position: resp.position || null,
-          address: resp.address || null,
-          lng: resp.lng != null ? Number(resp.lng) : null,
-          lat: resp.lat != null ? Number(resp.lat) : null,
-        } as LocationValue
-        // 移除旧的分散字段，避免干扰
-        delete formData.position
-        delete formData.lng
-        delete formData.lat
-        delete formData.address
-        setData(formData)
-        // 抽出 AI 字段做只读展示（不回填表单，避免提交时误覆盖）
-        setAiInfo({
-          summary: (resp.summary as string) || '',
-          tags: (resp.tags as string[]) || [],
-          persons: (resp.persons as string[]) || [],
-          aiStatus: Number(resp.aiStatus ?? 0),
-        })
-      } catch (error) {
-        console.error('获取日志详情失败:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [id])
+    loadDetail()
+  }, [id, loadDetail])
 
   /**
-   * 照片 EXIF 识别到 GPS 时传给 LocationPicker
-   * @param gps - GCJ-02 坐标
+   * 从 KeepAlive 缓存里被恢复时按需重拉详情
+   * 桌面端编辑页被 layouts 的 <KeepAlive name={uri}> 按完整地址（含 ?id=）缓存：
+   * 同一个 id 第二次进入时组件不重新挂载，上面的 useEffect([id]) 也不会再跑，
+   * 于是表单停在上一次的内容里——看着像“GET 走了浏览器缓存”，其实是请求根本没发出去。
+   * 只在“离开期间数据确实被改过”时刷新，纯切换标签仍保留用户正在填写的内容。
    */
-  const handleGpsExtracted = useCallback((gps: { lng: number; lat: number }) => {
-    setExifCoord(gps)
-    setGpsTip(true)
-  }, [])
-
-  /** 清除 EXIF 提示（提交成功后调用） */
-  const resetGpsTip = useCallback(() => setGpsTip(false), [])
+  useActivate(() => {
+    if (id && loadedRevision.current !== getEventRevision()) {
+      loadDetail()
+    }
+  })
 
   /**
    * 构造提交 payload：将 location 复合对象拆解为 position/lng/lat/address
@@ -233,7 +240,6 @@ export function useEventForm(id?: string | null) {
         return false
       }
       message.success(msg || t('public.successfulOperation'), 3)
-      setGpsTip(false)
       localStorage.setItem(DRAFT_KEY, 'null')
       return true
     } catch {
@@ -250,10 +256,6 @@ export function useEventForm(id?: string | null) {
     data,
     aiInfo,
     orgOptions,
-    gpsTip,
-    exifCoord,
-    handleGpsExtracted,
-    resetGpsTip,
     submit,
   }
 }
