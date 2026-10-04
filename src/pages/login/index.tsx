@@ -152,7 +152,6 @@ const Login = () => {
 
   return (
     <>
-
       <div
         className={`
         ${themeCache === 'dark' ? 'bg-black text-white' : 'bg-light-400'}
@@ -193,12 +192,7 @@ const Login = () => {
               password: '',
             }}
           >
-            <Form.Item
-              name='username'
-              rules={[
-                { required: true, message: t('public.pleaseEnter', { name: t('login.username') }) },
-              ]}
-            >
+            <Form.Item name='username' rules={[{ required: true, message: t('public.pleaseEnter', { name: t('login.username') }) }]}>
               <Input
                 allow-clear='true'
                 placeholder={t('login.username')}
@@ -210,25 +204,13 @@ const Login = () => {
 
             <Form.Item
               name='password'
-              rules={[
-                { required: true, message: t('public.pleaseEnter', { name: t('login.password') }) },
-                PASSWORD_RULE(t),
-              ]}
+              rules={[{ required: true, message: t('public.pleaseEnter', { name: t('login.password') }) }, PASSWORD_RULE(t)]}
             >
-              <Input.Password
-                placeholder={t('login.password')}
-                autoComplete='current-password'
-                addonBefore={<LockOutlined className='change' />}
-              />
+              <Input.Password placeholder={t('login.password')} autoComplete='current-password' addonBefore={<LockOutlined className='change' />} />
             </Form.Item>
 
             <Form.Item>
-              <Button
-                type='primary'
-                htmlType='submit'
-                className='w-full mt-5px rounded-5px tracking-2px'
-                loading={isLoading}
-              >
+              <Button type='primary' htmlType='submit' className='w-full mt-5px rounded-5px tracking-2px' loading={isLoading}>
                 {t('login.login')}
               </Button>
             </Form.Item>

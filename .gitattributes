@@ -1,0 +1,22 @@
+# 换行策略统一：入库一律 LF，检出也一律 LF。
+# 不写这条时，Windows 上的 core.autocrlf=true 会把工作区文件变成 CRLF，而 prettier 的
+# endOfLine=lf 又把它们写回 LF —— 格式化工具每次都可能重排整个文件的换行，是“提交后仍有
+# 变更、要二次提交”的另一个来源。显式声明 eol=lf 后，autocrlf 被覆盖，三方（git / prettier /
+# .editorconfig）对换行的理解完全一致。
+* text=auto eol=lf
+
+# 二进制文件不做换行转换，也不给 prettier 碰
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
+*.mp3 binary
+*.mp4 binary
+*.zip binary

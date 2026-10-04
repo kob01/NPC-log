@@ -136,10 +136,7 @@ export function filterEmptyValue(obj: EmptyData): EmptyData {
 interface RecursiveChildren<T> {
   children?: T[]
 }
-export function recursiveData<T extends RecursiveChildren<T>, U>(
-  data: T[],
-  callback: (data: T) => U
-): U[] {
+export function recursiveData<T extends RecursiveChildren<T>, U>(data: T[], callback: (data: T) => U): U[] {
   if (data.length === 0) {
     return []
   }

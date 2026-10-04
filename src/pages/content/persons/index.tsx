@@ -144,10 +144,7 @@ const Page = () => {
                   )}
                 />
               ) : (
-                <Empty
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description={t('content.personsEmpty')}
-                />
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('content.personsEmpty')} />
               )}
             </Spin>
           </Card>
@@ -207,11 +204,7 @@ const Page = () => {
                         </Typography.Text>
                       </div>
                       {item.summary && (
-                        <Typography.Paragraph
-                          type='secondary'
-                          ellipsis={{ rows: 2 }}
-                          style={{ fontSize: 12, margin: '2px 0' }}
-                        >
+                        <Typography.Paragraph type='secondary' ellipsis={{ rows: 2 }} style={{ fontSize: 12, margin: '2px 0' }}>
                           {item.summary}
                         </Typography.Paragraph>
                       )}
@@ -224,23 +217,14 @@ const Page = () => {
                           ))}
                         </Space>
                         <span onClick={(e) => e.stopPropagation()}>
-                          <NavLinks
-                            lng={item.lng}
-                            lat={item.lat}
-                            position={item.position}
-                            address={item.address}
-                            compact
-                          />
+                          <NavLinks lng={item.lng} lat={item.lat} position={item.position} address={item.address} compact />
                         </span>
                       </div>
                     </Card>
                   ))}
                 </div>
               ) : (
-                <Empty
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description={t('content.personsTimelineEmpty')}
-                />
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('content.personsTimelineEmpty')} />
               )}
             </Spin>
           </Card>

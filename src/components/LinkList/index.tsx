@@ -161,31 +161,15 @@ const LinkList = (props: LinkListProps) => {
                 style={{ width: 180 }}
                 onChange={(e) => updateRow(index, { title: e.target.value })}
               />
-              {!disabled && (
-                <Button
-                  type='text'
-                  danger
-                  icon={<DeleteOutlined />}
-                  onClick={() => onRemove(index)}
-                />
-              )}
-              {urlError && (
-                <div style={{ color: '#ff4d4f', fontSize: 12, width: '100%' }}>
-                  {t('content.linkUrlInvalid')}
-                </div>
-              )}
+              {!disabled && <Button type='text' danger icon={<DeleteOutlined />} onClick={() => onRemove(index)} />}
+              {urlError && <div style={{ color: '#ff4d4f', fontSize: 12, width: '100%' }}>{t('content.linkUrlInvalid')}</div>}
             </Space>
           )
         })}
       </Space>
 
       {!disabled && (maxCount === undefined || list.length < maxCount) && (
-        <Button
-          type='dashed'
-          icon={<PlusOutlined />}
-          onClick={onAdd}
-          style={{ marginTop: list.length ? 8 : 0, width: '100%' }}
-        >
+        <Button type='dashed' icon={<PlusOutlined />} onClick={onAdd} style={{ marginTop: list.length ? 8 : 0, width: '100%' }}>
           {t('content.linkAdd')}
         </Button>
       )}
@@ -233,13 +217,7 @@ export const LinkListReadonly = (props: LinkListReadonlyProps) => {
     <Space direction='vertical' size={4}>
       {links.map((item, index) => (
         // eslint-disable-next-line react/no-array-index-key
-        <a
-          key={index}
-          href={item.url}
-          target='_blank'
-          rel='noopener noreferrer'
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
-        >
+        <a key={index} href={item.url} target='_blank' rel='noopener noreferrer' style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
           <Tag color={PLATFORM_COLOR[item.platform] || '#8c8c8c'} style={{ marginRight: 0 }}>
             <LinkOutlined /> {platformLabel(item.platform)}
           </Tag>

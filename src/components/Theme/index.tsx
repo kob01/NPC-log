@@ -67,12 +67,8 @@ const Theme = () => {
   return (
     <Tooltip title={t('public.themes')}>
       <div className='flex items-center justify-center text-lg mr-4 cursor-pointer'>
-        {theme === 'light' && (
-          <Icon icon='mdi-white-balance-sunny' onClick={() => onChange('dark')} />
-        )}
-        {theme !== 'light' && (
-          <Icon icon='mdi-moon-waning-crescent' onClick={() => onChange('light')} />
-        )}
+        {theme === 'light' && <Icon icon='mdi-white-balance-sunny' onClick={() => onChange('dark')} />}
+        {theme !== 'light' && <Icon icon='mdi-moon-waning-crescent' onClick={() => onChange('light')} />}
       </div>
     </Tooltip>
   )

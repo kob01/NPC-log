@@ -55,20 +55,9 @@ const BasicModal = (props: Props) => {
   /** 自定义关闭和放大图标 */
   const CloseRender = () => (
     <div className='flex items-center justify-end absolute right-15px'>
-      <Tooltip
-        className='hover:text-#404040'
-        placement='bottom'
-        title={!isFullscreen ? t('public.maximize') : t('public.exitMaximized')}
-      >
+      <Tooltip className='hover:text-#404040' placement='bottom' title={!isFullscreen ? t('public.maximize') : t('public.exitMaximized')}>
         <div className='p-10px mt-3px cursor-pointer' onClick={onFullscreen}>
-          <Icon
-            className='text-lg'
-            icon={
-              !isFullscreen
-                ? 'ant-design:fullscreen-outlined'
-                : 'ant-design:fullscreen-exit-outlined'
-            }
-          />
+          <Icon className='text-lg' icon={!isFullscreen ? 'ant-design:fullscreen-outlined' : 'ant-design:fullscreen-exit-outlined'} />
         </div>
       </Tooltip>
       <Tooltip placement='bottom' title={t('public.close')}>
@@ -81,11 +70,7 @@ const BasicModal = (props: Props) => {
 
   /** 自定义标题 */
   const titleRender = (
-    <div
-      className='w-full cursor-move flex items-center justify-between'
-      onMouseOver={onMouseOver}
-      onMouseOut={() => setDisabled(true)}
-    >
+    <div className='w-full cursor-move flex items-center justify-between' onMouseOver={onMouseOver} onMouseOut={() => setDisabled(true)}>
       <span>{props.title || ''}</span>
 
       {CloseRender()}

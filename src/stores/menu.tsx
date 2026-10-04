@@ -30,7 +30,6 @@ const menuSlice = createSlice({
   },
 })
 
-export const { toggleCollapsed, togglePhone, setSelectedKeys, setOpenKeys, setMenuList } =
-  menuSlice.actions
+export const { toggleCollapsed, togglePhone, setSelectedKeys, setOpenKeys, setMenuList } = menuSlice.actions
 
 export default menuSlice.reducer

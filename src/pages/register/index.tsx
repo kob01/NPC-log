@@ -76,41 +76,23 @@ const Register = () => {
           <img className='mr-2 object-contain' width='30' height='30' src={Logo} alt='LOGO' />
           <span className='text-xl font-bold tracking-2px'>{t('login.systemRegister')}</span>
         </div>
-        <Form
-          name='horizontal_register'
-          layout='vertical'
-          autoComplete='on'
-          onFinish={handleFinish}
-          onFinishFailed={handleFinishFailed}
-        >
+        <Form name='horizontal_register' layout='vertical' autoComplete='on' onFinish={handleFinish} onFinishFailed={handleFinishFailed}>
           <Form.Item
             label={t('login.username')}
             name='username'
-            rules={[
-              { required: true, message: t('public.pleaseEnter', { name: t('login.username') }) },
-            ]}
+            rules={[{ required: true, message: t('public.pleaseEnter', { name: t('login.username') }) }]}
           >
-            <Input
-              placeholder={t('login.pleaseEnterUsername')}
-              autoComplete='username'
-              addonBefore={<UserOutlined className='change' />}
-            />
+            <Input placeholder={t('login.pleaseEnterUsername')} autoComplete='username' addonBefore={<UserOutlined className='change' />} />
           </Form.Item>
 
           <Form.Item label={t('public.name')} name='real_name'>
-            <Input
-              placeholder={t('system.pleaseEnterRealName')}
-              addonBefore={<IdcardOutlined className='change' />}
-            />
+            <Input placeholder={t('system.pleaseEnterRealName')} addonBefore={<IdcardOutlined className='change' />} />
           </Form.Item>
 
           <Form.Item
             label={t('login.password')}
             name='password'
-            rules={[
-              { required: true, message: t('public.pleaseEnter', { name: t('login.password') }) },
-              PASSWORD_RULE(t),
-            ]}
+            rules={[{ required: true, message: t('public.pleaseEnter', { name: t('login.password') }) }, PASSWORD_RULE(t)]}
           >
             <Input.Password
               placeholder={t('login.pleaseEnterPassword')}
@@ -130,20 +112,11 @@ const Register = () => {
               PASSWORD_RULE(t),
             ]}
           >
-            <Input.Password
-              placeholder={t('login.confirmPassword')}
-              autoComplete='new-password'
-              addonBefore={<LockOutlined className='change' />}
-            />
+            <Input.Password placeholder={t('login.confirmPassword')} autoComplete='new-password' addonBefore={<LockOutlined className='change' />} />
           </Form.Item>
 
           <Form.Item>
-            <Button
-              type='primary'
-              htmlType='submit'
-              className='w-full mt-5px rounded-5px tracking-2px'
-              loading={isLoading}
-            >
+            <Button type='primary' htmlType='submit' className='w-full mt-5px rounded-5px tracking-2px' loading={isLoading}>
               {t('login.register')}
             </Button>
           </Form.Item>

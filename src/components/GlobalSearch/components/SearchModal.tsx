@@ -112,7 +112,7 @@ const SearchModal = (props: Props) => {
         setList([])
       }
     },
-    { wait: 200 }
+    { wait: 200 },
   )
 
   /**
@@ -177,13 +177,7 @@ const SearchModal = (props: Props) => {
   }, [list, active, onKeyDown])
 
   return (
-    <Modal
-      className='rounded-100px'
-      open={isOpen}
-      closable={false}
-      onCancel={onClose}
-      footer={<SearchFooter />}
-    >
+    <Modal className='rounded-100px' open={isOpen} closable={false} onCancel={onClose} footer={<SearchFooter />}>
       <Input
         ref={inputRef}
         value={value}

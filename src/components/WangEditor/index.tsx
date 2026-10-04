@@ -56,7 +56,7 @@ const WangEditor = (props: EditorProps) => {
       editor.destroy()
       setEditor(null)
     },
-    [editor]
+    [editor],
   )
 
   /**
@@ -69,12 +69,7 @@ const WangEditor = (props: EditorProps) => {
 
   return (
     <div className={className} style={{ border: '1px solid #ccc', zIndex: 100 }}>
-      <Toolbar
-        editor={editor}
-        defaultConfig={toolbarConfig}
-        mode='default'
-        style={{ borderBottom: '1px solid #ccc' }}
-      />
+      <Toolbar editor={editor} defaultConfig={toolbarConfig} mode='default' style={{ borderBottom: '1px solid #ccc' }} />
 
       <Editor
         defaultConfig={editorConfig}

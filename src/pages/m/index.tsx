@@ -116,7 +116,7 @@ const MobileHome = () => {
             ...e,
             thumbs: images.slice(0, 9).map((img) => resolveFileUrl(img.thumbUrl || img.url)),
           }
-        })
+        }),
       )
     } catch (error) {
       console.error('回填缩略图失败（已忽略）:', error)
@@ -190,7 +190,7 @@ const MobileHome = () => {
           loadMore()
         }
       },
-      { rootMargin: '300px' }
+      { rootMargin: '300px' },
     )
     observer.observe(node)
     return () => observer.disconnect()
@@ -251,11 +251,7 @@ const MobileHome = () => {
   })
 
   return (
-    <div
-      className='max-w-768px mx-auto px-3 py-3'
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
-    >
+    <div className='max-w-768px mx-auto px-3 py-3' onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       {/* 搜索框 */}
       <div className='relative mb-3'>
         <SearchOutlined className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 z-1' />
@@ -293,11 +289,7 @@ const MobileHome = () => {
           </div>
 
           {group.items.map((entry) => (
-            <Card
-              key={entry.id}
-              entry={entry}
-              onClick={() => navigate(`/m/detail?id=${entry.id}`)}
-            />
+            <Card key={entry.id} entry={entry} onClick={() => navigate(`/m/detail?id=${entry.id}`)} />
           ))}
         </div>
       ))}
@@ -341,23 +333,13 @@ const Card = ({ entry, onClick }: { entry: TimelineEntry; onClick: () => void })
 
     <div className='font-bold text-15px text-gray-800 truncate'>{entry.event}</div>
 
-    {(entry.summary || entry.content) && (
-      <div className='mt-1 text-13px text-gray-500 multi-line-ellipsis-2'>
-        {entry.summary || entry.content}
-      </div>
-    )}
+    {(entry.summary || entry.content) && <div className='mt-1 text-13px text-gray-500 multi-line-ellipsis-2'>{entry.summary || entry.content}</div>}
 
     {/* 缩略图横条 */}
     {entry.thumbs.length > 0 && (
       <div className='mt-2 flex gap-2 overflow-x-auto'>
         {entry.thumbs.map((src, idx) => (
-          <img
-            key={`${src}-${idx}`}
-            src={src}
-            alt=''
-            loading='lazy'
-            className='w-56px h-56px object-cover rounded-6px shrink-0 bg-gray-100'
-          />
+          <img key={`${src}-${idx}`} src={src} alt='' loading='lazy' className='w-56px h-56px object-cover rounded-6px shrink-0 bg-gray-100' />
         ))}
       </div>
     )}
@@ -382,13 +364,7 @@ const Card = ({ entry, onClick }: { entry: TimelineEntry; onClick: () => void })
     {(entry.lng != null || entry.position || entry.address) && (
       <div className='mt-2 flex items-center text-12px text-gray-500'>
         <EnvironmentOutlined className='mr-1 text-gray-400' />
-        <NavLinks
-          lng={entry.lng}
-          lat={entry.lat}
-          position={entry.position}
-          address={entry.address}
-          compact
-        />
+        <NavLinks lng={entry.lng} lat={entry.lat} position={entry.position} address={entry.address} compact />
       </div>
     )}
   </div>

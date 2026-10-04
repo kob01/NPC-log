@@ -37,7 +37,7 @@ export function getOpenMenuByRouter(router: string): string[] {
 function collectMenuChain(
   menus: SideMenu[],
   parents: string[] = [],
-  result: { key: string; parents: string[] }[] = []
+  result: { key: string; parents: string[] }[] = [],
 ): { key: string; parents: string[] }[] {
   for (let i = 0; i < menus.length; i++) {
     const { key, children } = menus[i]
@@ -200,8 +200,7 @@ export function searchMenuValue(data: SearchMenuProps): SideMenu[] {
         currentPath.pop()
       }
     } else if (
-      ((lang === 'en' &&
-        menus[i]?.labelEn?.toLocaleUpperCase()?.includes(value?.toLocaleUpperCase())) ||
+      ((lang === 'en' && menus[i]?.labelEn?.toLocaleUpperCase()?.includes(value?.toLocaleUpperCase())) ||
         (lang !== 'en' && menus[i]?.label?.includes(value))) &&
       hasPermission(menus[i], permissions)
     ) {

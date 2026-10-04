@@ -67,9 +67,7 @@ export const tableColumns = (t: TFunction, optionRender: TableOptions<object>): 
     dataIndex: 'status',
     width: 100,
     render: (value: number) => (
-      <span style={{ color: value === 1 ? '#52c41a' : '#ff4d4f' }}>
-        {value === 1 ? t('public.open') : t('public.close')}
-      </span>
+      <span style={{ color: value === 1 ? '#52c41a' : '#ff4d4f' }}>{value === 1 ? t('public.open') : t('public.close')}</span>
     ),
   },
   {

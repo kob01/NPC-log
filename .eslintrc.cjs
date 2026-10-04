@@ -29,25 +29,15 @@ module.exports = {
     sourceType: 'module',
   },
   // 指定要使用的插件
-  plugins: [
-    'react',
-    'react-hooks',
-    '@typescript-eslint',
-    'import',
-    'jsx-a11y',
-    'prettier',
-  ],
+  plugins: ['react', 'react-hooks', '@typescript-eslint', 'import', 'jsx-a11y', 'prettier'],
   // 自定义规则
   rules: {
-    // Prettier 集成
-    'prettier/prettier': ['error', {
-      semi: false,
-      singleQuote: true,
-      tabWidth: 2,
-      trailingComma: 'es5',
-      printWidth: 100,
-      endOfLine: 'lf',
-    }],
+    // Prettier 集成：不要在这里内联 prettier 选项，格式规则唯一来源是 .prettierrc.json。
+    // 曾经在此写了 printWidth:100 / trailingComma:'es5' / endOfLine:'lf'，与 .prettierrc.json
+    // 的 printWidth:150 / trailingComma:'all' / endOfLine:'auto' 相互矛盾，导致
+    // `eslint --fix` 与 prettier（编辑器保存即格式化）来回改写同一文件，提交后工作区
+    // 依旧脏，必须再补一次 style 提交。保留内联选项等于制造第二套格式标准。
+    'prettier/prettier': 'error',
 
     // React 相关
     'react/react-in-jsx-scope': 'off',
@@ -57,10 +47,7 @@ module.exports = {
     'react/jsx-boolean-value': ['error', 'never'],
     'react/jsx-curly-brace-presence': ['error', { props: 'never', children: 'never' }],
     'react/self-closing-comp': ['error', { component: true, html: true }],
-    'react/function-component-definition': [
-      'error',
-      { namedComponents: 'arrow-function', unnamedComponents: 'arrow-function' },
-    ],
+    'react/function-component-definition': ['error', { namedComponents: 'arrow-function', unnamedComponents: 'arrow-function' }],
     'react/display-name': 'off',
 
     // React Hooks
@@ -82,14 +69,7 @@ module.exports = {
     'import/order': [
       'error',
       {
-        groups: [
-          'builtin',
-          'external',
-          'internal',
-          ['parent', 'sibling', 'index'],
-          'type',
-          'unknown',
-        ],
+        groups: ['builtin', 'external', 'internal', ['parent', 'sibling', 'index'], 'type', 'unknown'],
         'newlines-between': 'always',
         alphabetize: { order: 'asc', caseInsensitive: true },
       },
@@ -122,8 +102,8 @@ module.exports = {
     'prefer-arrow-callback': 'error',
     'arrow-body-style': ['error', 'as-needed'],
     'object-shorthand': ['error', 'always'],
-    'eqeqeq': ['error', 'always', { null: 'ignore' }],
-    'curly': ['error', 'all'],
+    eqeqeq: ['error', 'always', { null: 'ignore' }],
+    curly: ['error', 'all'],
     'no-throw-literal': 'error',
     'no-return-await': 'error',
     'no-shadow': 'off',
@@ -155,13 +135,5 @@ module.exports = {
     },
   },
   // 忽略的文件
-  ignorePatterns: [
-    'dist',
-    'build',
-    'node_modules',
-    '*.config.js',
-    '*.config.ts',
-    '.eslintrc.cjs',
-    'vite.config.ts',
-  ],
+  ignorePatterns: ['dist', 'build', 'node_modules', '*.config.js', '*.config.ts', '.eslintrc.cjs', 'vite.config.ts'],
 }

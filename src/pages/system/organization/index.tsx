@@ -16,13 +16,7 @@ import BasicPagination from '@/components/Pagination/BasicPagination'
 import BasicSearch from '@/components/Search/BasicSearch'
 import BasicTable from '@/components/Table/BasicTable'
 import { useCommonStore } from '@/hooks/useCommonStore'
-import {
-  createOrg,
-  deleteOrg,
-  getOrgById,
-  getOrgPage,
-  updateOrg,
-} from '@/servers/system/organization'
+import { createOrg, deleteOrg, getOrgById, getOrgPage, updateOrg } from '@/servers/system/organization'
 import { ADD_TITLE, EDIT_TITLE, INIT_PAGINATION } from '@/utils/config'
 import { checkPermission } from '@/utils/permissions'
 
@@ -180,19 +174,9 @@ const Page = () => {
   function optionRender(_: unknown, record: object) {
     return (
       <>
-        {pagePermission.update === true && (
-          <UpdateBtn
-            className='mr-5px'
-            isLoading={isLoading}
-            onClick={() => onUpdate((record as RowData).id)}
-          />
-        )}
+        {pagePermission.update === true && <UpdateBtn className='mr-5px' isLoading={isLoading} onClick={() => onUpdate((record as RowData).id)} />}
         {pagePermission.delete === true && (
-          <DeleteBtn
-            className='mr-5px'
-            isLoading={isLoading}
-            handleDelete={() => onDelete((record as RowData).id)}
-          />
+          <DeleteBtn className='mr-5px' isLoading={isLoading} handleDelete={() => onDelete((record as RowData).id)} />
         )}
       </>
     )
@@ -213,29 +197,10 @@ const Page = () => {
 
       <BasicTable loading={isLoading} columns={columns} dataSource={tableData} />
 
-      <BasicPagination
-        disabled={isLoading}
-        current={page}
-        pageSize={pageSize}
-        total={total}
-        onChange={onChangePagination}
-      />
+      <BasicPagination disabled={isLoading} current={page} pageSize={pageSize} total={total} onChange={onChangePagination} />
 
-      <BasicModal
-        title={createTitle}
-        open={isCreateOpen}
-        confirmLoading={isCreateLoading}
-        onOk={createSubmit}
-        onCancel={closeCreate}
-        width={600}
-      >
-        <BasicForm
-          ref={createFormRef}
-          list={createList(t)}
-          data={createData}
-          labelCol={{ span: 6 }}
-          handleFinish={handleCreate}
-        />
+      <BasicModal title={createTitle} open={isCreateOpen} confirmLoading={isCreateLoading} onOk={createSubmit} onCancel={closeCreate} width={600}>
+        <BasicForm ref={createFormRef} list={createList(t)} data={createData} labelCol={{ span: 6 }} handleFinish={handleCreate} />
       </BasicModal>
     </BasicContent>
   )

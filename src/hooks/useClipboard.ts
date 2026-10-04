@@ -44,7 +44,7 @@ export function useClipboard() {
           rej(error)
         }
       }),
-    []
+    [],
   )
 
   /** 获取剪切板数据 */

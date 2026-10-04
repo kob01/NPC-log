@@ -1,5 +1,5 @@
-import type { BuildOptions } from 'vite';
-import { splitJSModules } from '../utils/helper';
+import type { BuildOptions } from 'vite'
+import { splitJSModules } from '../utils/helper'
 
 /**
  * @description 分包配置
@@ -25,10 +25,10 @@ export function buildOptions(): BuildOptions {
         manualChunks(id) {
           // JS模块
           if (id.includes('node_modules')) {
-            return splitJSModules(id);
+            return splitJSModules(id)
           }
-        }
-      }
-    }
-  };
+        },
+      },
+    },
+  }
 }

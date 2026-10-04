@@ -6,11 +6,7 @@ import * as XLSX from 'xlsx'
  * @param filename - 文件名
  * @param sheetName - 工作表名称
  */
-export function exportToExcel<T extends Record<string, unknown>>(
-  data: T[],
-  filename: string,
-  sheetName: string = 'Sheet1'
-) {
+export function exportToExcel<T extends Record<string, unknown>>(data: T[], filename: string, sheetName: string = 'Sheet1') {
   if (!data || data.length === 0) {
     return false
   }
@@ -37,7 +33,7 @@ export function exportToExcel<T extends Record<string, unknown>>(
  */
 export function formatDataForExport<T extends Record<string, unknown>>(
   data: T[],
-  columns: { key: string; title: string }[]
+  columns: { key: string; title: string }[],
 ): Record<string, unknown>[] {
   return data.map((item) => {
     const formatted: Record<string, unknown> = {}

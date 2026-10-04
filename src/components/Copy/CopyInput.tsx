@@ -27,14 +27,7 @@ const CopyInput = (props: InputProps) => {
     }
   }
 
-  return (
-    <Search
-      {...props}
-      placeholder={t('public.inputPleaseEnter')}
-      enterButton={t('public.copy')}
-      onSearch={handleCopy}
-    />
-  )
+  return <Search {...props} placeholder={t('public.inputPleaseEnter')} enterButton={t('public.copy')} onSearch={handleCopy} />
 }
 
 export default CopyInput

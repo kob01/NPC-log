@@ -49,12 +49,7 @@ const Dashboard = () => {
 
   return (
     <BasicContent isPermission>
-      <BasicSearch
-        list={searchList(t)}
-        data={initSearch}
-        isLoading={isLoading}
-        handleFinish={handleSearch}
-      />
+      <BasicSearch list={searchList(t)} data={initSearch} isLoading={isLoading} handleFinish={handleSearch} />
 
       <div className='py-10px'>
         <Block />

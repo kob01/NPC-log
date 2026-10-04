@@ -8,7 +8,7 @@ const ResizableTitle = (
   props: HTMLAttributes<unknown> & {
     onResize: (e: SyntheticEvent<Element>, data: ResizeCallbackData) => void
     width: number
-  }
+  },
 ) => {
   const { onResize, width, ...restProps } = props
 

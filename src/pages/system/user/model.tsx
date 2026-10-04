@@ -60,9 +60,7 @@ export const tableColumns = (t: TFunction, optionRender: TableOptions<object>): 
     title: t('system.accountType'),
     dataIndex: 'account_type',
     width: 110,
-    render: (value: number) => (
-      <span>{Number(value) === 1 ? t('system.adminUser') : t('system.normalUser')}</span>
-    ),
+    render: (value: number) => <span>{Number(value) === 1 ? t('system.adminUser') : t('system.normalUser')}</span>,
   },
   {
     title: t('system.phone'),
@@ -81,11 +79,7 @@ export const tableColumns = (t: TFunction, optionRender: TableOptions<object>): 
     width: 100,
     render: (value: number) => {
       const enabled = value === GlobalStatus.Enable
-      return (
-        <span style={{ color: enabled ? '#52c41a' : '#ff4d4f' }}>
-          {enabled ? t('public.open') : t('public.close')}
-        </span>
-      )
+      return <span style={{ color: enabled ? '#52c41a' : '#ff4d4f' }}>{enabled ? t('public.open') : t('public.close')}</span>
     },
   },
   {
@@ -105,11 +99,7 @@ export const tableColumns = (t: TFunction, optionRender: TableOptions<object>): 
 ]
 
 // 新增/编辑表单数据
-export const createList = (
-  t: TFunction,
-  isEdit: boolean,
-  orgOptions: { label: string; value: number }[] = []
-): FormList[] => [
+export const createList = (t: TFunction, isEdit: boolean, orgOptions: { label: string; value: number }[] = []): FormList[] => [
   {
     label: t('login.username'),
     name: 'username',

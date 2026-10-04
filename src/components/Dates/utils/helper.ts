@@ -53,9 +53,7 @@ export function dayjsRang2StringRang(value: RangeValue<Dayjs>, format = DATE_FOR
  * 字符串类型转dayjs类型
  * @param value - 字符串
  */
-export function stringRang2DayjsRang(
-  value: RangeValueType<string> | RangeValueType<Dayjs>
-): RangeValue<Dayjs> | undefined {
+export function stringRang2DayjsRang(value: RangeValueType<string> | RangeValueType<Dayjs>): RangeValue<Dayjs> | undefined {
   if (!value) {
     return undefined
   }

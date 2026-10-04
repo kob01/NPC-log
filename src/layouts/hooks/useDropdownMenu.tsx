@@ -1,9 +1,4 @@
-import {
-  RedoOutlined,
-  CloseOutlined,
-  VerticalAlignTopOutlined,
-  VerticalAlignMiddleOutlined,
-} from '@ant-design/icons'
+import { RedoOutlined, CloseOutlined, VerticalAlignTopOutlined, VerticalAlignMiddleOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
 import { useLocation, useNavigate } from 'react-router-dom'

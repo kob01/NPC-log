@@ -28,9 +28,7 @@ export function layoutRoutes(routes: RouteObject[]): RouteObject[] {
  * 处理路由
  * @param routes - 路由数据
  */
-export function handleRoutes(
-  routes: Record<string, () => Promise<DefaultComponent<unknown>>>
-): RouteObject[] {
+export function handleRoutes(routes: Record<string, () => Promise<DefaultComponent<unknown>>>): RouteObject[] {
   const layouts: RouteObject[] = [] // layout内部组件
 
   for (const key in routes) {

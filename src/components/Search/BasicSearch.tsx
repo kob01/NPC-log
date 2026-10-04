@@ -26,18 +26,7 @@ interface Props extends FormProps {
 }
 
 const BasicSearch = forwardRef((props: Props, ref: LegacyRef<FormInstance>) => {
-  const {
-    list,
-    data,
-    isLoading,
-    isSearch = true,
-    isClear = true,
-    isCreate = true,
-    children,
-    labelCol,
-    wrapperCol,
-    handleFinish,
-  } = props
+  const { list, data, isLoading, isSearch = true, isClear = true, isCreate = true, children, labelCol, wrapperCol, handleFinish } = props
   const { t } = useTranslation()
   const [form] = Form.useForm()
 
@@ -131,13 +120,7 @@ const BasicSearch = forwardRef((props: Props, ref: LegacyRef<FormInstance>) => {
         <div className='flex items-center flex-wrap'>
           {!!isSearch && (
             <Form.Item>
-              <Button
-                type='primary'
-                htmlType='submit'
-                className='!mb-5px'
-                loading={isLoading}
-                icon={<SearchOutlined />}
-              >
+              <Button type='primary' htmlType='submit' className='!mb-5px' loading={isLoading} icon={<SearchOutlined />}>
                 {t('public.search')}
               </Button>
             </Form.Item>

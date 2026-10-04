@@ -114,7 +114,7 @@ const Page = () => {
       closeTabGoNext({
         key: uri,
         nextPath: fatherPath,
-      })
+      }),
     )
   }
 
@@ -140,16 +140,9 @@ const Page = () => {
 
   return (
     <BasicContent isPermission={id ? pagePermission.update : pagePermission.create}>
-
       <div className='mb-50px'>
         <Spin spinning={isLoading}>
-          <BasicForm
-            ref={createFormRef}
-            list={createList(t)}
-            data={createData}
-            labelCol={{ span: 5 }}
-            handleFinish={handleFinish}
-          />
+          <BasicForm ref={createFormRef} list={createList(t)} data={createData} labelCol={{ span: 5 }} handleFinish={handleFinish} />
         </Spin>
       </div>
 

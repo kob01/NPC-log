@@ -79,11 +79,7 @@ const FilterButton = (props: Props) => {
   // 渲染内容
   const content = () => (
     <div className='min-w-130px'>
-      <Checkbox.Group
-        className='flex flex-col !px-12px'
-        value={checkList}
-        onChange={onChangeCheckbox}
-      >
+      <Checkbox.Group className='flex flex-col !px-12px' value={checkList} onChange={onChangeCheckbox}>
         {list?.map((item) => (
           <div key={item.value}>
             <Checkbox value={item.value}>{item.label}</Checkbox>

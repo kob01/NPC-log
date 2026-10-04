@@ -10,10 +10,7 @@ const Github = () => {
   return (
     <Tooltip title='Github'>
       <div onClick={goGithub}>
-        <Icon
-          className='flex items-center justify-center text-lg mr-3 cursor-pointer'
-          icon='mdi:github'
-        />
+        <Icon className='flex items-center justify-center text-lg mr-3 cursor-pointer' icon='mdi:github' />
       </div>
     </Tooltip>
   )

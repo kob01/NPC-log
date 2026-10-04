@@ -13,10 +13,7 @@ const Fullscreen = () => {
 
   return (
     <Tooltip title={isFullscreen ? t('public.exitFullscreen') : t('public.fullScreen')}>
-      <div
-        className='flex items-center justify-center text-lg mr-3 cursor-pointer'
-        onClick={toggleFullscreen}
-      >
+      <div className='flex items-center justify-center text-lg mr-3 cursor-pointer' onClick={toggleFullscreen}>
         {isFullscreen && <Icon icon='gridicons-fullscreen-exit' />}
         {!isFullscreen && <Icon icon='gridicons-fullscreen' />}
       </div>

@@ -73,7 +73,7 @@ const BasicTable = (props: Props) => {
         },
         table: virtualOptions.table,
       }) as Components,
-    [virtualOptions]
+    [virtualOptions],
   )
 
   // 只带拖拽功能组件
@@ -96,13 +96,8 @@ const BasicTable = (props: Props) => {
   /**
    * 处理行内样式
    */
-  const handleRowClassName: TableProps<object>['rowClassName'] = (
-    record: object,
-    index: number,
-    indent: number
-  ) => {
-    const className =
-      typeof rowClassName === 'string' ? rowClassName : rowClassName?.(record, index, indent)
+  const handleRowClassName: TableProps<object>['rowClassName'] = (record: object, index: number, indent: number) => {
+    const className = typeof rowClassName === 'string' ? rowClassName : rowClassName?.(record, index, indent)
     const rowSize = `!h-${handleRowHeight(size)}px`
 
     return `${className || ''} ${rowSize}`

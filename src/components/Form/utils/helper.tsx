@@ -27,11 +27,7 @@ export function handleValuePropName(component: ComponentType): string {
  * 初始化组件自定义属性
  * @param component - 组件名
  */
-export function initCompProps(
-  t: TFunction,
-  component: ComponentType,
-  onPressEnter: () => void
-): ComponentProps {
+export function initCompProps(t: TFunction, component: ComponentType, onPressEnter: () => void): ComponentProps {
   switch (component) {
     // 下拉框
     case 'Select':

@@ -1,9 +1,4 @@
-import {
-  message as antdMessage,
-  notification as antdNotification,
-  Modal as antdModal,
-  App,
-} from 'antd'
+import { message as antdMessage, notification as antdNotification, Modal as antdModal, App } from 'antd'
 
 import type { MessageInstance } from 'antd/es/message/interface'
 import type { ModalStaticFunctions } from 'antd/es/modal/confirm'

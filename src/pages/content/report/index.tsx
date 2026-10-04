@@ -4,28 +4,8 @@
  * - AI 年度总结：仅输入当月各条已存摘要与月度缓存（不重读原文），一年一次 LLM 调用，懒生成+缓存
  * - AI 未配置时：统计部分完整可用，总结区提示配置密钥
  */
-import {
-  CalendarOutlined,
-  EnvironmentOutlined,
-  ReloadOutlined,
-  UserOutlined,
-} from '@ant-design/icons'
-import {
-  Alert,
-  Button,
-  Card,
-  Col,
-  Empty,
-  Progress,
-  Row,
-  Select,
-  Space,
-  Spin,
-  Statistic,
-  Tag,
-  Timeline,
-  Typography,
-} from 'antd'
+import { CalendarOutlined, EnvironmentOutlined, ReloadOutlined, UserOutlined } from '@ant-design/icons'
+import { Alert, Button, Card, Col, Empty, Progress, Row, Select, Space, Spin, Statistic, Tag, Timeline, Typography } from 'antd'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
@@ -65,7 +45,7 @@ const Page = () => {
         setLoading(false)
       }
     },
-    [t]
+    [t],
   )
 
   useEffect(() => {
@@ -115,29 +95,17 @@ const Page = () => {
                   </Col>
                   <Col span={6}>
                     <Card size='small'>
-                      <Statistic
-                        title={t('content.reportActiveMonths')}
-                        value={report.monthCount}
-                        suffix='/ 12'
-                      />
+                      <Statistic title={t('content.reportActiveMonths')} value={report.monthCount} suffix='/ 12' />
                     </Card>
                   </Col>
                   <Col span={6}>
                     <Card size='small'>
-                      <Statistic
-                        title={t('content.reportLocated')}
-                        value={report.locatedCount}
-                        prefix={<EnvironmentOutlined />}
-                      />
+                      <Statistic title={t('content.reportLocated')} value={report.locatedCount} prefix={<EnvironmentOutlined />} />
                     </Card>
                   </Col>
                   <Col span={6}>
                     <Card size='small'>
-                      <Statistic
-                        title={t('content.reportPersons')}
-                        value={report.topPersons?.length || 0}
-                        prefix={<UserOutlined />}
-                      />
+                      <Statistic title={t('content.reportPersons')} value={report.topPersons?.length || 0} prefix={<UserOutlined />} />
                     </Card>
                   </Col>
                 </Row>
@@ -146,9 +114,7 @@ const Page = () => {
                 <Card title={t('content.reportAiSummary')} className='mb-4' size='small'>
                   {report.summary ? (
                     <>
-                      <Typography.Paragraph style={{ whiteSpace: 'pre-wrap', marginBottom: 8 }}>
-                        {report.summary}
-                      </Typography.Paragraph>
+                      <Typography.Paragraph style={{ whiteSpace: 'pre-wrap', marginBottom: 8 }}>{report.summary}</Typography.Paragraph>
                       <Space size={[4, 6]} wrap>
                         {report.keywords.map((k) => (
                           <Tag key={k} color='gold' style={{ marginRight: 0 }}>
@@ -163,9 +129,7 @@ const Page = () => {
                       )}
                     </>
                   ) : report.aiConfigured ? (
-                    <Typography.Text type='secondary'>
-                      {report.eventCount ? t('content.memoryAiFailed') : t('content.reportEmpty')}
-                    </Typography.Text>
+                    <Typography.Text type='secondary'>{report.eventCount ? t('content.memoryAiFailed') : t('content.reportEmpty')}</Typography.Text>
                   ) : (
                     <Alert type='info' showIcon message={t('content.reportNoAi')} />
                   )}
@@ -182,11 +146,7 @@ const Page = () => {
                               <span>{item.type}</span>
                               <span>{item.count}</span>
                             </div>
-                            <Progress
-                              percent={Math.round((item.count / maxTypeCount) * 100)}
-                              showInfo={false}
-                              size='small'
-                            />
+                            <Progress percent={Math.round((item.count / maxTypeCount) * 100)} showInfo={false} size='small' />
                           </div>
                         ))
                       ) : (
@@ -206,9 +166,7 @@ const Page = () => {
                               icon={<UserOutlined />}
                               color='purple'
                               style={{ cursor: 'pointer', marginRight: 0 }}
-                              onClick={() =>
-                                navigate(`/content/persons?name=${encodeURIComponent(p.person)}`)
-                              }
+                              onClick={() => navigate(`/content/persons?name=${encodeURIComponent(p.person)}`)}
                             >
                               {p.person} · {p.count}
                             </Tag>

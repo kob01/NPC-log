@@ -60,14 +60,7 @@ function supportsWebp(): boolean {
  * - 受控 value/onChange，可接入 BasicForm 或 antd Form.Item
  */
 const ImageUpload = (props: ImageUploadProps) => {
-  const {
-    value,
-    onChange,
-    onGpsExtracted,
-    maxCount = 9,
-    disabled = false,
-    accept = DEFAULT_ACCEPT,
-  } = props
+  const { value, onChange, onGpsExtracted, maxCount = 9, disabled = false, accept = DEFAULT_ACCEPT } = props
   const { t } = useTranslation()
 
   // 上传中的占位项（独立于已提交值，避免并发上传相互覆盖）
@@ -168,10 +161,7 @@ const ImageUpload = (props: ImageUploadProps) => {
 
     const uid = file.uid
     const previewUrl = URL.createObjectURL(file)
-    setPendingList((prev) => [
-      ...prev,
-      { uid, name: file.name, status: 'uploading', thumbUrl: previewUrl },
-    ])
+    setPendingList((prev) => [...prev, { uid, name: file.name, status: 'uploading', thumbUrl: previewUrl }])
 
     try {
       // 1. 先读 EXIF GPS（压缩会丢失 EXIF）

@@ -190,11 +190,7 @@ const Page = () => {
       dataIndex: 'my_status',
       width: 110,
       render: (value: number) =>
-        Number(value) === 1 ? (
-          <Tag color='green'>{t('system.approved')}</Tag>
-        ) : (
-          <Tag color='orange'>{t('system.pending')}</Tag>
-        ),
+        Number(value) === 1 ? <Tag color='green'>{t('system.approved')}</Tag> : <Tag color='orange'>{t('system.pending')}</Tag>,
     },
     { title: t('system.memberCount'), dataIndex: 'member_count', width: 90 },
     {
@@ -215,10 +211,7 @@ const Page = () => {
             </Button>
           )}
           {Number(record.my_status) === 1 && (
-            <Popconfirm
-              title={t('system.confirmLeave')}
-              onConfirm={() => handleLeave(Number(record.id))}
-            >
+            <Popconfirm title={t('system.confirmLeave')} onConfirm={() => handleLeave(Number(record.id))}>
               <Button danger size='small'>
                 {t('system.leave')}
               </Button>
@@ -242,10 +235,7 @@ const Page = () => {
         const relation = record.relation as string
         if (relation === 'joined') {
           return (
-            <Popconfirm
-              title={t('system.confirmLeave')}
-              onConfirm={() => handleLeave(Number(record.id))}
-            >
+            <Popconfirm title={t('system.confirmLeave')} onConfirm={() => handleLeave(Number(record.id))}>
               <Button danger size='small'>
                 {t('system.leave')}
               </Button>
@@ -256,10 +246,7 @@ const Page = () => {
           return <Tag color='orange'>{t('system.pending')}</Tag>
         }
         return (
-          <Popconfirm
-            title={t('system.confirmApply')}
-            onConfirm={() => handleApply(Number(record.id))}
-          >
+          <Popconfirm title={t('system.confirmApply')} onConfirm={() => handleApply(Number(record.id))}>
             <Button type='primary' size='small'>
               {t('system.applyJoin')}
             </Button>
@@ -280,18 +267,12 @@ const Page = () => {
       // 审批直接影响他人能否加入组织，属于不可逆操作，与同页「退出/申请」保持一致加二次确认
       render: (_: unknown, record) => (
         <Space>
-          <Popconfirm
-            title={t('system.confirmApprove')}
-            onConfirm={() => handleAudit(Number(record.userId), true)}
-          >
+          <Popconfirm title={t('system.confirmApprove')} onConfirm={() => handleAudit(Number(record.userId), true)}>
             <Button type='primary' size='small'>
               {t('system.approve')}
             </Button>
           </Popconfirm>
-          <Popconfirm
-            title={t('system.confirmReject')}
-            onConfirm={() => handleAudit(Number(record.userId), false)}
-          >
+          <Popconfirm title={t('system.confirmReject')} onConfirm={() => handleAudit(Number(record.userId), false)}>
             <Button danger size='small'>
               {t('system.reject')}
             </Button>
@@ -322,17 +303,11 @@ const Page = () => {
           return '-'
         } // 创建者不可变更
         return role === 1 ? (
-          <Popconfirm
-            title={t('system.confirmDemote')}
-            onConfirm={() => handleSetManager(Number(record.id), 0)}
-          >
+          <Popconfirm title={t('system.confirmDemote')} onConfirm={() => handleSetManager(Number(record.id), 0)}>
             <Button size='small'>{t('system.demote')}</Button>
           </Popconfirm>
         ) : (
-          <Popconfirm
-            title={t('system.confirmPromote')}
-            onConfirm={() => handleSetManager(Number(record.id), 1)}
-          >
+          <Popconfirm title={t('system.confirmPromote')} onConfirm={() => handleSetManager(Number(record.id), 1)}>
             <Button size='small' type='primary'>
               {t('system.promote')}
             </Button>
@@ -361,18 +336,12 @@ const Page = () => {
       width: 160,
       render: (_: unknown, record) => (
         <Space>
-          <Popconfirm
-            title={t('system.confirmApprove')}
-            onConfirm={() => handleAuditGlobal(Number(record.orgId), Number(record.userId), true)}
-          >
+          <Popconfirm title={t('system.confirmApprove')} onConfirm={() => handleAuditGlobal(Number(record.orgId), Number(record.userId), true)}>
             <Button type='primary' size='small'>
               {t('system.approve')}
             </Button>
           </Popconfirm>
-          <Popconfirm
-            title={t('system.confirmReject')}
-            onConfirm={() => handleAuditGlobal(Number(record.orgId), Number(record.userId), false)}
-          >
+          <Popconfirm title={t('system.confirmReject')} onConfirm={() => handleAuditGlobal(Number(record.orgId), Number(record.userId), false)}>
             <Button danger size='small'>
               {t('system.reject')}
             </Button>
@@ -392,28 +361,12 @@ const Page = () => {
             {
               key: 'mine',
               label: t('system.myOrg'),
-              children: (
-                <Table
-                  rowKey='id'
-                  loading={loading}
-                  columns={myOrgColumns}
-                  dataSource={myOrgs as never[]}
-                  pagination={false}
-                />
-              ),
+              children: <Table rowKey='id' loading={loading} columns={myOrgColumns} dataSource={myOrgs as never[]} pagination={false} />,
             },
             {
               key: 'square',
               label: t('system.orgSquare'),
-              children: (
-                <Table
-                  rowKey='id'
-                  loading={loading}
-                  columns={squareColumns}
-                  dataSource={square as never[]}
-                  pagination={false}
-                />
-              ),
+              children: <Table rowKey='id' loading={loading} columns={squareColumns} dataSource={square as never[]} pagination={false} />,
             },
             ...(canManage || pendingAll.length > 0
               ? [
@@ -452,26 +405,12 @@ const Page = () => {
             {
               key: 'requests',
               label: `${t('system.pendingRequests')}${requests.length ? `(${requests.length})` : ''}`,
-              children: (
-                <Table
-                  rowKey='userId'
-                  columns={requestColumns}
-                  dataSource={requests as never[]}
-                  pagination={false}
-                />
-              ),
+              children: <Table rowKey='userId' columns={requestColumns} dataSource={requests as never[]} pagination={false} />,
             },
             {
               key: 'members',
               label: t('system.orgMembers'),
-              children: (
-                <Table
-                  rowKey='id'
-                  columns={memberColumns}
-                  dataSource={members as never[]}
-                  pagination={false}
-                />
-              ),
+              children: <Table rowKey='id' columns={memberColumns} dataSource={members as never[]} pagination={false} />,
             },
           ]}
         />

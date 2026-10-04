@@ -23,7 +23,7 @@ root.render(
     <Provider store={store}>
       <Router />
     </Provider>
-  </StyleProvider>
+  </StyleProvider>,
 )
 
 // 关闭loading

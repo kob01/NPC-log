@@ -18,15 +18,7 @@ import BasicTable from '@/components/Table/BasicTable'
 import FilterButton from '@/components/TableFilter'
 import { useFiler } from '@/components/TableFilter/hooks/useFiler'
 import { useCommonStore } from '@/hooks/useCommonStore'
-import {
-  getMenuPage,
-  getMenuById,
-  createMenu,
-  updateMenu,
-  deleteMenu,
-  getAllMenus,
-  getMenuList,
-} from '@/servers/system/menu'
+import { getMenuPage, getMenuById, createMenu, updateMenu, deleteMenu, getAllMenus, getMenuList } from '@/servers/system/menu'
 import { setMenuList } from '@/stores/menu'
 import { ADD_TITLE, EDIT_TITLE, INIT_PAGINATION } from '@/utils/config'
 import { checkPermission } from '@/utils/permissions'
@@ -117,7 +109,7 @@ const Page = () => {
           (data || []).map((m: FormData) => ({
             label: m.label as string,
             value: m.id as number,
-          }))
+          })),
         )
       }
     } catch (error) {
@@ -260,19 +252,9 @@ const Page = () => {
   function optionRender(_: unknown, record: object) {
     return (
       <>
-        {pagePermission.update === true && (
-          <UpdateBtn
-            className='mr-5px'
-            isLoading={isLoading}
-            onClick={() => onUpdate((record as RowData).id)}
-          />
-        )}
+        {pagePermission.update === true && <UpdateBtn className='mr-5px' isLoading={isLoading} onClick={() => onUpdate((record as RowData).id)} />}
         {pagePermission.delete === true && (
-          <DeleteBtn
-            className='mr-5px'
-            isLoading={isLoading}
-            handleDelete={() => onDelete((record as RowData).id)}
-          />
+          <DeleteBtn className='mr-5px' isLoading={isLoading} handleDelete={() => onDelete((record as RowData).id)} />
         )}
       </>
     )
@@ -291,28 +273,11 @@ const Page = () => {
         <FilterButton columns={columns} className='!mb-5px' getTableChecks={getTableChecks} />
       </BasicSearch>
 
-      <BasicTable
-        loading={isLoading}
-        columns={handleFilterTable(columns, tableFilters)}
-        dataSource={tableData}
-      />
+      <BasicTable loading={isLoading} columns={handleFilterTable(columns, tableFilters)} dataSource={tableData} />
 
-      <BasicPagination
-        disabled={isLoading}
-        current={page}
-        pageSize={pageSize}
-        total={total}
-        onChange={onChangePagination}
-      />
+      <BasicPagination disabled={isLoading} current={page} pageSize={pageSize} total={total} onChange={onChangePagination} />
 
-      <BasicModal
-        width={600}
-        title={createTitle}
-        open={isCreateOpen}
-        confirmLoading={isCreateLoading}
-        onOk={createSubmit}
-        onCancel={closeCreate}
-      >
+      <BasicModal width={600} title={createTitle} open={isCreateOpen} confirmLoading={isCreateLoading} onOk={createSubmit} onCancel={closeCreate}>
         <BasicForm
           ref={createFormRef}
           list={createList(t, createId, parentOptions)}

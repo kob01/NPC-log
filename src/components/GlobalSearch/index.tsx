@@ -22,11 +22,7 @@ const GlobalSearch = () => {
   return (
     <>
       <Tooltip title={t('public.search')}>
-        <Icon
-          className='flex items-center justify-center text-lg mr-3 cursor-pointer'
-          icon='uil-search'
-          onClick={toggle}
-        />
+        <Icon className='flex items-center justify-center text-lg mr-3 cursor-pointer' icon='uil-search' onClick={toggle} />
       </Tooltip>
 
       <SearchModal modalRef={modalRef} />

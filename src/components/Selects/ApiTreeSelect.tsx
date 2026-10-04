@@ -39,9 +39,7 @@ const ApiTreeSelect = (props: ApiTreeSelectProps) => {
         if (Number(code) !== 200) {
           return
         }
-        const result = apiResultKey
-          ? (data as { [apiResultKey: string]: unknown })?.[apiResultKey]
-          : data
+        const result = apiResultKey ? (data as { [apiResultKey: string]: unknown })?.[apiResultKey] : data
         setOptions(result as TreeSelectProps['treeData'])
       }
     } finally {

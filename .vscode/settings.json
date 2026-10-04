@@ -5,14 +5,10 @@
   "i18n-ally.sourceLanguage": "en",
   "i18n-ally.displayLanguage": "zh",
   "i18n-ally.keystyle": "nested",
-  "i18n-ally.localesPaths": [
-    "src/locales"
-  ],
+  "i18n-ally.localesPaths": ["src/locales"],
   "i18n-ally.enabledParsers": ["yaml", "ts", "js", "json"],
   "i18n-ally.pathMatcher": "{locale}/{namespaces}.{ext}",
-  "i18n-ally.enabledFrameworks": [
-    "react-i18next"
-  ],
+  "i18n-ally.enabledFrameworks": ["react-i18next"],
   "cSpell.words": [
     "vite",
     "windi",

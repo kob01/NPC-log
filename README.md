@@ -46,12 +46,12 @@ git push
 
 路由根据文件夹路径自动生成，路径包含以下文件名或文件夹名称则不生成：
 
-* components
-* utils
-* lib
-* hooks
-* model.tsx
-* 404.tsx
+- components
+- utils
+- lib
+- hooks
+- model.tsx
+- 404.tsx
 
 可自行在 src/router/utils/config.ts 修改路由生成规则。
 

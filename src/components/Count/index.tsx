@@ -20,7 +20,7 @@ const Count = (props: Props) => {
     setTimer(
       setInterval(() => {
         setNum((num) => num + add)
-      })
+      }),
     )
   }, [end, start])
 
@@ -42,7 +42,7 @@ const Count = (props: Props) => {
         setTimer(null)
       }
     },
-    [timer]
+    [timer],
   )
 
   return (

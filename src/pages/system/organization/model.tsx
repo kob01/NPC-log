@@ -55,8 +55,7 @@ export const tableColumns = (t: TFunction, optionRender: TableOptions<object>): 
     title: t('system.creator'),
     dataIndex: 'creator_name',
     width: 120,
-    render: (value: string, record: object) =>
-      value || (record as { creator_user?: string }).creator_user || '-',
+    render: (value: string, record: object) => value || (record as { creator_user?: string }).creator_user || '-',
   },
   {
     title: t('system.memberCount'),
@@ -79,11 +78,7 @@ export const tableColumns = (t: TFunction, optionRender: TableOptions<object>): 
     width: 90,
     render: (value: number) => {
       const enabled = value === GlobalStatus.Enable
-      return (
-        <span style={{ color: enabled ? '#52c41a' : '#ff4d4f' }}>
-          {enabled ? t('public.open') : t('public.close')}
-        </span>
-      )
+      return <span style={{ color: enabled ? '#52c41a' : '#ff4d4f' }}>{enabled ? t('public.open') : t('public.close')}</span>
     },
   },
   {

@@ -62,7 +62,7 @@ export function useSingleTab(fatherPath: string, title?: string, name = 'id') {
       dispatch(addTabs(newTab))
       // eslint-disable-next-line react-hooks/exhaustive-deps
     },
-    [pathname, search]
+    [pathname, search],
   )
 
   useEffect(() => {

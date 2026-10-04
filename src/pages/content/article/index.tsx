@@ -159,7 +159,6 @@ const Page = () => {
 
   return (
     <BasicContent isPermission={pagePermission.page}>
-
       <BasicSearch
         list={searchList(t)}
         data={searchData}

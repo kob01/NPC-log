@@ -64,13 +64,7 @@ const PermissionDrawer = (props: Props) => {
       }
     >
       {treeData.length > 0 ? (
-        <Tree
-          checkable
-          treeData={treeData}
-          checkedKeys={localCheckedKeys}
-          onCheck={onCheck}
-          defaultExpandAll
-        />
+        <Tree checkable treeData={treeData} checkedKeys={localCheckedKeys} onCheck={onCheck} defaultExpandAll />
       ) : (
         <div className='text-center text-gray-500 py-4'>{t('system.noMenuData')}</div>
       )}

@@ -6,13 +6,6 @@ import type { SelectProps } from 'antd'
 /**
  * @description: 合作公司下拉组件
  */
-const PartnerSelect = (props: SelectProps) => (
-  <ApiSelect
-    {...props}
-    api={getPartner}
-    mode='multiple'
-    fieldNames={{ label: 'name', value: 'id' }}
-  />
-)
+const PartnerSelect = (props: SelectProps) => <ApiSelect {...props} api={getPartner} mode='multiple' fieldNames={{ label: 'name', value: 'id' }} />
 
 export default PartnerSelect

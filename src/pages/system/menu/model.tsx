@@ -82,11 +82,7 @@ export const tableColumns = (t: TFunction, optionRender: TableOptions<object>): 
 ]
 
 // 新增/编辑表单数据
-export const createList = (
-  t: TFunction,
-  id: string,
-  parentOptions: { label: string; value: number }[] = []
-): FormList[] => [
+export const createList = (t: TFunction, id: string, parentOptions: { label: string; value: number }[] = []): FormList[] => [
   {
     label: t('system.parentMenu'),
     name: 'parent_id',

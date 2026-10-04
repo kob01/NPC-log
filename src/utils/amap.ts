@@ -11,14 +11,7 @@ const AMAP_KEY = (import.meta.env.VITE_AMAP_KEY || '').trim()
 const AMAP_SECURITY_CODE = (import.meta.env.VITE_AMAP_SECURITY_CODE || '').trim()
 
 /** 需要加载的插件列表 */
-const PLUGINS = [
-  'AMap.AutoComplete',
-  'AMap.Geocoder',
-  'AMap.PlaceSearch',
-  'AMap.Marker',
-  'AMap.ToolBar',
-  'AMap.Geolocation',
-]
+const PLUGINS = ['AMap.AutoComplete', 'AMap.Geocoder', 'AMap.PlaceSearch', 'AMap.Marker', 'AMap.ToolBar', 'AMap.Geolocation']
 
 /** 加载超时（毫秒） */
 const LOAD_TIMEOUT = 10000

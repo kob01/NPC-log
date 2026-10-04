@@ -104,7 +104,7 @@ const Page = () => {
           (data || []).map((org: FormData) => ({
             label: org.org_name as string,
             value: org.id as number,
-          }))
+          })),
         )
       }
     } catch (error) {
@@ -265,19 +265,9 @@ const Page = () => {
   function optionRender(_: unknown, record: object) {
     return (
       <>
-        {pagePermission.update === true && (
-          <UpdateBtn
-            className='mr-5px'
-            isLoading={isLoading}
-            onClick={() => onUpdate((record as RowData).id)}
-          />
-        )}
+        {pagePermission.update === true && <UpdateBtn className='mr-5px' isLoading={isLoading} onClick={() => onUpdate((record as RowData).id)} />}
         {pagePermission.delete === true && (
-          <DeleteBtn
-            className='mr-5px'
-            isLoading={isLoading}
-            handleDelete={() => onDelete((record as RowData).id)}
-          />
+          <DeleteBtn className='mr-5px' isLoading={isLoading} handleDelete={() => onDelete((record as RowData).id)} />
         )}
       </>
     )
@@ -299,28 +289,11 @@ const Page = () => {
         <FilterButton columns={columns} className='!mb-5px' getTableChecks={getTableChecks} />
       </BasicSearch>
 
-      <BasicTable
-        loading={isLoading}
-        columns={handleFilterTable(columns, tableFilters)}
-        dataSource={tableData}
-      />
+      <BasicTable loading={isLoading} columns={handleFilterTable(columns, tableFilters)} dataSource={tableData} />
 
-      <BasicPagination
-        disabled={isLoading}
-        current={page}
-        pageSize={pageSize}
-        total={total}
-        onChange={onChangePagination}
-      />
+      <BasicPagination disabled={isLoading} current={page} pageSize={pageSize} total={total} onChange={onChangePagination} />
 
-      <BasicModal
-        title={createTitle}
-        open={isCreateOpen}
-        confirmLoading={isCreateLoading}
-        onOk={createSubmit}
-        onCancel={closeCreate}
-        width={600}
-      >
+      <BasicModal title={createTitle} open={isCreateOpen} confirmLoading={isCreateLoading} onOk={createSubmit} onCancel={closeCreate} width={600}>
         <BasicForm
           ref={createFormRef}
           list={createList(t, !!createId, orgOptions)}

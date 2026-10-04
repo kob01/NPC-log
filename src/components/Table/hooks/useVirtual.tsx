@@ -139,7 +139,7 @@ const VirtualTable = (props: VirtualTableProps) => {
         })
       }
     },
-    { wait: 60 }
+    { wait: 60 },
   )
 
   useEffect(() => {
