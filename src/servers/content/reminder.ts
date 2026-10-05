@@ -19,8 +19,17 @@ enum API {
   URL = '/api/reminder',
 }
 
-/** 重复规则（与后端 REPEAT_RULES 一一对应） */
-export type ReminderRepeat = 'none' | 'daily' | 'weekly' | 'monthly'
+/** 重复规则（与后端 REPEAT_RULES 一一对应）；custom 的间隔由 intervalValue/intervalUnit 描述 */
+export type ReminderRepeat = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom'
+
+/**
+ * 自定义间隔的单位（与后端 INTERVAL_UNIT 一一对应）
+ * 没有 week：「每周」是固定规则，不占间隔单位；也没有 year：「每年」同为固定规则
+ */
+export type ReminderIntervalUnit = 'month' | 'day' | 'hour' | 'minute'
+
+/** 间隔数值上限（与后端 INTERVAL_MAX 一致，超出后端直接拒） */
+export const REMINDER_INTERVAL_MAX = 999
 
 /** 下发渠道（与后端 CHANNELS 一一对应） */
 export type ReminderChannel = 'wx' | 'email' | 'both'
@@ -40,6 +49,10 @@ export interface ReminderItem {
   remark: string
   time: string
   repeat: ReminderRepeat
+  /** 自定义间隔数值：只有 repeat='custom' 时有值，其余规则下后端给 null */
+  intervalValue: number | null
+  /** 自定义间隔单位（month/day/hour/minute），同上 */
+  intervalUnit: string
   /** 下发渠道；后端对历史数据（没这一列的行）一律归为 wx */
   channel: ReminderChannel
   /**
@@ -74,6 +87,9 @@ export interface ReminderFormData {
   title: string
   time?: string
   repeat: ReminderRepeat
+  /** 只在 repeat='custom' 时必带（后端不认其他规则下的这两个值，也不会落库） */
+  intervalValue?: number | null
+  intervalUnit?: ReminderIntervalUnit | ''
   remark?: string
   eventId?: number | null
   channel: ReminderChannel

@@ -1,14 +1,16 @@
 /**
  * 定时提醒管理页（/content/reminder）
  *
- * 定位是「看住这条链路 + 把邮件提醒在电脑上管完」：
+ * 定位是「看住这条链路 + 把提醒在电脑上管完」：
  * 订阅授权只能由小程序里的用户点击触发（wx.requestSubscribeMessage），网页做不到，
- * 所以微信渠道的新建/改时间仍留在小程序；而邮件不依赖授权也不消耗额度，
- * 这一页可以直接新建与编辑 channel='email' 的提醒（表单选微信时顶部会提示该去小程序授权）。
+ * 但新建/编辑本身不需要授权，所以本页随时能建一条不关联日志的单独提醒
+ * （邮件不依赖授权也不消耗额度，可以建完就用；选微信时表单顶部会提示该去小程序授权）。
  *
  * 管理员看到的是跨用户视图，因为提醒最难查的一段几乎都出在用户身上：
  * 没绑 openid（推送没有收件人）、订阅次数为 0（发不出去）、没填邮箱、连败被自动停用。
  * 普通用户走自扫接口，后端天然按 user_id 收窄，这里不做前端过滤。
+ * 跨用户视图仍是只读的：别人的提醒不能代改（提醒是「给自己定的」），
+ * 但「新建」不拿视图拦——它建的永远是当前登录人自己那一条。
  */
 import { BellOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import {
@@ -34,11 +36,19 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { CHANNEL_META, REPEAT_KEYS, STATUS_META, createReminderForm, statusKeyOf } from './model'
+import { CHANNEL_META, STATUS_META, createReminderForm, repeatTextOf, statusKeyOf } from './model'
 
 import type { FormData } from '#/form'
 import type { TableColumn } from '#/public'
-import type { ReminderAdminResult, ReminderChannel, ReminderConfig, ReminderFormData, ReminderItem } from '@/servers/content/reminder'
+import type {
+  ReminderAdminResult,
+  ReminderChannel,
+  ReminderConfig,
+  ReminderFormData,
+  ReminderIntervalUnit,
+  ReminderItem,
+  ReminderRepeat,
+} from '@/servers/content/reminder'
 
 import BasicContent from '@/components/Content/BasicContent'
 import BasicForm from '@/components/Form/BasicForm'
@@ -58,11 +68,16 @@ import {
 import { checkPermission } from '@/utils/permissions'
 import { message } from '@/utils/staticAntd'
 
-/** 新建时表单的初始值（时间由用户自己选：提醒本来就是面向未来的东西） */
+/**
+ * 新建时表单的初始值（时间由用户自己选：提醒本来就是面向未来的东西）
+ * 间隔默认「每 1 天」：选到「自定义间隔」时不必先填两个空字段
+ */
 const EMPTY_FORM: FormData = {
   title: '',
   time: '',
   repeat: 'none',
+  intervalValue: 1,
+  intervalUnit: 'day',
   channel: 'email',
   email: '',
   remark: '',
@@ -102,6 +117,7 @@ const Page = () => {
   const [formOpen, setFormOpen] = useState(false)
   const [editingId, setEditingId] = useState(0)
   const [formChannel, setFormChannel] = useState<ReminderChannel>('email')
+  const [formRepeat, setFormRepeat] = useState<ReminderRepeat>('none')
   const [formRow, setFormRow] = useState<FormData>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const formRef = useRef<FormInstance>(null)
@@ -203,6 +219,7 @@ const Page = () => {
     origTimeRef.current = ''
     setEditingId(0)
     setFormChannel('email')
+    setFormRepeat('none')
     setFormRow({ ...EMPTY_FORM, email: cfg?.accountEmail || '' })
     setFormOpen(true)
   }
@@ -212,10 +229,13 @@ const Page = () => {
     origTimeRef.current = row.time || ''
     setEditingId(row.id)
     setFormChannel(row.channel || 'wx')
+    setFormRepeat(row.repeat || 'none')
     setFormRow({
       title: row.title,
       time: row.time ? row.time.slice(0, 16) : '',
       repeat: row.repeat || 'none',
+      intervalValue: row.intervalValue ?? 1,
+      intervalUnit: (row.intervalUnit as ReminderIntervalUnit) || 'day',
       channel: row.channel || 'wx',
       email: row.email || '',
       remark: row.remark || '',
@@ -223,10 +243,13 @@ const Page = () => {
     setFormOpen(true)
   }
 
-  /** 渠道一变就要重算表单项（要不要收收件邮箱） */
+  /** 渠道与重复规则一变就要重算表单项（要不要收收件邮箱 / 要不要收间隔） */
   const onValuesChange = (changed: FormData) => {
     if (changed && changed.channel) {
       setFormChannel(changed.channel as ReminderChannel)
+    }
+    if (changed && changed.repeat) {
+      setFormRepeat(changed.repeat as ReminderRepeat)
     }
   }
 
@@ -244,6 +267,11 @@ const Page = () => {
       remark: String(v.remark || '').trim(),
       channel: v.channel,
       email: String(v.email || '').trim(),
+    }
+    // 间隔只在自定义规则下提交：其它规则带了也没人读，不如不传（后端也会自己清空两列）
+    if (payload.repeat === 'custom') {
+      payload.intervalValue = Number(v.intervalValue) || 1
+      payload.intervalUnit = (v.intervalUnit || 'day') as ReminderIntervalUnit
     }
     if (v.time && v.time !== origTimeRef.current) {
       payload.time = v.time
@@ -288,14 +316,15 @@ const Page = () => {
     }
   }
 
-  /** 表单项：随渠道与账号邮箱变化重建（BasicForm 只在 data 变化时才重置字段） */
+  /** 表单项：随渠道、重复规则与账号邮箱变化重建（BasicForm 只在 data 变化时才重置字段） */
   const formList = useMemo(
     () =>
       createReminderForm(t, {
         accountEmail: cfg?.accountEmail || '',
         channel: formChannel,
+        repeat: formRepeat,
       }),
-    [cfg, formChannel, t],
+    [cfg, formChannel, formRepeat, t],
   )
 
   const columns = useMemo<TableColumn<ReminderItem>>(() => {
@@ -352,8 +381,8 @@ const Page = () => {
       {
         title: t('content.reminderRepeat'),
         dataIndex: 'repeat',
-        width: 90,
-        render: (v: ReminderItem['repeat']) => t(REPEAT_KEYS[v] || REPEAT_KEYS.none),
+        width: 100,
+        render: (_v, r) => repeatTextOf(t, r),
       },
       {
         /**
@@ -518,12 +547,11 @@ const Page = () => {
 
         <Card size='small' className='mb-3'>
           <Space wrap>
-            {/* 新建/启停只对自己的提醒开放（管理员视图是跨用户只读体检视图） */}
-            {!(scope === 'all' && isAdmin) && (
-              <Button size='small' type='primary' icon={<PlusOutlined />} onClick={openCreate}>
-                {t('content.reminderCreate')}
-              </Button>
-            )}
+            {/* 新建永远可用：建的是「当前登录人自己的一条单独提醒」（不关联日志），
+                与当前看的是哪个视图无关；而编辑/启停只对自己的行开放（见下面操作列） */}
+            <Button size='small' type='primary' icon={<PlusOutlined />} onClick={openCreate}>
+              {t('content.reminderCreate')}
+            </Button>
             {isAdmin && (
               <Radio.Group
                 size='small'
@@ -583,8 +611,9 @@ const Page = () => {
                 loadConfig()
               }}
             />
-            {/* 测试邮件：SMTP 配错的表现全是「等不到信」，有这个口就不用等下一分钟 */}
-            {!(scope === 'all' && isAdmin) && cfg?.mailEnabled && (
+            {/* 测试邮件：SMTP 配错的表现全是「等不到信」，有这个口就不用等下一分钟
+                （它测的是当前登录人自己的收件人，与当前视图无关，所以不拿 scope 拦） */}
+            {cfg?.mailEnabled && (
               <Button size='small' onClick={onTestMail}>
                 {t('content.reminderTestMail')}
               </Button>
@@ -638,6 +667,8 @@ const Page = () => {
           destroyOnClose
           width={560}
         >
+          {/* 新建的是不关联日志的单独提醒：不说这一句，用户会找不到「怎么挂到某条日志上」 */}
+          {!editingId && <Alert type='info' showIcon className='mb-3' message={t('content.reminderStandaloneHint')} />}
           <BasicForm ref={formRef} list={formList} data={formRow} labelCol={{ span: 6 }} onValuesChange={onValuesChange} handleFinish={handleFinish}>
             {/* 选微信渠道时必须把「还得去小程序授权」说出来，否则建完只会看到一条永远发不出的提醒 */}
             {formChannel !== 'email' && (

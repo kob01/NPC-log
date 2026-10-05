@@ -11,9 +11,10 @@
  * 留默认值会带出秒位以外的格式差异，编辑时也会让「时间到底改没改」判错。
  */
 import type { FormList } from '#/form'
-import type { ReminderChannel, ReminderRepeat } from '@/servers/content/reminder'
+import type { ReminderChannel, ReminderIntervalUnit, ReminderItem, ReminderRepeat } from '@/servers/content/reminder'
 import type { TFunction } from 'i18next'
 
+import { REMINDER_INTERVAL_MAX } from '@/servers/content/reminder'
 import { FORM_REQUIRED } from '@/utils/config'
 
 /** 渠道 → 文案键与标签色（与后端 CHANNELS 一一对应） */
@@ -48,6 +49,33 @@ export const REPEAT_KEYS: Record<ReminderRepeat, string> = {
   daily: 'content.reminderRepeatDaily',
   weekly: 'content.reminderRepeatWeekly',
   monthly: 'content.reminderRepeatMonthly',
+  yearly: 'content.reminderRepeatYearly',
+  custom: 'content.reminderRepeatCustom',
+}
+
+/** 自定义间隔单位 → 文案键（与后端 INTERVAL_UNIT 一一对应） */
+export const INTERVAL_UNIT_KEYS: Record<ReminderIntervalUnit, string> = {
+  month: 'content.reminderIntervalUnitMonth',
+  day: 'content.reminderIntervalUnitDay',
+  hour: 'content.reminderIntervalUnitHour',
+  minute: 'content.reminderIntervalUnitMinute',
+}
+
+/**
+ * 一条提醒的重复文案
+ * custom 必须带上间隔，否则页面上只看到一句「自定义间隔」而不知道到底是多久；
+ * 行上间隔丢了（直接改库或迁移前的存量数据）时退回「不重复」而不是拼个「每 undefined 天」。
+ */
+export function repeatTextOf(t: TFunction, row: Pick<ReminderItem, 'repeat' | 'intervalValue' | 'intervalUnit'>): string {
+  if (row.repeat !== 'custom') {
+    return t(REPEAT_KEYS[row.repeat] || REPEAT_KEYS.none)
+  }
+  const unitKey = INTERVAL_UNIT_KEYS[row.intervalUnit as ReminderIntervalUnit]
+  const n = Number(row.intervalValue)
+  if (!unitKey || !Number.isFinite(n) || n < 1) {
+    return t(REPEAT_KEYS.none)
+  }
+  return t('content.reminderRepeatEvery', { n, unit: t(unitKey) })
 }
 
 interface ReminderFormCtx {
@@ -55,15 +83,18 @@ interface ReminderFormCtx {
   accountEmail: string
   /** 当前选中的渠道（决定要不要收收件邮箱） */
   channel: ReminderChannel
+  /** 当前选中的重复规则（只有 custom 才多出间隔两项） */
+  repeat: ReminderRepeat
 }
 
 /**
  * 新建/编辑提醒的表单字段
  * @param t - 翻译函数
- * @param ctx - 渠道与账号邮箱等上下文（随表单选择变化而重建列表）
+ * @param ctx - 渠道、重复规则与账号邮箱等上下文（随表单选择变化而重建列表）
  */
 export function createReminderForm(t: TFunction, ctx: ReminderFormCtx): FormList[] {
   const needEmail = ctx.channel === 'email' || ctx.channel === 'both'
+  const needInterval = ctx.repeat === 'custom'
   return [
     {
       label: t('content.reminderFormTitle'),
@@ -91,6 +122,34 @@ export function createReminderForm(t: TFunction, ctx: ReminderFormCtx): FormList
       componentProps: {
         options: (Object.keys(REPEAT_KEYS) as ReminderRepeat[]).map((v) => ({
           label: t(REPEAT_KEYS[v]),
+          value: v,
+        })),
+      },
+    },
+    {
+      label: t('content.reminderIntervalValue'),
+      name: 'intervalValue',
+      hidden: !needInterval,
+      rules: needInterval ? FORM_REQUIRED : [],
+      component: 'InputNumber',
+      componentProps: {
+        min: 1,
+        max: REMINDER_INTERVAL_MAX,
+        // precision=0：后端只收整数间隔（1.5 小时这种半格会把排期算得看不懂）
+        precision: 0,
+        step: 1,
+        style: { width: '100%' },
+      },
+    },
+    {
+      label: t('content.reminderIntervalUnit'),
+      name: 'intervalUnit',
+      hidden: !needInterval,
+      rules: needInterval ? FORM_REQUIRED : [],
+      component: 'Select',
+      componentProps: {
+        options: (Object.keys(INTERVAL_UNIT_KEYS) as ReminderIntervalUnit[]).map((v) => ({
+          label: t(INTERVAL_UNIT_KEYS[v]),
           value: v,
         })),
       },
