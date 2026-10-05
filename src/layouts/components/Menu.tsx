@@ -1,4 +1,4 @@
-import { CompassOutlined, ThunderboltFilled } from '@ant-design/icons'
+import { BellOutlined, CompassOutlined, ThunderboltFilled } from '@ant-design/icons'
 import { Icon } from '@iconify/react'
 import { Badge, Menu } from 'antd'
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
@@ -157,6 +157,15 @@ const LayoutMenu = () => {
         labelEn: 'NPC Save',
         key: '/content/log',
         rule: '/content/log',
+      })
+      // 定时提醒：单列顶级项（紧跟 NPC 存档），不放进「超级记忆」组 —— 它不是 AI 能力，
+      // 而是「到点能不能推出去」的运维视图，语义上与回顾/图谱不同组
+      newMenus.splice(1, 0, {
+        icon: <BellOutlined />,
+        label: t('content.reminderTitle'),
+        labelEn: 'Reminders',
+        key: '/content/reminder',
+        rule: '/content/reminder',
       })
 
       setMenus(newMenus || [])
