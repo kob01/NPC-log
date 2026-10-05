@@ -85,7 +85,7 @@ const Register = () => {
             <Input placeholder={t('login.pleaseEnterUsername')} autoComplete='username' addonBefore={<UserOutlined className='change' />} />
           </Form.Item>
 
-          <Form.Item label={t('public.name')} name='real_name'>
+          <Form.Item label={t('system.username')} name='real_name'>
             <Input placeholder={t('system.pleaseEnterRealName')} addonBefore={<IdcardOutlined className='change' />} />
           </Form.Item>
 

@@ -14,7 +14,6 @@ import type { FootprintsResult } from '@/servers/content/memory'
 
 import BasicContent from '@/components/Content/BasicContent'
 import FootprintMap from '@/components/FootprintMap'
-import NavLinks from '@/components/NavLinks'
 import ShareCardModal from '@/components/ShareCard'
 import { useCommonStore } from '@/hooks/useCommonStore'
 import { useMobileRedirect } from '@/hooks/useMobileRedirect'
@@ -175,13 +174,10 @@ const Page = () => {
                       onClick={() => navigate(`/content/log/option?id=${p.id}`)}
                       onKeyDown={(e) => e.key === 'Enter' && navigate(`/content/log/option?id=${p.id}`)}
                       className='
-                      flex gap-2 p-2 rounded-8px cursor-pointer
+                      flex items-center gap-2 p-2 rounded-8px cursor-pointer
                       hover:bg-gray-50 border border-gray-100
                     '
                     >
-                      {p.firstThumb ? (
-                        <img src={resolveFileUrl(p.firstThumb)} alt='' className='w-48px h-48px object-cover rounded-6px shrink-0' />
-                      ) : null}
                       <div className='flex-1 min-w-0'>
                         <div className='flex items-center justify-between gap-2'>
                           <Typography.Text strong ellipsis className='flex-1'>
@@ -191,19 +187,23 @@ const Page = () => {
                             {p.time}
                           </Typography.Text>
                         </div>
-                        <div className='flex items-center justify-between mt-1'>
-                          <Space size={[4, 4]} wrap>
-                            {p.tags.slice(0, 3).map((tg) => (
-                              <Tag key={tg} color='blue' style={{ marginRight: 0, fontSize: 11 }}>
-                                {tg}
-                              </Tag>
-                            ))}
-                          </Space>
-                          <span onClick={(e) => e.stopPropagation()}>
-                            <NavLinks lng={p.lng} lat={p.lat} position={p.position} address={p.address} compact />
-                          </span>
-                        </div>
+                        {/* 地址整行换行展示，宽度由 min-w-0 约束，不会把右侧缩略图挤窄 */}
+                        {p.address || p.position ? (
+                          <Typography.Text type='secondary' className='block mt-1 break-words' style={{ fontSize: 12 }}>
+                            {p.address || p.position}
+                          </Typography.Text>
+                        ) : null}
+                        <Space size={[4, 4]} wrap className='mt-1'>
+                          {p.tags.slice(0, 3).map((tg) => (
+                            <Tag key={tg} color='blue' style={{ marginRight: 0, fontSize: 11 }}>
+                              {tg}
+                            </Tag>
+                          ))}
+                        </Space>
                       </div>
+                      {p.firstThumb ? (
+                        <img src={resolveFileUrl(p.firstThumb)} alt='' className='w-48px h-48px object-cover rounded-6px shrink-0' />
+                      ) : null}
                     </div>
                   ))}
                 </div>

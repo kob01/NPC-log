@@ -259,7 +259,7 @@ const Page = () => {
   // ==================== 待审批列 ====================
   const requestColumns: ColumnsType<FormData> = [
     { title: t('login.username'), dataIndex: 'username', width: 140 },
-    { title: t('public.name'), dataIndex: 'real_name', width: 140 },
+    { title: t('system.username'), dataIndex: 'real_name', width: 140 },
     {
       title: t('public.operate'),
       key: 'operate',
@@ -285,7 +285,7 @@ const Page = () => {
   // ==================== 成员列 ====================
   const memberColumns: ColumnsType<FormData> = [
     { title: t('login.username'), dataIndex: 'username', width: 140 },
-    { title: t('public.name'), dataIndex: 'real_name', width: 140 },
+    { title: t('system.username'), dataIndex: 'real_name', width: 140 },
     {
       title: t('system.role'),
       dataIndex: 'role',
@@ -323,7 +323,7 @@ const Page = () => {
   const pendingAllColumns: ColumnsType<FormData> = [
     { title: t('system.orgName'), dataIndex: 'org_name', width: 160 },
     { title: t('login.username'), dataIndex: 'username', width: 140 },
-    { title: t('public.name'), dataIndex: 'real_name', width: 140 },
+    { title: t('system.username'), dataIndex: 'real_name', width: 140 },
     {
       title: t('system.applyTime'),
       dataIndex: 'apply_time',

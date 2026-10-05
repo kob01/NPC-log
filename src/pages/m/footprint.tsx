@@ -12,7 +12,6 @@ import { useNavigate } from 'react-router-dom'
 import type { FootprintsResult } from '@/servers/content/memory'
 
 import FootprintMap from '@/components/FootprintMap'
-import NavLinks from '@/components/NavLinks'
 import { getFootprints } from '@/servers/content/memory'
 import { resolveFileUrl } from '@/utils/config'
 
@@ -115,28 +114,25 @@ const MobileFootprint = () => {
                 className='
                 mb-2 p-2 rounded-10px bg-white cursor-pointer
                 shadow-0_1px_4px_rgba(0,0,0,0.06)
-                flex gap-2 active:bg-gray-50
+                flex items-center gap-2 active:bg-gray-50
               '
               >
-                {p.firstThumb ? <img src={resolveFileUrl(p.firstThumb)} alt='' className='w-52px h-52px object-cover rounded-6px shrink-0' /> : null}
                 <div className='flex-1 min-w-0'>
                   <div className='flex items-center justify-between gap-2'>
                     <span className='text-14px font-bold text-gray-800 truncate flex-1'>{p.event}</span>
                     <span className='text-11px text-gray-400 shrink-0'>{p.time}</span>
                   </div>
-                  <div className='mt-1 flex items-center justify-between gap-2'>
-                    <div className='flex flex-wrap gap-1 overflow-hidden'>
-                      {p.tags.slice(0, 3).map((tg) => (
-                        <Tag key={tg} color='blue' className='!mr-0' style={{ fontSize: 11 }}>
-                          {tg}
-                        </Tag>
-                      ))}
-                    </div>
-                    <span className='shrink-0' onClick={(e) => e.stopPropagation()}>
-                      <NavLinks lng={p.lng} lat={p.lat} position={p.position} address={p.address} compact />
-                    </span>
+                  {/* 地址整行换行展示，宽度由 min-w-0 约束，不会把右侧缩略图挤窄 */}
+                  {p.address || p.position ? <div className='mt-1 text-12px text-gray-500 break-words'>{p.address || p.position}</div> : null}
+                  <div className='mt-1 flex flex-wrap gap-1 overflow-hidden'>
+                    {p.tags.slice(0, 3).map((tg) => (
+                      <Tag key={tg} color='blue' className='!mr-0' style={{ fontSize: 11 }}>
+                        {tg}
+                      </Tag>
+                    ))}
                   </div>
                 </div>
+                {p.firstThumb ? <img src={resolveFileUrl(p.firstThumb)} alt='' className='w-52px h-52px object-cover rounded-6px shrink-0' /> : null}
               </div>
             ))
           : !loading && <Empty className='mt-60px' image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('content.footprintEmpty')} />}

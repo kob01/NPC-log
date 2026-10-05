@@ -16,7 +16,7 @@ const ACCOUNT_TYPE = (t: TFunction) => [
 // 搜索数据
 export const searchList = (t: TFunction): FormList[] => [
   {
-    label: t('public.name'),
+    label: t('system.username'),
     name: 'keyword',
     component: 'Input',
     componentProps: {
@@ -48,11 +48,21 @@ export const tableColumns = (t: TFunction, optionRender: TableOptions<object>): 
   {
     title: t('login.username'),
     dataIndex: 'username',
-    width: 150,
+    width: 190,
     fixed: 'left',
+    // 微信一键注册的账号只带 openid、还没设过密码；标出来免得管理员当成坏数据
+    render: (value: string, record: object) => {
+      const noPass = Number((record as { has_password?: number }).has_password) === 0
+      return (
+        <span>
+          {value}
+          {noPass ? <span style={{ marginLeft: 6, fontSize: 12, color: '#fa8c16' }}>{t('system.noPassword')}</span> : null}
+        </span>
+      )
+    },
   },
   {
-    title: t('public.name'),
+    title: t('system.username'),
     dataIndex: 'real_name',
     width: 120,
   },
@@ -106,7 +116,7 @@ export const createList = (t: TFunction, isEdit: boolean, orgOptions: { label: s
     rules: FORM_REQUIRED,
     component: 'Input',
     componentProps: {
-      disabled: isEdit, // 编辑时用户名不可修改
+      disabled: isEdit, // 编辑时账号不可修改
       placeholder: t('login.pleaseEnterUsername'),
     },
   },
@@ -120,7 +130,7 @@ export const createList = (t: TFunction, isEdit: boolean, orgOptions: { label: s
     },
   },
   {
-    label: t('public.name'),
+    label: t('system.username'),
     name: 'real_name',
     rules: FORM_REQUIRED,
     component: 'Input',
