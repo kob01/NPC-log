@@ -1,28 +1,16 @@
-import {
-  BulbOutlined,
-  HistoryOutlined,
-  ReloadOutlined,
-  SearchOutlined,
-  ShareAltOutlined,
-  TagsOutlined,
-  ThunderboltOutlined,
-  UserOutlined,
-} from '@ant-design/icons'
+import { BulbOutlined, HistoryOutlined, ReloadOutlined, SearchOutlined, TagsOutlined, ThunderboltOutlined, UserOutlined } from '@ant-design/icons'
 import { Alert, Button, Card, Empty, Image, Input, Space, Spin, Tag, Typography, message } from 'antd'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
-import type { CardData } from '@/components/ShareCard/templates'
-import type { ShareCopyResult, SocialPlatform } from '@/servers/content/event'
 import type { MemoryAskResult, MemorySearchItem, MemorySummaryResult, TagCountItem } from '@/servers/content/memory'
 
 import BasicContent from '@/components/Content/BasicContent'
 import NavLinks from '@/components/NavLinks'
-import ShareCardModal from '@/components/ShareCard'
 import { useCommonStore } from '@/hooks/useCommonStore'
 import { useMobileRedirect } from '@/hooks/useMobileRedirect'
-import { askMemory, generateMemoryShareCopy, getMemorySummary, getMemoryTags, isAiNotConfigured, searchMemory } from '@/servers/content/memory'
+import { askMemory, getMemorySummary, getMemoryTags, isAiNotConfigured, searchMemory } from '@/servers/content/memory'
 import { EMPTY_VALUE, resolveFileUrl } from '@/utils/config'
 import { checkPermission } from '@/utils/permissions'
 
@@ -56,26 +44,6 @@ const Page = () => {
   const [summary, setSummary] = useState<MemorySummaryResult | null>(null)
   const [summaryLoading, setSummaryLoading] = useState(false)
   const [summaryNotConfigured, setSummaryNotConfigured] = useState(false)
-  const [shareOpen, setShareOpen] = useState(false)
-
-  /** 月度回顾分享卡：把当前摘要交给 AI 改写 */
-  const summaryCardData: CardData = {
-    time: summary?.period,
-    event: `${summary?.period || ''} 月度回顾`,
-    summary: summary?.summary,
-    tags: summary?.keywords,
-  }
-
-  const getSummaryCopy = useCallback(
-    async (platform: SocialPlatform): Promise<ShareCopyResult | null> => {
-      const { code, data } = await generateMemoryShareCopy({
-        month: summary?.period,
-        platform,
-      })
-      return Number(code) === 200 && data ? data : null
-    },
-    [summary?.period],
-  )
 
   // 热门标签：进入页面即拉取（不依赖 AI 密钥）
   useEffect(() => {
@@ -367,16 +335,9 @@ const Page = () => {
             }
             size='small'
             extra={
-              <Space size={4}>
-                {summary?.summary ? (
-                  <Button type='link' size='small' icon={<ShareAltOutlined />} onClick={() => setShareOpen(true)}>
-                    {t('content.shareBtn')}
-                  </Button>
-                ) : null}
-                <Button type='link' size='small' icon={<ReloadOutlined />} loading={summaryLoading} onClick={handleSummary}>
-                  {summary ? t('public.reload') : t('content.memorySummaryGenBtn')}
-                </Button>
-              </Space>
+              <Button type='link' size='small' icon={<ReloadOutlined />} loading={summaryLoading} onClick={handleSummary}>
+                {summary ? t('public.reload') : t('content.memorySummaryGenBtn')}
+              </Button>
             }
           >
             {summaryNotConfigured && <Alert type='info' showIcon message={t('content.memorySummaryNotConfigured')} />}
@@ -446,9 +407,6 @@ const Page = () => {
           </Spin>
         </Card>
       </div>
-
-      {/* 月度回顾分享卡 */}
-      <ShareCardModal open={shareOpen} onClose={() => setShareOpen(false)} type='summary' data={summaryCardData} getCopy={getSummaryCopy} />
     </BasicContent>
   )
 }

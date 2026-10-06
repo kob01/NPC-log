@@ -10,7 +10,6 @@ import Layout from '@/layouts'
 import NotFound from '@/pages/404'
 import Login from '@/pages/login'
 import Register from '@/pages/register'
-import SharedView from '@/pages/s'
 
 type PageFiles = Record<string, () => Promise<DefaultComponent<unknown>>>
 const pages = import.meta.glob('../pages/**/*.tsx') as PageFiles
@@ -63,11 +62,6 @@ const newRoutes: RouteObject[] = [
   {
     path: 'register',
     element: <Register />,
-  },
-  {
-    // 公开分享访客页（无需登录，脱离 Layout 守卫）
-    path: 's/:token',
-    element: <SharedView />,
   },
   {
     path: '',

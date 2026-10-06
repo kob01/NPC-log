@@ -83,7 +83,7 @@ const MobileHome = () => {
   const [hasMore, setHasMore] = useState(true)
   const [keyword, setKeyword] = useState('')
   const [searchMode, setSearchMode] = useState(false)
-  const cursorRef = useRef<number | null>(null) // 游标：当前已加载最小 event_id
+  const cursorRef = useRef<number | null>(null) // 游标：已加载部分里时间最旧那条的 event_id
   const sentinelRef = useRef<HTMLDivElement>(null)
   const pullStartY = useRef<number | null>(null)
   const listVersion = useRef(0) // 用于缩略图异步回填时丢弃过期结果
@@ -144,9 +144,11 @@ const MobileHome = () => {
           return [...prev, ...items.filter((e) => !ids.has(String(e.id)))]
         })
         if (items.length) {
-          const minId = Math.min(...items.map((e) => Number(e.id)))
-          if (Number.isFinite(minId)) {
-            cursorRef.current = minId
+          // 游标取「本页最后一条」而不是本页最小 id：后端按 event_time 倒序返回，
+          // 最后一条才是本页时间最旧的锚点；取 min(id) 会把补记旧日期的那条永久跳过
+          const lastId = Number(items[items.length - 1].id)
+          if (Number.isFinite(lastId)) {
+            cursorRef.current = lastId
           }
         }
         setHasMore(items.length >= PAGE_SIZE || (items.length > 0 && total === 0))

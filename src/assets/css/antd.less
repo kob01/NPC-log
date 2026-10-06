@@ -124,7 +124,9 @@
 /* 分页:结束 */
 
 /* 标签:开始 */
-.ant-tabs-tab-active {
+/* 蓝底白字只给卡片式标签（顶部多页签栏）用：线条式标签的 tab 没有左右内边距，
+   套上背景色会变成贴着文字的错位色块，所以这里必须限定 .ant-tabs-card 祖先 */
+.ant-tabs-card .ant-tabs-tab-active {
   background-color: #1d4ed8 !important;
 
   .ant-tabs-tab-remove {

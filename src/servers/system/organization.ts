@@ -41,12 +41,23 @@ export function getPublicOrgs() {
   return request.get<FormData[]>(`${API.URL}/public`)
 }
 
-export function applyJoin(orgId: string | number) {
-  return request.post(`${API.URL}/apply`, { orgId })
+/** 申请加入（理由可选，会展示给该组织管理者） */
+export function applyJoin(orgId: string | number, reason?: string) {
+  return request.post(`${API.URL}/apply`, { orgId, reason })
 }
 
 export function getMyOrgs() {
   return request.get<FormData[]>(`${API.URL}/mine`)
+}
+
+/** 我提交的申请记录（进行中为主，含待审/通过/拒绝） */
+export function getMyApplications() {
+  return request.get<FormData[]>(`${API.URL}/applications`)
+}
+
+/** 已结束的审批记录：我申请的 + 我管理的组织里别人的 */
+export function getMyRecords() {
+  return request.get<FormData[]>(`${API.URL}/records`)
 }
 
 export function leaveOrg(orgId: string | number) {
@@ -63,12 +74,23 @@ export function getPendingCount() {
   return request.get<number>(`${API.URL}/requests/count`)
 }
 
-export function auditRequest(data: { orgId: string | number; userId: string | number; approved: boolean }) {
+export function auditRequest(data: {
+  orgId: string | number
+  userId: string | number
+  approved: boolean
+  /** 拒绝理由，可选（通过后回显给申请人） */
+  reason?: string
+}) {
   return request.post(`${API.URL}/audit`, data)
 }
 
 export function setOrgManager(data: { orgId: string | number; userId: string | number; role: number }) {
   return request.post(`${API.URL}/manager`, data)
+}
+
+/** 移出成员（仅该组织的管理者/创建者，不能移自己也不能移创建者） */
+export function kickMember(orgId: string | number, userId: string | number) {
+  return request.post(`${API.URL}/kick`, { orgId, userId })
 }
 
 // 系统管理员：为用户分配组织

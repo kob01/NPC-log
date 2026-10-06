@@ -128,14 +128,6 @@ export interface FootprintsResult {
   points: FootprintPoint[]
 }
 
-/** 回顾分享文案结果 */
-export interface MemoryShareCopyResult {
-  title: string
-  body: string
-  hashtags: string[]
-  degraded?: boolean
-}
-
 /** 统一响应结构 */
 export interface MemoryResponse<T> {
   code: number
@@ -234,20 +226,6 @@ export async function getYearReport(year?: number | string): Promise<MemoryRespo
   const params = year ? { year } : {}
   const { data } = await memoryRequest.get<MemoryResponse<YearReportResult>>(`${MEMORY_API}/report`, { params })
   return data
-}
-
-/**
- * 周/月或年度回顾的社媒分享文案（依赖 AI 密钥；未配置时后端降级返回原文）
- * @param data - { month? YYYY-MM, year? YYYY, platform?, tone? }
- */
-export async function generateMemoryShareCopy(data: {
-  month?: string
-  year?: string | number
-  platform?: string
-  tone?: string
-}): Promise<MemoryResponse<MemoryShareCopyResult>> {
-  const { data: resp } = await memoryRequest.post<MemoryResponse<MemoryShareCopyResult>>(`${MEMORY_API}/share-copy`, data)
-  return resp
 }
 
 /**

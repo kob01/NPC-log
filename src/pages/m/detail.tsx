@@ -4,7 +4,7 @@
  * - 地点卡片：有坐标时提供高德驾车/公交/步行导航入口（唤起 App / 网页版）
  * - 底部编辑入口：跳 /m/edit，与桌面端共用同一套表单逻辑
  */
-import { EditOutlined, EnvironmentOutlined, LeftOutlined, ShareAltOutlined } from '@ant-design/icons'
+import { EditOutlined, EnvironmentOutlined, LeftOutlined } from '@ant-design/icons'
 import { Image, Spin, Tag } from 'antd'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -13,7 +13,6 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import type { EventImageDetail } from '@/servers/content/event'
 
 import NavLinks from '@/components/NavLinks'
-import ShareCardModal from '@/components/ShareCard'
 import { getNPCEventById } from '@/servers/content/event'
 import { EMPTY_VALUE, resolveFileUrl } from '@/utils/config'
 import { isMobileDevice } from '@/utils/device'
@@ -48,7 +47,6 @@ const MobileDetail = () => {
   const [data, setData] = useState<DetailData | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
-  const [shareOpen, setShareOpen] = useState(false)
 
   // 用 useLocation 读 search（与桌面页一致，兼容未来 hash 路由）
   const { search } = useLocation()
@@ -125,13 +123,6 @@ const MobileDetail = () => {
         )}
         <span>{data.time || EMPTY_VALUE}</span>
         {data.author && <span>@{data.author}</span>}
-        <button
-          type='button'
-          onClick={() => setShareOpen(true)}
-          className='ml-auto inline-flex items-center gap-1 px-3 py-1 rounded-full text-12px text-white bg-blue-500 border-none cursor-pointer'
-        >
-          <ShareAltOutlined /> {t('content.shareBtn')}
-        </button>
       </div>
 
       {/* AI 摘要 */}
@@ -263,9 +254,6 @@ const MobileDetail = () => {
           {t('content.mobileEditBtn')}
         </button>
       </div>
-
-      {/* 社媒分享卡片弹窗 */}
-      <ShareCardModal open={shareOpen} onClose={() => setShareOpen(false)} data={{ ...data, id: id ?? undefined, images: data.images }} />
     </div>
   )
 }
