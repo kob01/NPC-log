@@ -2,10 +2,11 @@
  * 地点选择组件（受控）
  * - 搜索输入（AMap.AutoComplete）
  * - 地图选点 Modal（AMap.Marker + 逆地理编码 + PlaceSearch 联网搜索）
+ * - 无已有坐标时自动定位到当前位置（浏览器定位失败退回 IP 城市定位）
  * - 未配置 Key 时优雅降级为纯 Input
  */
-import { EnvironmentOutlined } from '@ant-design/icons'
-import { AutoComplete, Button, Input, Modal, Space, Spin, Tooltip, Typography } from 'antd'
+import { AimOutlined, EnvironmentOutlined } from '@ant-design/icons'
+import { AutoComplete, Button, Input, Modal, Space, Spin, Tooltip, Typography, message } from 'antd'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -34,6 +35,25 @@ export interface LocationPickerProps {
 /** 默认地图中心（北京） */
 const DEFAULT_CENTER: [number, number] = [116.397, 39.909]
 const DEFAULT_ZOOM = 11
+/** 精确定位缩放级别 */
+const LOCATE_ZOOM = 16
+/** IP 城市定位缩放级别（精度低，只到市中心） */
+const CITY_ZOOM = 12
+/** 定位整体超时（毫秒），防止插件回调丢失导致 loading 卡死 */
+const LOCATE_TIMEOUT = 12000
+
+/** AMap.Geolocation 实例结构 */
+interface GeolocationPlugin {
+  getCurrentPosition: (cb: (status: string, result: unknown) => void) => void
+  getCity: (cb: (status: string, result: unknown) => void) => void
+}
+
+/**
+ * 给 Promise 加超时兜底，避免高德回调不触发时一直 pending
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([promise, new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms))])
+}
 
 /**
  * 地点选择组件
@@ -60,6 +80,8 @@ const LocationPicker = (props: LocationPickerProps) => {
   const [mapError, setMapError] = useState(false)
   // 逆地理编码中
   const [geocoding, setGeocoding] = useState(false)
+  // 定位中
+  const [locating, setLocating] = useState(false)
   // 地图 Modal 内搜索结果
   const [mapSearchOptions, setMapSearchOptions] = useState<
     {
@@ -76,12 +98,15 @@ const LocationPicker = (props: LocationPickerProps) => {
   const autoCompleteRef = useRef<unknown>(null)
   const geocoderRef = useRef<unknown>(null)
   const placeSearchRef = useRef<unknown>(null)
+  const geolocationRef = useRef<unknown>(null)
   // 地图 Modal 内搜索防抖
   const mapSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   // 用户是否手动修改过 position
   const userModifiedPosition = useRef(false)
   // 地图 Modal 初始化时的坐标（用 ref 避免 initMap 依赖 tempCoord 导致重建）
   const initCoordRef = useRef<{ lng: number; lat: number } | null>(null)
+  // 定位进行中标记（initMap 闭包只持有首次渲染的 state，重入判断须用 ref）
+  const locatingRef = useRef(false)
 
   // 同步外部 value 到 searchText
   useEffect(() => {
@@ -309,9 +334,11 @@ const LocationPicker = (props: LocationPickerProps) => {
     if (poi?.location && map) {
       const { lng, lat } = poi.location
       map.setCenter([lng, lat])
-      map.setZoom(16)
+      map.setZoom(LOCATE_ZOOM)
       if (markerRef.current) {
-        ;(markerRef.current as { setPosition: (p: [number, number]) => void }).setPosition([lng, lat])
+        const marker = markerRef.current as { setPosition: (p: [number, number]) => void; show: () => void }
+        marker.setPosition([lng, lat])
+        marker.show()
       }
       setTempCoord({ lng, lat })
       setTempPosition(poi.name || selectedValue)
@@ -359,18 +386,19 @@ const LocationPicker = (props: LocationPickerProps) => {
 
       const MapConstructor = AMapNS.Map as new (el: HTMLElement, opts: Record<string, unknown>) => unknown
       const map = new MapConstructor(mapContainerRef.current, {
-        zoom: initCoordRef.current ? 15 : DEFAULT_ZOOM,
+        zoom: initCoordRef.current ? LOCATE_ZOOM : DEFAULT_ZOOM,
         center,
         resizeEnable: true,
       })
       mapRef.current = map
 
-      // 添加 Marker
+      // 添加 Marker（无已有坐标时先隐藏，避免默认中心的图钉被误认为已选位置）
       const MarkerConstructor = AMapNS.Marker as new (opts: Record<string, unknown>) => unknown
       const marker = new MarkerConstructor({
         position: center,
         draggable: true,
         cursor: 'move',
+        visible: !!initCoordRef.current,
       })
       ;(map as { add: (m: unknown) => void }).add(marker)
       markerRef.current = marker
@@ -391,7 +419,9 @@ const LocationPicker = (props: LocationPickerProps) => {
         if (evt.lnglat) {
           const { lng, lat } = evt.lnglat
           setTempCoord({ lng, lat })
-          ;(marker as { setPosition: (p: [number, number]) => void }).setPosition([lng, lat])
+          const m = marker as { setPosition: (p: [number, number]) => void; show: () => void }
+          m.setPosition([lng, lat])
+          m.show()
           doReverseGeocode(lng, lat)
         }
       })
@@ -401,14 +431,14 @@ const LocationPicker = (props: LocationPickerProps) => {
       const toolbar = new ToolBarConstructor()
       ;(map as { addControl: (c: unknown) => void }).addControl(toolbar)
 
-      // 如果没有初始坐标，尝试浏览器定位
+      // 没有已有坐标时，默认拉一次当前位置（不覆盖用户已填的地点名）
       if (!initCoordRef.current) {
-        tryGeolocation(AMapNS, map)
+        locateCurrentPosition({ keepName: true })
       }
 
-      // 如果有初始坐标，做逆地理编码
+      // 如果有初始坐标，做逆地理编码（同样不覆盖已存的地点名）
       if (initCoordRef.current) {
-        doReverseGeocode(initCoordRef.current.lng, initCoordRef.current.lat)
+        doReverseGeocode(initCoordRef.current.lng, initCoordRef.current.lat, true)
       }
     } catch {
       setMapError(true)
@@ -417,48 +447,116 @@ const LocationPicker = (props: LocationPickerProps) => {
   }, [])
 
   /**
-   * 尝试浏览器定位
+   * 把定位结果落到地图上：居中 + 显示图钉 + 逆地理编码
+   * @param keepName 已有地点名时不被逆地理编码结果覆盖（自动定位场景）
    */
-  const tryGeolocation = (AMapNS: Record<string, unknown>, map: unknown) => {
-    try {
-      const GeolocationConstructor = AMapNS.Geolocation as new (opts: Record<string, unknown>) => unknown
-      const geolocation = new GeolocationConstructor({
-        enableHighAccuracy: true,
-        timeout: 5000,
-      }) as {
-        getCurrentPosition: (cb: (status: string, result: unknown) => void) => void
+  const applyLocatedPoint = (lng: number, lat: number, zoom: number, keepName = false) => {
+    const map = mapRef.current as { setCenter: (c: [number, number]) => void; setZoom: (z: number) => void } | null
+    if (!map) {
+      return
+    }
+    setTempCoord({ lng, lat })
+    map.setCenter([lng, lat])
+    map.setZoom(zoom)
+    if (markerRef.current) {
+      const marker = markerRef.current as { setPosition: (p: [number, number]) => void; show: () => void }
+      marker.setPosition([lng, lat])
+      marker.show()
+    }
+    doReverseGeocode(lng, lat, keepName)
+  }
+
+  /**
+   * 获取 AMap.Geolocation 实例（插件未随 loader 注入时显式补加载一次）
+   */
+  const getGeolocationPlugin = async (): Promise<GeolocationPlugin | null> => {
+    const AMapNS = (await loadAmap()) as unknown as Record<string, unknown>
+    if (typeof AMapNS.Geolocation !== 'function') {
+      const plugin = AMapNS.plugin as ((name: string, cb: () => void) => void) | undefined
+      if (typeof plugin === 'function') {
+        await withTimeout(new Promise<void>((resolve) => plugin('AMap.Geolocation', () => resolve())), 3000, undefined)
       }
-      geolocation.getCurrentPosition((status, result) => {
-        if (status === 'complete' && result) {
-          const r = result as { position?: { lng: number; lat: number } }
-          if (r.position) {
-            const { lng, lat } = r.position
-            setTempCoord({ lng, lat })
-            ;(map as { setCenter: (c: [number, number]) => void }).setCenter([lng, lat])
-            ;(map as { setZoom: (z: number) => void }).setZoom(15)
-            if (markerRef.current) {
-              ;(markerRef.current as { setPosition: (p: [number, number]) => void }).setPosition([lng, lat])
-            }
-            doReverseGeocode(lng, lat)
-          }
-        }
+    }
+    if (typeof AMapNS.Geolocation !== 'function') {
+      return null
+    }
+    if (!geolocationRef.current) {
+      const GeolocationConstructor = AMapNS.Geolocation as new (opts: Record<string, unknown>) => unknown
+      geolocationRef.current = new GeolocationConstructor({
+        // 优先浏览器高精度定位，拿不到（拒授权 / 非 HTTPS）时自动退回 IP 定位
+        enableHighAccuracy: true,
+        timeout: 8000,
+        noIpLocate: 0,
+        noGeoLocation: 0,
+        convert: true,
       })
+    }
+    return geolocationRef.current as GeolocationPlugin
+  }
+
+  /**
+   * 定位到当前位置：浏览器精确定位 → IP 城市定位 → 提示失败
+   */
+  const locateCurrentPosition = async (opts?: { keepName?: boolean }) => {
+    if (!mapRef.current || locatingRef.current) {
+      return
+    }
+    const keepName = !!opts?.keepName
+    locatingRef.current = true
+    setLocating(true)
+    try {
+      const geo = await getGeolocationPlugin()
+      if (!geo) {
+        message.warning(t('content.locateFailed'))
+        return
+      }
+      const point = await withTimeout(
+        new Promise<{ lng: number; lat: number; zoom: number } | null>((resolve) => {
+          geo.getCurrentPosition((status, result) => {
+            const r = result as { position?: { lng: number; lat: number } }
+            if (status === 'complete' && r?.position && Number.isFinite(r.position.lng) && Number.isFinite(r.position.lat)) {
+              resolve({ lng: r.position.lng, lat: r.position.lat, zoom: LOCATE_ZOOM })
+              return
+            }
+            // 浏览器定位不可用（拒授权 / 非 HTTPS），退回 IP 城市定位
+            geo.getCity((_status, cityResult) => {
+              const c = cityResult as { center?: string }
+              const [lngStr, latStr] = String(c?.center || '').split(',')
+              const lng = Number(lngStr)
+              const lat = Number(latStr)
+              // center 形如 "116.397428,39.90923"，可解析即视为成功
+              resolve(Number.isFinite(lng) && Number.isFinite(lat) ? { lng, lat, zoom: CITY_ZOOM } : null)
+            })
+          })
+        }),
+        LOCATE_TIMEOUT,
+        null,
+      )
+      if (point) {
+        applyLocatedPoint(point.lng, point.lat, point.zoom, keepName)
+      } else {
+        message.warning(t('content.locateFailed'))
+      }
     } catch {
-      // 定位失败，保持默认中心
+      message.warning(t('content.locateFailed'))
+    } finally {
+      locatingRef.current = false
+      setLocating(false)
     }
   }
 
   /**
    * 地图 Modal 内逆地理编码
+   * @param keepName 保留用户已填的地点名，仅在为空时回填 POI
    */
-  const doReverseGeocode = async (lng: number, lat: number) => {
+  const doReverseGeocode = async (lng: number, lat: number, keepName = false) => {
     setGeocoding(true)
     const { address, position } = await reverseGeocode(lng, lat)
     if (address) {
       setTempAddress(address)
     }
     if (position) {
-      setTempPosition(position)
+      setTempPosition((prev) => (keepName && prev ? prev : position))
     }
     setGeocoding(false)
   }
@@ -636,12 +734,20 @@ const LocationPicker = (props: LocationPickerProps) => {
               style={{ width: '100%', marginBottom: 8 }}
               allowClear
             />
-            <Spin spinning={geocoding} size='small'>
-              <Typography.Text type='secondary' style={{ fontSize: 11, display: 'block', wordBreak: 'break-all', marginBottom: 8 }}>
-                {tempAddress || t('content.clickMapToSelect')}
-                {tempCoord ? ` · ${tempCoord.lng.toFixed(6)}, ${tempCoord.lat.toFixed(6)}` : ''}
-              </Typography.Text>
-            </Spin>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+              {/* Spin 嵌套模式下 style 不生效，宽度约束交给外层 div */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <Spin spinning={geocoding || locating} size='small'>
+                  <Typography.Text type='secondary' style={{ fontSize: 11, display: 'block', wordBreak: 'break-all' }}>
+                    {tempAddress || (locating ? t('content.locating') : t('content.clickMapToSelect'))}
+                    {tempCoord ? ` · ${tempCoord.lng.toFixed(6)}, ${tempCoord.lat.toFixed(6)}` : ''}
+                  </Typography.Text>
+                </Spin>
+              </div>
+              <Tooltip title={t('content.locateNow')}>
+                <Button size='small' icon={<AimOutlined />} loading={locating} onClick={() => locateCurrentPosition()} />
+              </Tooltip>
+            </div>
             <div
               ref={mapContainerRef}
               style={{

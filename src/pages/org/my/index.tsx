@@ -42,10 +42,9 @@ const Page = () => {
   const [myOrgs, setMyOrgs] = useState<FormData[]>([])
   const [square, setSquare] = useState<FormData[]>([])
 
-  // 管理弹窗
+  // 成员名单弹窗（待审批不在这里：外层「待审批申请」页签已是跨组织的同一份数据）
   const [manageOpen, setManageOpen] = useState(false)
   const [curOrg, setCurOrg] = useState<FormData | null>(null)
-  const [requests, setRequests] = useState<FormData[]>([])
   const [members, setMembers] = useState<FormData[]>([])
   // 全局待审批（我管理的所有组织的申请）
   const [pendingAll, setPendingAll] = useState<FormData[]>([])
@@ -56,7 +55,7 @@ const Page = () => {
   const [detailRecord, setDetailRecord] = useState<FormData | null>(null)
   // 申请与拒绝都收一个可选理由，所以走弹窗而不是 Popconfirm
   const [applyTarget, setApplyTarget] = useState<{ orgId: number; orgName: string } | null>(null)
-  const [rejectTarget, setRejectTarget] = useState<{ orgId: number; userId: number; name: string; inManage: boolean } | null>(null)
+  const [rejectTarget, setRejectTarget] = useState<{ orgId: number; userId: number; name: string } | null>(null)
   const [reasonLoading, setReasonLoading] = useState(false)
 
   // 新建 / 编辑组织弹窗（原「组织管理」页的能力已并入本页）
@@ -199,22 +198,22 @@ const Page = () => {
     }
   }
 
-  /** 刷新当前管理组织数据 */
-  const refreshManage = useCallback(async (orgId: number) => {
-    const [req, mem] = await Promise.all([getPendingRequests(orgId), getOrgMembers(String(orgId))])
-    if (Number(req.code) === 200) {
-      setRequests(req.data || [])
-    }
-    if (Number(mem.code) === 200) {
-      setMembers(mem.data || [])
+  /** 拉当前弹窗组织的成员名单 */
+  const loadMembers = useCallback(async (orgId: number) => {
+    const { code, data } = await getOrgMembers(String(orgId))
+    if (Number(code) === 200) {
+      setMembers(data || [])
     }
   }, [])
 
-  /** 打开管理弹窗 */
-  const openManage = async (org: FormData) => {
+  /**
+   * 打开成员名单：管理者与普通成员同一个入口，
+   * 差别只在名单里给不给操作列（由 curOrg.is_manager 定）
+   */
+  const openMembers = async (org: FormData) => {
     setCurOrg(org)
     setManageOpen(true)
-    await refreshManage(Number(org.id))
+    await loadMembers(Number(org.id))
   }
 
   /** 提交审批结论，返回是否成功让调用方决定后续刷新 */
@@ -227,28 +226,10 @@ const Page = () => {
     return true
   }
 
-  /** 审批（管理弹窗内）：通过直接执行，拒绝先收理由 */
-  const handleAudit = (userId: number, approved: boolean, name = '') => {
-    const orgId = Number(curOrg?.id)
-    if (!approved) {
-      setRejectTarget({ orgId, userId, name, inManage: true })
-      return
-    }
-    doAudit(orgId, userId, true).then(async (ok) => {
-      if (!ok) {
-        return
-      }
-      await refreshManage(orgId)
-      loadMyOrgs()
-      loadPendingAll()
-      loadRecords()
-    })
-  }
-
-  /** 审批（全局待审批入口，跨组织） */
+  /** 审批（全局待审批入口，跳组织共用一张表）：通过直接执行，拒绝先收理由 */
   const handleAuditGlobal = (orgId: number, userId: number, approved: boolean, name = '') => {
     if (!approved) {
-      setRejectTarget({ orgId, userId, name, inManage: false })
+      setRejectTarget({ orgId, userId, name })
       return
     }
     doAudit(orgId, userId, true).then((ok) => {
@@ -259,8 +240,9 @@ const Page = () => {
       loadMyOrgs()
       loadApplications()
       loadRecords()
+      // 刚通过的人就在名单弹窗那个组织里：重拉一次，弹窗不会还停在审批前的名单
       if (Number(curOrg?.id) === orgId) {
-        refreshManage(orgId)
+        loadMembers(orgId)
       }
     })
   }
@@ -270,16 +252,13 @@ const Page = () => {
     if (!rejectTarget) {
       return
     }
-    const { orgId, userId, inManage } = rejectTarget
+    const { orgId, userId } = rejectTarget
     try {
       setReasonLoading(true)
       if (!(await doAudit(orgId, userId, false, reason))) {
         return
       }
       setRejectTarget(null)
-      if (inManage) {
-        await refreshManage(orgId)
-      }
       loadMyOrgs()
       loadPendingAll()
       loadApplications()
@@ -298,7 +277,7 @@ const Page = () => {
     })
     if (Number(code) === 200) {
       message.success(msg || t('public.successfulOperation'))
-      await refreshManage(Number(curOrg?.id))
+      await loadMembers(Number(curOrg?.id))
       loadMyOrgs()
     }
   }
@@ -362,7 +341,7 @@ const Page = () => {
       return
     }
     message.success(msg || t('public.successfulOperation'))
-    await refreshManage(orgId)
+    await loadMembers(orgId)
     loadMyOrgs()
   }
 
@@ -390,9 +369,11 @@ const Page = () => {
       width: 260,
       render: (_: unknown, record) => (
         <Space>
-          {Number(record.my_status) === 1 && Number(record.is_manager) === 1 && (
-            <Button type='primary' size='small' onClick={() => openManage(record)}>
-              {t('system.manage')}
+          {Number(record.my_status) === 1 && (
+            // 名单入口人人都有：管理者在这里升降级/移出成员，普通成员只读名单；
+            // 待审批不在弹窗里（外层「待审批申请」页签就是同一份数据的跳组织视图）
+            <Button type={Number(record.is_manager) === 1 ? 'primary' : 'default'} size='small' onClick={() => openMembers(record)}>
+              {Number(record.is_manager) === 1 ? t('system.manage') : t('system.viewMembers')}
             </Button>
           )}
           {Number(record.my_status) === 1 && Number(record.is_manager) === 1 && canUpdate && (
@@ -451,37 +432,10 @@ const Page = () => {
     },
   ]
 
-  // ==================== 待审批列 ====================
-  const requestColumns: ColumnsType<FormData> = [
-    { title: t('login.username'), dataIndex: 'username', width: 140 },
-    { title: t('system.username'), dataIndex: 'real_name', width: 140 },
-    {
-      title: t('system.applyReason'),
-      dataIndex: 'apply_reason',
-      ellipsis: true,
-      render: (value: string) => value || '-',
-    },
-    {
-      title: t('public.operate'),
-      key: 'operate',
-      width: 200,
-      // 审批直接影响他人能否加入组织，属于不可逆操作：通过给二次确认，拒绝多收一个可选理由回显给申请人
-      render: (_: unknown, record) => (
-        <Space>
-          <Popconfirm title={t('system.confirmApprove')} onConfirm={() => handleAudit(Number(record.userId), true)}>
-            <Button type='primary' size='small'>
-              {t('system.approve')}
-            </Button>
-          </Popconfirm>
-          <Button danger size='small' onClick={() => handleAudit(Number(record.userId), false, displayNameOf(record))}>
-            {t('system.reject')}
-          </Button>
-        </Space>
-      ),
-    },
-  ]
-
   // ==================== 成员列 ====================
+  // 当前弹窗组织里我的身份：名单操作列只给管理者，普通成员只读名单
+  const curIsManager = Number(curOrg?.is_manager) === 1
+
   const memberColumns: ColumnsType<FormData> = [
     { title: t('login.username'), dataIndex: 'username', width: 140 },
     { title: t('system.username'), dataIndex: 'real_name', width: 140 },
@@ -491,7 +445,11 @@ const Page = () => {
       width: 100,
       render: (value: number) => <Tag>{roleText(value)}</Tag>,
     },
-    {
+  ]
+  if (curIsManager) {
+    // 操作列整列只给管理者：升降级与移出都是对别人的成员关系动手，
+    // 普通成员只读名单（后端同样按管理者拦，这里不给按钮而不是让他撞报错）
+    memberColumns.push({
       title: t('public.operate'),
       key: 'operate',
       width: 240,
@@ -525,8 +483,8 @@ const Page = () => {
           </Space>
         )
       },
-    },
-  ]
+    })
+  }
 
   const canManage = myOrgs.some((o) => Number(o.is_manager) === 1)
 
@@ -723,26 +681,14 @@ const Page = () => {
       </Card>
 
       <Modal
-        title={`${t('system.manageOrg')}${curOrg ? ` - ${curOrg.org_name}` : ''}`}
+        title={`${t('system.orgMembers')}${curOrg ? ` - ${curOrg.org_name}` : ''}`}
         open={manageOpen}
         onCancel={() => setManageOpen(false)}
         footer={null}
         width={720}
       >
-        <Tabs
-          items={[
-            {
-              key: 'requests',
-              label: `${t('system.pendingRequests')}${requests.length ? `(${requests.length})` : ''}`,
-              children: <Table rowKey='userId' columns={requestColumns} dataSource={requests as never[]} pagination={false} />,
-            },
-            {
-              key: 'members',
-              label: t('system.orgMembers'),
-              children: <Table rowKey='id' columns={memberColumns} dataSource={members as never[]} pagination={false} />,
-            },
-          ]}
-        />
+        {/* 只留名单：待审批已收拢到外层「待审批申请」页签，弹窗里不再放一份重复的 */}
+        <Table rowKey='id' columns={memberColumns} dataSource={members as never[]} pagination={false} />
       </Modal>
 
       <OrgFormModal

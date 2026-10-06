@@ -66,6 +66,7 @@ export default {
   approved: 'Approved',
   pending: 'Pending',
   manage: 'Manage',
+  viewMembers: 'Members',
   manageOrg: 'Manage Organization',
   createOrg: 'Create Organization',
   allOrg: 'All Organizations',

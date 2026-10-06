@@ -66,6 +66,7 @@ export default {
   approved: '已通过',
   pending: '待审批',
   manage: '管理',
+  viewMembers: '查看成员',
   manageOrg: '组织管理',
   createOrg: '创建组织',
   allOrg: '全部组织',
