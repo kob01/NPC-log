@@ -60,6 +60,11 @@ export function getMyRecords() {
   return request.get<FormData[]>(`${API.URL}/records`)
 }
 
+/** 某人申请某组织的完整审批历史（点开一条记录看全部拒绝/通过轮次） */
+export function getAuditHistory(orgId: string | number, userId: string | number) {
+  return request.get<FormData[]>(`${API.URL}/audit-history`, { params: { orgId, userId } })
+}
+
 export function leaveOrg(orgId: string | number) {
   return request.post(`${API.URL}/leave`, { orgId })
 }

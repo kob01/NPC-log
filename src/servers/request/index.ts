@@ -2,9 +2,8 @@ import axios from 'axios'
 
 import AxiosRequest from './request'
 
-import { API_PREFIX, ONLY_MINE_HEADER, TOKEN } from '@/utils/config'
+import { API_PREFIX, TOKEN } from '@/utils/config'
 import { getLocalInfo, removeLocalInfo } from '@/utils/local'
-import { getOnlyMine } from '@/utils/onlyMine'
 import { message } from '@/utils/staticAntd'
 
 // 请求配置
@@ -32,10 +31,8 @@ function creteRequest() {
         if (res?.headers && token) {
           res.headers.Authorization = `Bearer ${token}`
         }
-        // “只看自己日志”开关：全局注入，后端在所有可见性查询中统一生效
-        if (res?.headers && getOnlyMine()) {
-          res.headers[ONLY_MINE_HEADER] = '1'
-        }
+        // 「只看自己」不再全局注入：改由日志列表/导出（event.ts）按页内筛选逐请求带头，
+        // 分析类接口则在 memory.ts 里恒定带头；其余接口本就不受该范围影响
         return res
       },
       // 请求拦截超时

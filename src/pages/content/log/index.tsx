@@ -1,5 +1,5 @@
 import { EyeOutlined, FileExcelOutlined, LinkOutlined, SoundOutlined } from '@ant-design/icons'
-import { message, Tooltip, Button, Image, Tag, Switch, Space, Popover } from 'antd'
+import { message, Tooltip, Button, Image, Tag, Segmented, Popover } from 'antd'
 import { useEffect, useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch, useSelector } from 'react-redux'
@@ -11,6 +11,7 @@ import type { FormData } from '#/form'
 import type { PagePermission, TableOptions } from '#/public'
 import type { EventListItem } from '@/servers/content/event'
 import type { AppDispatch, RootState } from '@/stores'
+import type { ScopeValue } from '@/utils/onlyMine'
 
 import { UpdateBtn, DeleteBtn } from '@/components/Buttons'
 import BasicContent from '@/components/Content/BasicContent'
@@ -25,7 +26,7 @@ import { setRefreshPage } from '@/stores/public'
 import { setMenuClick } from '@/stores/tabs'
 import { EMPTY_VALUE, INIT_PAGINATION, resolveFileUrl } from '@/utils/config'
 import { exportToExcel } from '@/utils/excel'
-import { getOnlyMine, setOnlyMine } from '@/utils/onlyMine'
+import { getFilterScope, setFilterScope } from '@/utils/onlyMine'
 import { checkPermission } from '@/utils/permissions'
 
 // 当前行数据
@@ -34,9 +35,17 @@ interface RowData {
   is_mine?: boolean
 }
 
-// “只看自己日志”开关的提示文案
-const ONLY_MINE_TIP =
-  '开启后全局只看自己的日志：列表/导出、AI 记忆检索与问答、月度/年度摘要、' + '热门标签、人物图谱、地图足迹都只统计本人数据，避开他人日志干扰分析'
+// 日志列表查看范围三态：全部 / 只看自己 / 只看组织内他人
+const SCOPE_OPTIONS = [
+  { label: '全部', value: 'all' },
+  { label: '只看自己', value: 'mine' },
+  { label: '只看他人', value: 'others' },
+]
+
+// 日志列表查看范围的提示文案（仅作用于列表/导出，不再是全局开关）
+const SCOPE_TIP =
+  '仅作用于日志列表与导出：可切换「全部 / 只看自己 / 只看组织内他人」。' +
+  'AI 回忆、年度回顾、人物图谱、地图足迹等分析页始终只统计本人数据，不受此筛选影响'
 
 /**
  * 录音时长展示：1 分钟内只报秒，超过则分:秒
@@ -64,8 +73,8 @@ const Page = () => {
   const [tableData, setTableData] = useState<FormData[]>([])
   // 多图日志的完整图片集（按日志 id 存）：列表接口只回首图+数量，这里异步回填全部缩略图供行内浏览
   const [imagesMap, setImagesMap] = useState<Record<string, { thumb: string; full: string }[]>>({})
-  // “只看自己日志”全局开关：状态真值存在本地缓存（请求拦截器要读），这里只做展示与切换
-  const [onlyMine, setOnlyMineState] = useState(getOnlyMine())
+  // 日志列表查看范围：真值存本地缓存（供列表/导出与 H5 列表读取），这里只做展示与切换
+  const [filterScope, setFilterScopeState] = useState<ScopeValue>(getFilterScope())
   const isRefreshPage = useSelector((state: RootState) => state.public.isRefreshPage)
   const isMenuClick = useSelector((state: RootState) => state.tabs.isMenuClick)
   const hasFetched = useRef(false) // 标记是否已经请求过数据
@@ -132,11 +141,14 @@ const Page = () => {
   const getPage = async () => {
     try {
       setLoading(true)
-      const { code, data } = await getNPCEventPage({
-        ...searchData,
-        page,
-        pageSize,
-      })
+      const { code, data } = await getNPCEventPage(
+        {
+          ...searchData,
+          page,
+          pageSize,
+        },
+        filterScope,
+      )
 
       if (Number(code) === 200) {
         const { items, total } = data
@@ -179,13 +191,13 @@ const Page = () => {
   }
 
   /**
-   * 切换“只看自己日志”
-   * @param checked - 是否只看自己的日志
+   * 切换日志列表查看范围（仅影响本页列表/导出，分析页不受影响）
+   * @param scope - 'all' | 'mine' | 'others'
    */
-  const onToggleOnlyMine = (checked: boolean) => {
-    setOnlyMine(checked)
-    setOnlyMineState(checked)
-    // 开关是后端查询条件，切换后回到第一页重新拉取
+  const onScopeChange = (scope: ScopeValue) => {
+    setFilterScope(scope)
+    setFilterScopeState(scope)
+    // 筛选是后端查询条件，切换后回到第一页重新拉取
     setPage(INIT_PAGINATION.page)
     setPageSize(INIT_PAGINATION.pageSize)
     setFetch(true)
@@ -256,7 +268,7 @@ const Page = () => {
     try {
       setLoading(true)
       // 获取所有数据（不分页）
-      const { code, data } = await getAllNPCEvents(searchData)
+      const { code, data } = await getAllNPCEvents(searchData, filterScope)
       if (Number(code) !== 200) {
         message.error('获取数据失败')
         return
@@ -523,12 +535,15 @@ const Page = () => {
         onCreate={onCreate}
         handleFinish={onSearch}
       >
-        <Space className='ml-2 !mb-5px' size={6}>
-          <Tooltip title={ONLY_MINE_TIP}>
-            <Switch size='small' checked={onlyMine} onChange={onToggleOnlyMine} />
-          </Tooltip>
-          <span>只看自己</span>
-        </Space>
+        <Tooltip title={SCOPE_TIP}>
+          <Segmented
+            size='small'
+            className='ml-2 !mb-5px'
+            value={filterScope}
+            options={SCOPE_OPTIONS}
+            onChange={(val) => onScopeChange(val as ScopeValue)}
+          />
+        </Tooltip>
         <Button type='primary' icon={<FileExcelOutlined />} loading={isLoading} onClick={handleExportExcel} className='ml-2'>
           导出Excel
         </Button>

@@ -17,6 +17,7 @@ import NavLinks from '@/components/NavLinks'
 import { getNPCEventImages, getNPCEventPage } from '@/servers/content/event'
 import { searchMemory } from '@/servers/content/memory'
 import { resolveFileUrl } from '@/utils/config'
+import { getFilterScope } from '@/utils/onlyMine'
 
 // 每页条数（移动端流量敏感，取小值）
 const PAGE_SIZE = 10
@@ -135,7 +136,7 @@ const MobileHome = () => {
         // 游标分页固定取第 1 页，靠 beforeId 向前推进
         params.beforeId = cursorRef.current
       }
-      const { code, data } = await getNPCEventPage(params)
+      const { code, data } = await getNPCEventPage(params, getFilterScope())
       if (Number(code) === 200 && data) {
         const items = (data.items || []).map(fromListItem)
         const total = Number(data.total || 0)
@@ -217,7 +218,7 @@ const MobileHome = () => {
     setSearchMode(true)
     setLoading(true)
     try {
-      const { code, data } = await searchMemory(q, 20)
+      const { code, data } = await searchMemory(q, 20, getFilterScope())
       setEntries(Number(code) === 200 && data ? (data.list || []).map(fromMemoryItem) : [])
     } catch (error) {
       console.error('记忆搜索失败:', error)

@@ -4,8 +4,10 @@ import type { FormData } from '#/form'
 import type { PageServerResult, PaginationData } from '#/public'
 
 import { request } from '@/servers/request'
-import { FILE_API, TOKEN } from '@/utils/config'
+import { FILE_API, ONLY_MINE_HEADER, TOKEN, VIEW_SCOPE_HEADER } from '@/utils/config'
 import { getLocalInfo } from '@/utils/local'
+
+import type { ScopeValue } from '@/utils/onlyMine'
 
 enum API {
   URL = '/api/event',
@@ -103,22 +105,38 @@ const bumpRevision = (code?: number) => {
 }
 
 /**
+ * 按查看范围构造逐请求头：mine → X-Only-Mine: 1；others → X-View-Scope: others；all → 无
+ * @param scope - 'all' | 'mine' | 'others'
+ */
+function scopeHeaders(scope?: ScopeValue): Record<string, string> | undefined {
+  if (scope === 'others') return { [VIEW_SCOPE_HEADER]: 'others' }
+  if (scope === 'mine') return { [ONLY_MINE_HEADER]: '1' }
+  return undefined
+}
+
+/**
  * 获取分页数据
  * @param data - 请求数据
+ * @param scope - 列表查看范围（all/mine/others），逐请求带头让后端收窄可见范围
  */
-export function getNPCEventPage(data: Partial<FormData> & PaginationData) {
+export function getNPCEventPage(data: Partial<FormData> & PaginationData, scope?: ScopeValue) {
+  const headers = scopeHeaders(scope)
   return request.get<PageServerResult<EventListItem[]>>(`${API.URL}/list`, {
     params: data,
+    ...(headers ? { headers } : {}),
   })
 }
 
 /**
  * 获取所有数据（导出用）
  * @param data - 请求数据
+ * @param scope - 与列表保持一致的查看范围
  */
-export function getAllNPCEvents(data: Partial<FormData>) {
+export function getAllNPCEvents(data: Partial<FormData>, scope?: ScopeValue) {
+  const headers = scopeHeaders(scope)
   return request.get<FormData[]>(`${API.URL}/export`, {
     params: data,
+    ...(headers ? { headers } : {}),
   })
 }
 

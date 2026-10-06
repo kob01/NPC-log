@@ -117,7 +117,8 @@ const Page = () => {
       try {
         setSearching(true)
         setSearched(true)
-        const { code, data, message: msg } = await searchMemory(q, size)
+        // AI 回忆页固定只看自己（scope 'mine'），与本页其他分析接口一致
+        const { code, data, message: msg } = await searchMemory(q, size, 'mine')
         if (Number(code) === 200 && data) {
           setSearchList(data.list || [])
           setSearchTotal(data.total || 0)

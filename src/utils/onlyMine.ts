@@ -2,27 +2,35 @@ import { ONLY_MINE_KEY } from '@/utils/config'
 import { getLocalInfo, setLocalInfo } from '@/utils/local'
 
 /**
- * “只看自己日志”全局开关
+ * 日志列表「查看范围」筛选（不再是全局开关）
  *
- * 为什么存 localStorage 而不进 redux：两个 axios 实例（全局 request、
- * memory 专用实例）的请求拦截器都要读它，拦截器里引 store 会形成循环依赖，
- * 读本地缓存是最轻的共享方式；开关 UI 在 /content/log 页面，展示态由页面自行维护。
+ * 为什么存 localStorage 而不进 redux：列表页（/content/log）与移动端列表（/m）
+ * 都要读它作为列表/导出请求的范围，读本地缓存是最轻的共享方式；
+ * 切换 UI 在 /content/log 页面（三态 Segmented），展示态由页面自行维护。
  *
- * 作用范围（全局）：开关打开后请求头带上 X-Only-Mine: 1，后端在所有走可见性判定的
- * 查询里只返回本人日志 —— 日志列表/导出、移动端列表、AI 记忆检索与问答、
- * 月度/年度摘要、热门标签、人物图谱、地图足迹，避免他人日志混入影响个人分析。
+ * 作用范围（仅列表）：mine → 逐请求带 X-Only-Mine: 1；others → 带 X-View-Scope: others
+ * （在可见范围内再排除自己，即只看组织内他人）。AI 回忆/年度回顾/人物图谱/地图足迹等
+ * 分析页不受此影响，始终只统计本人数据（servers/content/memory.ts 里恒定带 X-Only-Mine）。
  */
 
-/** 获取开关状态（默认关闭） */
-export function getOnlyMine(): boolean {
-  return getLocalInfo<boolean>(ONLY_MINE_KEY) === true
+/** 列表查看范围 */
+export type ScopeValue = 'all' | 'mine' | 'others'
+
+/**
+ * 获取查看范围（默认 all）
+ * 兼容旧的布尔存储：true → 'mine'，其余 → 'all'
+ */
+export function getFilterScope(): ScopeValue {
+  const v = getLocalInfo<ScopeValue | boolean>(ONLY_MINE_KEY)
+  if (v === 'mine' || v === 'others') return v
+  return v === true ? 'mine' : 'all'
 }
 
 /**
- * 设置开关状态
- * @param onlyMine - 是否只看自己的日志
+ * 设置查看范围
+ * @param scope - 'all' | 'mine' | 'others'
  */
-export function setOnlyMine(onlyMine: boolean) {
+export function setFilterScope(scope: ScopeValue) {
   // 过期时间传 null：这是用户的长期偏好，按默认 2 天过期会被悄悄清掉
-  setLocalInfo(ONLY_MINE_KEY, onlyMine, null)
+  setLocalInfo(ONLY_MINE_KEY, scope || 'all', null)
 }

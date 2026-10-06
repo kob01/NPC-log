@@ -53,6 +53,8 @@ const Page = () => {
   const [applications, setApplications] = useState<FormData[]>([])
   const [records, setRecords] = useState<FormData[]>([])
   const [detailRecord, setDetailRecord] = useState<FormData | null>(null)
+  // 详情弹窗模式：record=已结束的审批记录；pending=待审批当场看历史
+  const [detailMode, setDetailMode] = useState<'record' | 'pending'>('record')
   // 申请与拒绝都收一个可选理由，所以走弹窗而不是 Popconfirm
   const [applyTarget, setApplyTarget] = useState<{ orgId: number; orgName: string } | null>(null)
   const [rejectTarget, setRejectTarget] = useState<{ orgId: number; userId: number; name: string } | null>(null)
@@ -520,9 +522,19 @@ const Page = () => {
     {
       title: t('public.operate'),
       key: 'operate',
-      width: 160,
+      width: 240,
       render: (_: unknown, record) => (
         <Space>
+          {/* 审批前先翻这个申请人的历史：被拒过几次、当初的理由是什么，当场决定通过/拒绝 */}
+          <Button
+            size='small'
+            onClick={() => {
+              setDetailMode('pending')
+              setDetailRecord(record)
+            }}
+          >
+            {t('system.viewRecords')}
+          </Button>
           <Popconfirm title={t('system.confirmApprove')} onConfirm={() => handleAuditGlobal(Number(record.orgId), Number(record.userId), true)}>
             <Button type='primary' size='small'>
               {t('system.approve')}
@@ -546,6 +558,23 @@ const Page = () => {
       render: (value: string) => value || '-',
     },
     { title: t('system.applyTime'), dataIndex: 'apply_time', width: 180, render: (value: string) => timeText(value) },
+    {
+      title: t('public.operate'),
+      key: 'operate',
+      width: 120,
+      render: (_: unknown, record) => (
+        // 进行中的申请也能点开：看之前几轮为什么被拒（本次申请走 pending 模式，不给审批/重新申请按钮）
+        <Button
+          size='small'
+          onClick={() => {
+            setDetailMode('pending')
+            setDetailRecord(record)
+          }}
+        >
+          {t('system.viewRecords')}
+        </Button>
+      ),
+    },
   ]
 
   // ==================== 审批结束列（我申请的 + 我管的组织里别人的）====================
@@ -573,7 +602,13 @@ const Page = () => {
       render: (_: unknown, record) => (
         // 整行可点开详情，所以这里要挡住冒泡：否则点「重新申请」会连带弹出详情，两层弹窗叠在一起
         <Space onClick={(e) => e.stopPropagation()}>
-          <Button size='small' onClick={() => setDetailRecord(record)}>
+          <Button
+            size='small'
+            onClick={() => {
+              setDetailMode('record')
+              setDetailRecord(record)
+            }}
+          >
             {t('system.viewReason')}
           </Button>
           {/* 自己申请且被拒、组织还在启用 → 允许再试一次 */}
@@ -662,7 +697,13 @@ const Page = () => {
                   loading={loading}
                   columns={recordColumns}
                   dataSource={records as never[]}
-                  onRow={(record) => ({ onClick: () => setDetailRecord(record as FormData), style: { cursor: 'pointer' } })}
+                  onRow={(record) => ({
+                    onClick: () => {
+                      setDetailMode('record')
+                      setDetailRecord(record as FormData)
+                    },
+                    style: { cursor: 'pointer' },
+                  })}
                   pagination={{ pageSize: 10, showSizeChanger: false, showTotal: (num) => t('public.totalNum', { num }) }}
                 />
               ),
@@ -720,7 +761,7 @@ const Page = () => {
         onOk={submitReject}
       />
 
-      <RecordDetailModal record={detailRecord} onClose={() => setDetailRecord(null)} />
+      <RecordDetailModal record={detailRecord} mode={detailMode} onClose={() => setDetailRecord(null)} />
     </BasicContent>
   )
 }

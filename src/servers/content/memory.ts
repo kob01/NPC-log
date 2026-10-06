@@ -3,14 +3,19 @@
  * 说明：使用独立 axios 实例（不走全局 request 拦截器），
  * 避免 code:1（如"AI 未配置"）被全局拦截器弹红色错误提示，
  * 由调用方自行决定 UI 降级策略。
+ *
+ * 「只看自己」范围（逐请求 X-Only-Mine 头）：
+ * - 分析类接口（问答/摘要/标签/年度回顾/人物图谱/地图足迹）恒带 X-Only-Mine，只统计本人数据；
+ * - searchMemory 例外：它被移动端列表页（/m）的搜索框复用，范围要跟随列表筛选，故由调用方传 scope（all/mine/others）。
  */
 import axios from 'axios'
 
 import type { AxiosInstance } from 'axios'
 
-import { API_PREFIX, ONLY_MINE_HEADER, TOKEN } from '@/utils/config'
+import { API_PREFIX, ONLY_MINE_HEADER, TOKEN, VIEW_SCOPE_HEADER } from '@/utils/config'
 import { getLocalInfo } from '@/utils/local'
-import { getOnlyMine } from '@/utils/onlyMine'
+
+import type { ScopeValue } from '@/utils/onlyMine'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -153,13 +158,19 @@ memoryRequest.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
-  // “只看自己日志”开关：本文件用的是独立 axios 实例，不走全局拦截器，
-  // 所以必须单独注入，否则 AI 检索/摘要/足迹仍会读到他人日志。
-  if (getOnlyMine()) {
-    config.headers[ONLY_MINE_HEADER] = '1'
-  }
+  // 「只看自己」不再全局注入：改由各接口按需带 ONLY_MINE_HEADER（见下方各 API 函数）
   return config
 })
+
+/** 分析类接口恒定携带的「只看自己」请求头 */
+const MINE_HEADERS = { [ONLY_MINE_HEADER]: '1' }
+
+/** 按查看范围构造逐请求头：mine→X-Only-Mine；others→X-View-Scope；all→无 */
+function scopeHeaders(scope?: ScopeValue): Record<string, string> | undefined {
+  if (scope === 'others') return { [VIEW_SCOPE_HEADER]: 'others' }
+  if (scope === 'mine') return { [ONLY_MINE_HEADER]: '1' }
+  return undefined
+}
 
 // ---------------------------------------------------------------------------
 // API 函数
@@ -181,63 +192,74 @@ export const isAiNotConfigured = (msg?: string) => !!msg && msg.includes(AI_NOT_
  * 记忆搜索（不依赖 AI 密钥，LIKE + 全文检索）
  * @param q - 搜索关键词
  * @param limit - 返回条数，默认8，钳制1~20
+ * @param scope - 查看范围：AI 回忆页传 'mine'，列表页搜索按列表筛选传（all/mine/others）
  */
-export async function searchMemory(q: string, limit = 8): Promise<MemoryResponse<MemorySearchResult>> {
-  const { data } = await memoryRequest.get<MemoryResponse<MemorySearchResult>>(`${MEMORY_API}/search`, { params: { q, limit } })
-  return data
-}
-
-/**
- * AI 问答（依赖 AI 密钥，未配置时 code:1）
- * @param question - 问题
- * @param limit - 引用条数，默认8
- */
-export async function askMemory(question: string, limit = 8): Promise<MemoryResponse<MemoryAskResult>> {
-  const { data } = await memoryRequest.post<MemoryResponse<MemoryAskResult>>(`${MEMORY_API}/ask`, {
-    question,
-    limit,
+export async function searchMemory(q: string, limit = 8, scope?: ScopeValue): Promise<MemoryResponse<MemorySearchResult>> {
+  const headers = scopeHeaders(scope)
+  const { data } = await memoryRequest.get<MemoryResponse<MemorySearchResult>>(`${MEMORY_API}/search`, {
+    params: { q, limit },
+    ...(headers ? { headers } : {}),
   })
   return data
 }
 
 /**
- * 月度摘要（依赖 AI 密钥，未配置且当月有日志时 code:1）
+ * AI 问答（依赖 AI 密钥，未配置时 code:1）——恒定只看自己
+ * @param question - 问题
+ * @param limit - 引用条数，默认8
+ */
+export async function askMemory(question: string, limit = 8): Promise<MemoryResponse<MemoryAskResult>> {
+  const { data } = await memoryRequest.post<MemoryResponse<MemoryAskResult>>(
+    `${MEMORY_API}/ask`,
+    {
+      question,
+      limit,
+    },
+    {
+      headers: MINE_HEADERS,
+    },
+  )
+  return data
+}
+
+/**
+ * 月度摘要（依赖 AI 密钥，未配置且当月有日志时 code:1）——恒定只看自己
  * @param month - 格式 YYYY-MM，缺省为当月
  */
 export async function getMemorySummary(month?: string): Promise<MemoryResponse<MemorySummaryResult>> {
   const params = month ? { month } : {}
-  const { data } = await memoryRequest.get<MemoryResponse<MemorySummaryResult>>(`${MEMORY_API}/summary`, { params })
+  const { data } = await memoryRequest.get<MemoryResponse<MemorySummaryResult>>(`${MEMORY_API}/summary`, { params, headers: MINE_HEADERS })
   return data
 }
 
 /**
- * 热门标签列表（不依赖 AI 密钥，但标签由 AI 抽取产生，未配置时可能为空）
+ * 热门标签列表（不依赖 AI 密钥，但标签由 AI 抽取产生，未配置时可能为空）——恒定只看自己
  */
 export async function getMemoryTags(): Promise<MemoryResponse<MemoryTagsResult>> {
-  const { data } = await memoryRequest.get<MemoryResponse<MemoryTagsResult>>(`${MEMORY_API}/tags`)
+  const { data } = await memoryRequest.get<MemoryResponse<MemoryTagsResult>>(`${MEMORY_API}/tags`, { headers: MINE_HEADERS })
   return data
 }
 
 /**
- * 年度回顾（统计部分不依赖 AI；AI 总结懒生成后缓存，重复请求命中缓存）
+ * 年度回顾（统计部分不依赖 AI；AI 总结懒生成后缓存，重复请求命中缓存）——恒定只看自己
  * @param year - 年份 YYYY，缺省为当年
  */
 export async function getYearReport(year?: number | string): Promise<MemoryResponse<YearReportResult>> {
   const params = year ? { year } : {}
-  const { data } = await memoryRequest.get<MemoryResponse<YearReportResult>>(`${MEMORY_API}/report`, { params })
+  const { data } = await memoryRequest.get<MemoryResponse<YearReportResult>>(`${MEMORY_API}/report`, { params, headers: MINE_HEADERS })
   return data
 }
 
 /**
- * 人物图谱列表（按 event_persons 聚合，不依赖 AI 密钥但人物由 AI 抽取）
+ * 人物图谱列表（按 event_persons 聚合，不依赖 AI 密钥但人物由 AI 抽取）——恒定只看自己
  */
 export async function getMemoryPersons(): Promise<MemoryResponse<{ persons: PersonItem[] }>> {
-  const { data } = await memoryRequest.get<MemoryResponse<{ persons: PersonItem[] }>>(`${MEMORY_API}/persons`)
+  const { data } = await memoryRequest.get<MemoryResponse<{ persons: PersonItem[] }>>(`${MEMORY_API}/persons`, { headers: MINE_HEADERS })
   return data
 }
 
 /**
- * 某人相关日志时间线
+ * 某人相关日志时间线——恒定只看自己
  * @param name - 人物称呼（精确匹配 CSV 边界）
  * @param year - 可选年份过滤
  */
@@ -246,12 +268,12 @@ export async function getPersonTimeline(name: string, year?: number | string): P
   if (year) {
     params.year = year
   }
-  const { data } = await memoryRequest.get<MemoryResponse<PersonTimelineResult>>(`${MEMORY_API}/person`, { params })
+  const { data } = await memoryRequest.get<MemoryResponse<PersonTimelineResult>>(`${MEMORY_API}/person`, { params, headers: MINE_HEADERS })
   return data
 }
 
 /**
- * 地图足迹（带坐标的可见日志）
+ * 地图足迹（带坐标的可见日志）——恒定只看自己
  * @param filters.year - 年份
  * @param filters.tag - 标签关键词
  */
@@ -261,6 +283,6 @@ export async function getFootprints(
     tag?: string
   } = {},
 ): Promise<MemoryResponse<FootprintsResult>> {
-  const { data } = await memoryRequest.get<MemoryResponse<FootprintsResult>>(`${MEMORY_API}/footprints`, { params: filters })
+  const { data } = await memoryRequest.get<MemoryResponse<FootprintsResult>>(`${MEMORY_API}/footprints`, { params: filters, headers: MINE_HEADERS })
   return data
 }

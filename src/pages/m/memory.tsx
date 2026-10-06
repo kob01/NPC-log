@@ -54,7 +54,8 @@ const MobileMemory = () => {
       setSearching(true)
       setSearched(true)
       setKeyword(q)
-      const { code, data } = await searchMemory(q, size)
+      // AI 回忆页固定只看自己（scope 'mine'）
+      const { code, data } = await searchMemory(q, size, 'mine')
       if (Number(code) === 200 && data) {
         setSearchList(data.list || [])
         setSearchTotal(data.total || 0)
