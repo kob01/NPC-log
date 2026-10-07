@@ -20,6 +20,8 @@ import { buildAmapNavigationUrl } from '@/utils/nav'
 
 interface DetailData {
   time?: string
+  /** 更新时间（后端 event_update_time，每次编辑都会推齐） */
+  updatedAt?: string | null
   event?: string
   type?: string
   content?: string
@@ -123,6 +125,11 @@ const MobileDetail = () => {
         )}
         <span>{data.time || EMPTY_VALUE}</span>
         {data.author && <span>@{data.author}</span>}
+        {data.updatedAt && (
+          <span>
+            {t('content.mobileUpdatedAt')} {data.updatedAt}
+          </span>
+        )}
       </div>
 
       {/* AI 摘要 */}

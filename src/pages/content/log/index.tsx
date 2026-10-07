@@ -286,6 +286,7 @@ const Page = () => {
         { key: 'witness', title: '见证者' },
         { key: 'author', title: '作者' },
         { key: 'visibility', title: '可见范围' },
+        { key: 'updatedAt', title: '更新于' },
       ]
 
       // 格式化数据

@@ -69,6 +69,8 @@ export interface EventPayload {
 export interface EventListItem extends FormData {
   id: string
   is_mine?: boolean
+  /** 更新时间（后端 event_update_time，每次编辑都会推齐；从未编辑过的行等于建档时间） */
+  updatedAt?: string | null
   /** 首图缩略图（300px，只用于行内小图展示） */
   firstThumb?: string | null
   /** 首图原图地址：行内点开的灯箱预览要用它，用缩略图等于把小图放大到全屏 */

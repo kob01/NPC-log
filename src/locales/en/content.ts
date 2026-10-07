@@ -103,6 +103,7 @@ export default {
   mobileRating: 'Rating',
   mobileWitness: 'Witness',
   mobileLocationCard: 'Location',
+  mobileUpdatedAt: 'Updated',
   mobileEditNew: 'Add',
   mobileEditUpdate: 'Edit Record',
   mobileEditBtn: 'Edit this record',

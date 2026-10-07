@@ -2,7 +2,7 @@ import type { FormList } from '#/form'
 import type { TableColumn, TableOptions } from '#/public'
 import type { TFunction } from 'i18next'
 
-import { FORM_REQUIRED } from '@/utils/config'
+import { EMPTY_VALUE, FORM_REQUIRED } from '@/utils/config'
 
 export const typeOptions = [
   {
@@ -256,6 +256,13 @@ export const tableColumns = (
       const orgNames = (record as { visibleOrgNames?: string }).visibleOrgNames
       return orgNames ? `组织可见·${orgNames}` : '组织可见'
     },
+  },
+  {
+    // 后端 event_update_time：每次编辑（含只换图片/链接/可见组织）都会推齐
+    title: '更新于',
+    dataIndex: 'updatedAt',
+    width: 140,
+    render: (value: string) => value || EMPTY_VALUE,
   },
   {
     title: t('public.operate'),

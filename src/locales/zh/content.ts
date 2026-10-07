@@ -103,6 +103,7 @@ export default {
   mobileRating: '评价',
   mobileWitness: '见证者',
   mobileLocationCard: '地点',
+  mobileUpdatedAt: '更新于',
   mobileEditNew: '记一笔',
   mobileEditUpdate: '编辑记录',
   mobileEditBtn: '编辑这条记录',
