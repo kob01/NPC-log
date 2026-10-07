@@ -1,4 +1,4 @@
-import { BellOutlined, CompassOutlined, ThunderboltFilled } from '@ant-design/icons'
+import { BellOutlined, CompassOutlined, HistoryOutlined, ThunderboltFilled } from '@ant-design/icons'
 import { Icon } from '@iconify/react'
 import { Badge, Menu } from 'antd'
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
@@ -20,6 +20,7 @@ import { setOpenKeys, setSelectedKeys, toggleCollapsed } from '@/stores/menu'
 import { addTabs, setNav, setActiveKey, setMenuClick } from '@/stores/tabs'
 import { HOME_PATH } from '@/utils/config'
 import { setTitle } from '@/utils/helper'
+import { checkPermission } from '@/utils/permissions'
 
 // “我的组织”菜单 key，用于挂载待审批红点
 const ORG_MY_KEY = '/org/my'
@@ -167,6 +168,18 @@ const LayoutMenu = () => {
         key: '/content/reminder',
         rule: '/content/reminder',
       })
+      // 访问记录：管理员专属（权限位来自后端 ADMIN_EXTRA_PERMISSIONS）。
+      // 上面这批硬编码前置项是 filterMenus 之后插进来的，本身不会再按权限筛，
+      // 所以必须在这里手动判一次；而菜单只是入口，真正的门是接口上的 adminOnly（回查库）
+      if (checkPermission('/content/visit', permissions)) {
+        newMenus.splice(2, 0, {
+          icon: <HistoryOutlined />,
+          label: t('content.visitTitle'),
+          labelEn: 'Visit Log',
+          key: '/content/visit',
+          rule: '/content/visit',
+        })
+      }
 
       setMenus(newMenus || [])
     }
