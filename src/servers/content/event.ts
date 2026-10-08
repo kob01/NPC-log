@@ -107,11 +107,11 @@ const bumpRevision = (code?: number) => {
 }
 
 /**
- * 按查看范围构造逐请求头：mine → X-Only-Mine: 1；others → X-View-Scope: others；all → 无
- * @param scope - 'all' | 'mine' | 'others'
+ * 按查看范围构造逐请求头：mine → X-Only-Mine: 1；others / private → X-View-Scope；all → 无
+ * @param scope - 'all' | 'mine' | 'others' | 'private'
  */
 function scopeHeaders(scope?: ScopeValue): Record<string, string> | undefined {
-  if (scope === 'others') return { [VIEW_SCOPE_HEADER]: 'others' }
+  if (scope === 'others' || scope === 'private') return { [VIEW_SCOPE_HEADER]: scope }
   if (scope === 'mine') return { [ONLY_MINE_HEADER]: '1' }
   return undefined
 }
@@ -119,7 +119,7 @@ function scopeHeaders(scope?: ScopeValue): Record<string, string> | undefined {
 /**
  * 获取分页数据
  * @param data - 请求数据
- * @param scope - 列表查看范围（all/mine/others），逐请求带头让后端收窄可见范围
+ * @param scope - 列表查看范围（all/mine/others/private），逐请求带头让后端收窄可见范围
  */
 export function getNPCEventPage(data: Partial<FormData> & PaginationData, scope?: ScopeValue) {
   const headers = scopeHeaders(scope)

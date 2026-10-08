@@ -1,5 +1,5 @@
 import { EyeOutlined, FileExcelOutlined, LinkOutlined, SoundOutlined } from '@ant-design/icons'
-import { message, Tooltip, Button, Image, Tag, Segmented, Popover } from 'antd'
+import { message, Tooltip, Button, Image, Tag, Select, Popover, Typography } from 'antd'
 import { useEffect, useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch, useSelector } from 'react-redux'
@@ -35,16 +35,18 @@ interface RowData {
   is_mine?: boolean
 }
 
-// 日志列表查看范围三态：全部 / 只看自己 / 只看组织内他人
+// 日志列表查看范围四态：全部 / 只看自己 / 仅自己可见 / 只看组织内他人
+// 用下拉而不是 Segmented：四态文案并排放不下，展开才能读完整
 const SCOPE_OPTIONS = [
   { label: '全部', value: 'all' },
   { label: '只看自己', value: 'mine' },
+  { label: '仅自己可见', value: 'private' },
   { label: '只看他人', value: 'others' },
 ]
 
 // 日志列表查看范围的提示文案（仅作用于列表/导出，不再是全局开关）
 const SCOPE_TIP =
-  '仅作用于日志列表与导出：可切换「全部 / 只看自己 / 只看组织内他人」。' +
+  '仅作用于日志列表与导出：可切换「全部 / 只看自己 / 仅自己可见 / 只看组织内他人」。' +
   'AI 回忆、年度回顾、人物图谱、地图足迹等分析页始终只统计本人数据，不受此筛选影响'
 
 /**
@@ -192,7 +194,7 @@ const Page = () => {
 
   /**
    * 切换日志列表查看范围（仅影响本页列表/导出，分析页不受影响）
-   * @param scope - 'all' | 'mine' | 'others'
+   * @param scope - 'all' | 'mine' | 'others' | 'private'
    */
   const onScopeChange = (scope: ScopeValue) => {
     setFilterScope(scope)
@@ -536,10 +538,15 @@ const Page = () => {
         onCreate={onCreate}
         handleFinish={onSearch}
       >
+        {/* 下拉只露出当前选中那一项（不像 Segmented 会平铺全部选项），补一个字段名避免「全部」看不出是什么筛选项 */}
+        <Typography.Text type='secondary' className='ml-2 !mb-5px' style={{ fontSize: 12 }}>
+          查看范围
+        </Typography.Text>
         <Tooltip title={SCOPE_TIP}>
-          <Segmented
+          <Select
             size='small'
-            className='ml-2 !mb-5px'
+            className='!mb-5px'
+            style={{ width: 120, marginLeft: 6 }}
             value={filterScope}
             options={SCOPE_OPTIONS}
             onChange={(val) => onScopeChange(val as ScopeValue)}

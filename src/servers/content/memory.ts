@@ -6,7 +6,7 @@
  *
  * 「只看自己」范围（逐请求 X-Only-Mine 头）：
  * - 分析类接口（问答/摘要/标签/年度回顾/人物图谱/地图足迹）恒带 X-Only-Mine，只统计本人数据；
- * - searchMemory 例外：它被移动端列表页（/m）的搜索框复用，范围要跟随列表筛选，故由调用方传 scope（all/mine/others）。
+ * - searchMemory 例外：它被移动端列表页（/m）的搜索框复用，范围要跟随列表筛选，故由调用方传 scope（all/mine/others/private）。
  */
 import axios from 'axios'
 
@@ -165,9 +165,9 @@ memoryRequest.interceptors.request.use((config) => {
 /** 分析类接口恒定携带的「只看自己」请求头 */
 const MINE_HEADERS = { [ONLY_MINE_HEADER]: '1' }
 
-/** 按查看范围构造逐请求头：mine→X-Only-Mine；others→X-View-Scope；all→无 */
+/** 按查看范围构造逐请求头：mine→X-Only-Mine；others/private→X-View-Scope；all→无 */
 function scopeHeaders(scope?: ScopeValue): Record<string, string> | undefined {
-  if (scope === 'others') return { [VIEW_SCOPE_HEADER]: 'others' }
+  if (scope === 'others' || scope === 'private') return { [VIEW_SCOPE_HEADER]: scope }
   if (scope === 'mine') return { [ONLY_MINE_HEADER]: '1' }
   return undefined
 }
@@ -192,7 +192,7 @@ export const isAiNotConfigured = (msg?: string) => !!msg && msg.includes(AI_NOT_
  * 记忆搜索（不依赖 AI 密钥，LIKE + 全文检索）
  * @param q - 搜索关键词
  * @param limit - 返回条数，默认8，钳制1~20
- * @param scope - 查看范围：AI 回忆页传 'mine'，列表页搜索按列表筛选传（all/mine/others）
+ * @param scope - 查看范围：AI 回忆页传 'mine'，列表页搜索按列表筛选传（all/mine/others/private）
  */
 export async function searchMemory(q: string, limit = 8, scope?: ScopeValue): Promise<MemoryResponse<MemorySearchResult>> {
   const headers = scopeHeaders(scope)

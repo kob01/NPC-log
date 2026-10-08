@@ -10,9 +10,9 @@ export const WATERMARK_PREFIX = 'admin' // 水印前缀
 export const VERSION = 'admin_version' // 版本
 export const EMPTY_VALUE = '-' // 空值显示
 export const THEME_KEY = 'theme_key' // 主题
-export const ONLY_MINE_KEY = 'npc_only_mine' // 日志列表查看范围（'all'|'mine'|'others'，旧版可能为布尔）
+export const ONLY_MINE_KEY = 'npc_only_mine' // 日志列表查看范围（'all'|'mine'|'others'|'private'，旧版可能为布尔）
 export const ONLY_MINE_HEADER = 'X-Only-Mine' // “只看自己”请求头（=mine）
-export const VIEW_SCOPE_HEADER = 'X-View-Scope' // “查看范围”请求头（others 用）
+export const VIEW_SCOPE_HEADER = 'X-View-Scope' // “查看范围”请求头（others / private 用）
 export const MOBILE_HOME = '/m' // 移动版（H5）首页路径
 export const HOME_PATH = '/content/log' // Web 端默认首页（登录/Logo/404/403 跳转目标）
 // UA 识别失败时的兜底阈值：视口窄于此值且无精确指针（非鼠标）才按手机处理
