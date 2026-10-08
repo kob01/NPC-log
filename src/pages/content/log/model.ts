@@ -64,24 +64,24 @@ export const typeOptions = [
 ]
 export const ratingOptions = [
   {
-    label: '非常好',
-    value: '非常好',
+    label: '夯',
+    value: '夯',
   },
   {
     label: '好',
     value: '好',
   },
   {
-    label: '一般',
-    value: '一般',
+    label: 'NPC',
+    value: 'NPC',
   },
   {
-    label: '差',
-    value: '差',
+    label: '拉',
+    value: '拉',
   },
   {
-    label: '非常差',
-    value: '非常差',
+    label: '拉完了',
+    value: '拉完了',
   },
 ]
 // 可见范围选项
