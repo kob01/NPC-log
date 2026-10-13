@@ -22,7 +22,11 @@ const GlobalSearch = () => {
   return (
     <>
       <Tooltip title={t('public.search')}>
-        <Icon className='flex items-center justify-center text-lg mr-3 cursor-pointer' icon='uil-search' onClick={toggle} />
+        {/* 外层用原生 div 承载 ref 与点击：Icon 首帧是异步加载的占位 span、拿不到 ref，
+            antd Tooltip 会退化成 findDOMNode，React 开发模式下报 deprecation 警告 */}
+        <div className='flex items-center justify-center text-lg mr-3 cursor-pointer' onClick={toggle}>
+          <Icon icon='uil-search' />
+        </div>
       </Tooltip>
 
       <SearchModal modalRef={modalRef} />
