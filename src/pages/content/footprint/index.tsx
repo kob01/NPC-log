@@ -1,10 +1,11 @@
 /**
  * 地图足迹页（/content/footprint）
  * - 撒点逻辑复用 components/FootprintMap（移动端 /m/footprint 同一套实现）
- * - 按年/标签过滤，地图不可用时降级为列表视图
+ * - 按年/标签/区域过滤，地图不可用时降级为列表视图
+ * - 区域只三级（省 → 地级市 → 区县/县级市）：小程序录的与存量点没行政区，不进选项但照常撒点
  */
 import { EnvironmentOutlined, ReloadOutlined } from '@ant-design/icons'
-import { Alert, Button, Card, Empty, Select, Space, Spin, Tag, Typography } from 'antd'
+import { Alert, Button, Cascader, Card, Empty, Select, Space, Spin, Tag, Typography } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
@@ -17,6 +18,7 @@ import { useCommonStore } from '@/hooks/useCommonStore'
 import { useMobileRedirect } from '@/hooks/useMobileRedirect'
 import { getFootprints } from '@/servers/content/memory'
 import { resolveFileUrl } from '@/utils/config'
+import { regionOfPath, toCascaderOptions } from '@/utils/footprintRegion'
 import { checkPermission } from '@/utils/permissions'
 
 const Page = () => {
@@ -27,6 +29,8 @@ const Page = () => {
   const [data, setData] = useState<FootprintsResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [year, setYear] = useState<string | undefined>(undefined)
+  // 区域存的是完整路径（Cascader 的受控值），发给后端只取末档
+  const [regionPath, setRegionPath] = useState<string[]>([])
   const [tags, setTags] = useState<string[]>([])
   const [mapError, setMapError] = useState('')
 
@@ -34,7 +38,7 @@ const Page = () => {
   const toMobile = useMobileRedirect('/m/footprint')
 
   /** 拉取足迹数据（标签在前端按已加载点位过滤，不再走服务端） */
-  const load = async (y?: string) => {
+  const load = async (y?: string, path?: string[]) => {
     try {
       setLoading(true)
       setMapError('')
@@ -44,6 +48,7 @@ const Page = () => {
         message: msg,
       } = await getFootprints({
         year: y,
+        region: regionOfPath(path || []),
       })
       if (Number(code) === 200 && resp) {
         setData(resp)
@@ -63,11 +68,12 @@ const Page = () => {
     if (toMobile) {
       return
     }
-    load(year)
+    load(year, regionPath)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [year])
+  }, [year, regionPath])
 
   const allTags = Array.from(new Set((data?.points || []).flatMap((p) => p.tags))).slice(0, 50)
+  const regionOptions = useMemo(() => toCascaderOptions(data?.regionOptions), [data?.regionOptions])
 
   // 按选中标签过滤：命中任一即保留，未选则展示全部
   const filteredPoints = useMemo(() => {
@@ -106,6 +112,20 @@ const Page = () => {
               value: y.year,
             }))}
           />
+          {/* 区域筛选：changeOnSelect 让用户停在省或市就生效（不必选到区）；
+              选项树由后端按「当前 year/tag 下真的有点」算出，不靠前端猜 */}
+          <Cascader
+            allowClear
+            changeOnSelect
+            style={{ minWidth: 180, maxWidth: 300 }}
+            placeholder={t('content.footprintAllRegions')}
+            options={regionOptions}
+            value={regionPath}
+            showSearch={{
+              filter: (input, path) => path.some((node) => String(node.label).toLowerCase().includes(input.toLowerCase())),
+            }}
+            onChange={(v) => setRegionPath((v || []).map(String))}
+          />
           <Select
             mode='multiple'
             allowClear
@@ -122,7 +142,7 @@ const Page = () => {
               </Tag>
             )}
           />
-          <Button icon={<ReloadOutlined />} loading={loading} onClick={() => load(year)}>
+          <Button icon={<ReloadOutlined />} loading={loading} onClick={() => load(year, regionPath)}>
             {t('public.reload')}
           </Button>
         </Space>

@@ -121,6 +121,9 @@ export function useEventForm(id?: string | null) {
         address: resp.address || null,
         lng: resp.lng != null ? Number(resp.lng) : null,
         lat: resp.lat != null ? Number(resp.lat) : null,
+        // 行政区三级原样带回去：不带的话用户在 Web 上编辑一条旧日志再保存，
+        // 会把之前选好的区清掉（后端把 region 当整组覆盖）
+        ...(resp.region || {}),
       } as LocationValue
       // 移除旧的分散字段，避免干扰
       delete formData.position
@@ -214,6 +217,14 @@ export function useEventForm(id?: string | null) {
       lng: toNum(loc.lng),
       lat: toNum(loc.lat),
       address: loc.address || null,
+      // 四列整组交出去（后端只在看到 region 这个键时才写，且一起覆盖）：
+      // 没选过点就是四个 null，对新建等于没区域，对编辑等于维持原状（本来也全空）
+      region: {
+        adcode: loc.adcode || null,
+        province: loc.province || null,
+        city: loc.city || null,
+        district: loc.district || null,
+      },
       images,
       links,
     }

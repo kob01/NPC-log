@@ -40,6 +40,20 @@ export interface EventLinkDetail extends EventLinkItem {
   id?: number
 }
 
+/**
+ * 日志的行政区三级（对应 migrations.sql 段 30 的四个列）
+ *
+ * 只由 Web 端地图选点的逆地理编码写入；小程序的 chooseLocation 不返回行政区，
+ * 所以那边录的日志与存量数据都是 null —— 这些点照常撒点，只是不参与区域筛选。
+ * adcode 仅用于同名地点消歧（全国有两个「高新区」），筛选本身按名字精确匹配。
+ */
+export interface EventRegion {
+  adcode?: string | null
+  province?: string | null
+  city?: string | null
+  district?: string | null
+}
+
 /** 日志新增/编辑提交数据（「感受」已并入 content，不再单列） */
 export interface EventPayload {
   id?: string
@@ -57,6 +71,11 @@ export interface EventPayload {
   lng?: number | null
   lat?: number | null
   address?: string | null
+  /**
+   * 行政区三级 + adcode（足迹页的区域筛选靠它）
+   * 整组覆盖：后端只在 body 里出现这个键时才写，且四列一起换（不会残留上一个市的区县）
+   */
+  region?: EventRegion | null
   // AI 标签/人物，前端可传，后端亦会自行抽取
   tags?: string[] | null
   persons?: string[] | null
@@ -83,6 +102,8 @@ export interface EventListItem extends FormData {
   address?: string | null
   lng?: number | null
   lat?: number | null
+  /** 行政区三级：详情接口才带（列表投影不背这四个字段） */
+  region?: EventRegion | null
   aiStatus?: number
   /** 随日志留存的录音（小程序录音录入产生），Web 端可回放 */
   audioUrl?: string | null

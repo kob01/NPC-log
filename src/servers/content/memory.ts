@@ -10,12 +10,11 @@
  */
 import axios from 'axios'
 
+import type { ScopeValue } from '@/utils/onlyMine'
 import type { AxiosInstance } from 'axios'
 
 import { API_PREFIX, ONLY_MINE_HEADER, TOKEN, VIEW_SCOPE_HEADER } from '@/utils/config'
 import { getLocalInfo } from '@/utils/local'
-
-import type { ScopeValue } from '@/utils/onlyMine'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -123,13 +122,35 @@ export interface FootprintPoint {
   address: string
   lng: number
   lat: number
+  /** 行政区三级：小程序录的与存量为 null（这些点不参与区域筛选，但照常撒点） */
+  adcode?: string | null
+  province?: string | null
+  city?: string | null
+  district?: string | null
   firstThumb: string | null
+}
+
+/**
+ * 区域级联节点（后端 buildRegionTree 产出）
+ * value 就是可直接回传的 region 参数（'province:江苏省' / 'city:苏州市' / 'district:昆山市'）
+ */
+export interface RegionNode {
+  value: string
+  label: string
+  count: number
+  children?: RegionNode[]
 }
 
 /** 地图足迹结果 */
 export interface FootprintsResult {
+  /** 当前这一档过滤命中的点位数（选了年份就只是那一年的） */
   total: number
+  /** 所有年份之和（小程序「全部(N)」那颗 chip 用） */
+  totalAllYears?: number
+  /** 年份分布：不受 year 自身影响，所以选了某年也不会把其他年份从选项里掉下去 */
   years: { year: string; count: number }[]
+  /** 区域级联树：同样不受 region 自身影响，选了苏州市仍能看到上海市 */
+  regionOptions?: RegionNode[]
   points: FootprintPoint[]
 }
 
@@ -167,8 +188,12 @@ const MINE_HEADERS = { [ONLY_MINE_HEADER]: '1' }
 
 /** 按查看范围构造逐请求头：mine→X-Only-Mine；others/private→X-View-Scope；all→无 */
 function scopeHeaders(scope?: ScopeValue): Record<string, string> | undefined {
-  if (scope === 'others' || scope === 'private') return { [VIEW_SCOPE_HEADER]: scope }
-  if (scope === 'mine') return { [ONLY_MINE_HEADER]: '1' }
+  if (scope === 'others' || scope === 'private') {
+    return { [VIEW_SCOPE_HEADER]: scope }
+  }
+  if (scope === 'mine') {
+    return { [ONLY_MINE_HEADER]: '1' }
+  }
   return undefined
 }
 
@@ -252,9 +277,41 @@ export async function getYearReport(year?: number | string): Promise<MemoryRespo
 
 /**
  * 人物图谱列表（按 event_persons 聚合，不依赖 AI 密钥但人物由 AI 抽取）——恒定只看自己
+ * blockedCount：当前用户屏蔽了几个人（图谱页据此决定要不要露出「已屏蔽」入口）
  */
-export async function getMemoryPersons(): Promise<MemoryResponse<{ persons: PersonItem[] }>> {
-  const { data } = await memoryRequest.get<MemoryResponse<{ persons: PersonItem[] }>>(`${MEMORY_API}/persons`, { headers: MINE_HEADERS })
+export async function getMemoryPersons(): Promise<MemoryResponse<{ persons: PersonItem[]; blockedCount?: number; partial?: boolean }>> {
+  const { data } = await memoryRequest.get<MemoryResponse<{ persons: PersonItem[]; blockedCount?: number; partial?: boolean }>>(
+    `${MEMORY_API}/persons`,
+    { headers: MINE_HEADERS },
+  )
+  return data
+}
+
+/** 被屏蔽的人物一行 */
+export interface PersonBlockItem {
+  person: string
+  createTime: string
+}
+
+/**
+ * 屏蔽图谱里的一个人（只影响自己的图谱列表，日志与 AI 问答都不动）
+ */
+export async function blockPerson(name: string): Promise<MemoryResponse<{ person: string; blockedCount: number }>> {
+  const { data } = await memoryRequest.post<MemoryResponse<{ person: string; blockedCount: number }>>(`${MEMORY_API}/person/block`, { name })
+  return data
+}
+
+/** 取消屏蔽 */
+export async function unblockPerson(name: string): Promise<MemoryResponse<{ person: string; blockedCount: number }>> {
+  const { data } = await memoryRequest.post<MemoryResponse<{ person: string; blockedCount: number }>>(`${MEMORY_API}/person/unblock`, { name })
+  return data
+}
+
+/** 被屏蔽名单 */
+export async function getPersonBlocks(): Promise<MemoryResponse<{ max: number; blocks: PersonBlockItem[] }>> {
+  const { data } = await memoryRequest.get<MemoryResponse<{ max: number; blocks: PersonBlockItem[] }>>(`${MEMORY_API}/person/blocks`, {
+    headers: MINE_HEADERS,
+  })
   return data
 }
 
@@ -276,11 +333,13 @@ export async function getPersonTimeline(name: string, year?: number | string): P
  * 地图足迹（带坐标的可见日志）——恒定只看自己
  * @param filters.year - 年份
  * @param filters.tag - 标签关键词
+ * @param filters.region - 区域筛：'province:江苏省' / 'city:苏州市' / 'district:昆山市'
  */
 export async function getFootprints(
   filters: {
     year?: number | string
     tag?: string
+    region?: string
   } = {},
 ): Promise<MemoryResponse<FootprintsResult>> {
   const { data } = await memoryRequest.get<MemoryResponse<FootprintsResult>>(`${MEMORY_API}/footprints`, { params: filters, headers: MINE_HEADERS })

@@ -19,6 +19,27 @@ export interface LocationValue {
   address?: string | null
   lng?: number | null
   lat?: number | null
+  /**
+   * 行政区三级 + adcode：由逆地理编码顺手带回，足迹页的区域筛选靠它
+   * 后端把这四个字段当一组整覆盖（见 normalizeRegion），所以这里也总是一起给
+   */
+  adcode?: string | null
+  province?: string | null
+  city?: string | null
+  district?: string | null
+}
+
+/** 只取行政区那四个字段的形状（逆地理编码的回参） */
+type RegionFields = Pick<LocationValue, 'adcode' | 'province' | 'city' | 'district'>
+
+/**
+ * 高德 addressComponent 里 province/city 对部分城市是数组（直辖市返回 city: []），
+ * 取首个元素；adcode 可能是数字。统一成字符串或 null，不把数组递给后端。
+ */
+function firstOf(raw: unknown): string | null {
+  const v = Array.isArray(raw) ? raw[0] : raw
+  const s = String(v ?? '').trim()
+  return s || null
 }
 
 export interface LocationPickerProps {
@@ -107,6 +128,10 @@ const LocationPicker = (props: LocationPickerProps) => {
   const initCoordRef = useRef<{ lng: number; lat: number } | null>(null)
   // 定位进行中标记（initMap 闭包只持有首次渲染的 state，重入判断须用 ref）
   const locatingRef = useRef(false)
+  // 最近一次逆地理编码拿到的行政区三级（弹窗「确定」时随地点一起交出去）
+  const regionRef = useRef<Partial<RegionFields>>({})
+  // emitChange 的发号器（只用来拦「异步补发撞上用户手输」）
+  const emitSeq = useRef(0)
 
   // 同步外部 value 到 searchText
   useEffect(() => {
@@ -120,62 +145,81 @@ const LocationPicker = (props: LocationPickerProps) => {
    */
   const emitChange = useCallback(
     (next: LocationValue) => {
+      // 每发一次加一个号：异步补发（搜索建议的行政区回填）只对得上号才落地，
+      // 否则「点完建议又手打了几个字」会被这一发迟到的回参盖掉
+      emitSeq.current += 1
       onChange?.(next)
     },
     [onChange],
   )
 
   /**
-   * 逆地理编码：坐标 → 地址 + POI
+   * 逆地理编码：坐标 → 地址 + POI + 行政区三级
    */
-  const reverseGeocode = useCallback(async (lng: number, lat: number): Promise<{ address: string; position: string }> => {
-    try {
-      const AMap = await loadAmap()
-      if (!geocoderRef.current) {
-        geocoderRef.current = new (
-          AMap as unknown as {
-            Geocoder: new (opts?: { extensions?: string; radius?: number }) => unknown
-          }
-        ).Geocoder({
-          extensions: 'all',
-          radius: 200,
-        })
-      }
-      const geocoder = geocoderRef.current as {
-        getAddress: (lnglat: [number, number], cb: (status: string, result: unknown) => void) => void
-      }
-      return new Promise((resolve) => {
-        geocoder.getAddress([lng, lat], (status, result) => {
-          if (status === 'complete' && result) {
-            const r = result as {
-              regeocode?: {
-                formattedAddress?: string
-                pois?: Array<{ name?: string; distance?: string | number }>
-                aois?: Array<{ name?: string }>
-                addressComponent?: {
-                  township?: string
-                  street?: string
-                  streetNumber?: string
-                  neighborhood?: { name?: string }
-                  building?: { name?: string }
+  const reverseGeocode = useCallback(
+    async (lng: number, lat: number): Promise<{ address: string; position: string; region: Partial<RegionFields> }> => {
+      try {
+        const AMap = await loadAmap()
+        if (!geocoderRef.current) {
+          geocoderRef.current = new (
+            AMap as unknown as {
+              Geocoder: new (opts?: { extensions?: string; radius?: number }) => unknown
+            }
+          ).Geocoder({
+            extensions: 'all',
+            radius: 200,
+          })
+        }
+        const geocoder = geocoderRef.current as {
+          getAddress: (lnglat: [number, number], cb: (status: string, result: unknown) => void) => void
+        }
+        return new Promise((resolve) => {
+          geocoder.getAddress([lng, lat], (status, result) => {
+            if (status === 'complete' && result) {
+              const r = result as {
+                regeocode?: {
+                  formattedAddress?: string
+                  pois?: Array<{ name?: string; distance?: string | number }>
+                  aois?: Array<{ name?: string }>
+                  addressComponent?: {
+                    township?: string
+                    street?: string
+                    streetNumber?: string
+                    neighborhood?: { name?: string }
+                    building?: { name?: string }
+                    province?: string | string[]
+                    city?: string | string[]
+                    district?: string
+                    adcode?: string | number
+                  }
                 }
               }
+              const address = r.regeocode?.formattedAddress || ''
+              const comp = r.regeocode?.addressComponent
+              // 优先取最近的 POI / AOI 名称，避免只显示街道这类过于笼统的名称
+              const nearestPoi = r.regeocode?.pois?.find((p) => p.name)?.name || r.regeocode?.aois?.find((a) => a.name)?.name
+              const position = nearestPoi || comp?.building?.name || comp?.neighborhood?.name || comp?.township || ''
+              resolve({
+                address,
+                position,
+                region: {
+                  adcode: firstOf(comp?.adcode),
+                  province: firstOf(comp?.province),
+                  city: firstOf(comp?.city),
+                  district: firstOf(comp?.district),
+                },
+              })
+            } else {
+              resolve({ address: '', position: '', region: {} })
             }
-            const address = r.regeocode?.formattedAddress || ''
-            const comp = r.regeocode?.addressComponent
-            // 优先取最近的 POI / AOI 名称，避免只显示街道这类过于笼统的名称
-            const nearestPoi = r.regeocode?.pois?.find((p) => p.name)?.name || r.regeocode?.aois?.find((a) => a.name)?.name
-            const position = nearestPoi || comp?.building?.name || comp?.neighborhood?.name || comp?.township || ''
-            resolve({ address, position })
-          } else {
-            resolve({ address: '', position: '' })
-          }
+          })
         })
-      })
-    } catch {
-      return { address: '', position: '' }
-    }
-  }, [])
+      } catch {
+        return { address: '', position: '', region: {} }
+      }
+    },
+    [],
+  )
 
   /**
    * 搜索输入变化
@@ -233,8 +277,9 @@ const LocationPicker = (props: LocationPickerProps) => {
 
   /**
    * 选中搜索建议
+   * async 只为了末尾那一发行政区补发（onSelect 不关心返回值）
    */
-  const handleSelect = (selectedValue: string) => {
+  const handleSelect = async (selectedValue: string) => {
     const opt = options.find((o) => o.value === selectedValue)
     if (!opt?.data) {
       emitChange({ ...value, position: selectedValue })
@@ -249,14 +294,25 @@ const LocationPicker = (props: LocationPickerProps) => {
     const lng = tip.location?.lng ?? null
     const lat = tip.location?.lat ?? null
     const address = tip.address ? `${tip.district || ''}${tip.address}` : tip.district || null
-    emitChange({
+    const next: LocationValue = {
       position: tip.name || selectedValue,
       address,
       lng,
       lat,
-    })
+    }
+    emitChange(next)
     setSearchText(tip.name || selectedValue)
     setOptions([])
+    // 搜索建议只给一个 district 串，没有省/市/adcode —— 补一次逆地理编码再追发一次。
+    // 分两次是有意的：先让地点立刻可见（不拿高德往返时长堵用户），区域到了再补；
+    // 这一发得对得上号，号变了说明用户已经接着改了，不该再盖
+    const seq = emitSeq.current
+    if (lng != null && lat != null) {
+      const { region } = await reverseGeocode(lng, lat)
+      if (region.province && seq === emitSeq.current) {
+        emitChange({ ...next, ...region })
+      }
+    }
   }
 
   /**
@@ -551,7 +607,10 @@ const LocationPicker = (props: LocationPickerProps) => {
    */
   const doReverseGeocode = async (lng: number, lat: number, keepName = false) => {
     setGeocoding(true)
-    const { address, position } = await reverseGeocode(lng, lat)
+    const { address, position, region } = await reverseGeocode(lng, lat)
+    // 行政区存进 ref 而不是 state：它不参与渲染（弹窗里看不到这三个字），
+    // 做成 state 会让每次拖图钉都多一次整页 setData，而它只在「确定」那一下被读一次
+    regionRef.current = region
     if (address) {
       setTempAddress(address)
     }
@@ -570,6 +629,7 @@ const LocationPicker = (props: LocationPickerProps) => {
       address: tempAddress || null,
       lng: tempCoord?.lng ?? null,
       lat: tempCoord?.lat ?? null,
+      ...regionRef.current,
     })
     setSearchText(tempPosition || value?.position || '')
     destroyMap()
@@ -580,11 +640,17 @@ const LocationPicker = (props: LocationPickerProps) => {
    * 清除坐标（仅保留文本）
    */
   const handleClearCoord = () => {
+    regionRef.current = {}
     emitChange({
       position: value?.position || null,
       address: null,
       lng: null,
       lat: null,
+      // 坐标清了还留着区就是脏数据：筛苏州会筛出一条已经不在苏州的点
+      adcode: null,
+      province: null,
+      city: null,
+      district: null,
     })
     destroyMap()
     setMapVisible(false)

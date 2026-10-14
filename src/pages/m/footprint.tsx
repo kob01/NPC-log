@@ -2,10 +2,11 @@
  * 移动端地图足迹（/m/footprint）
  * - 撒点复用 components/FootprintMap（与桌面端同一套高德逻辑），高度按视口收缩
  * - 下方单列卡片流，点击进 /m/detail；地图不可用时只留列表，不白屏
+ * - 区域筛选单独一行，且只在「有点带行政区」时出现（小程序录的与存量点没这个字段）
  */
 import { SearchOutlined } from '@ant-design/icons'
-import { Alert, Button, Empty, Input, Select, Spin, Tag } from 'antd'
-import { useEffect, useState } from 'react'
+import { Alert, Button, Cascader, Empty, Input, Select, Spin, Tag } from 'antd'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
@@ -14,6 +15,7 @@ import type { FootprintsResult } from '@/servers/content/memory'
 import FootprintMap from '@/components/FootprintMap'
 import { getFootprints } from '@/servers/content/memory'
 import { resolveFileUrl } from '@/utils/config'
+import { regionOfPath, toCascaderOptions } from '@/utils/footprintRegion'
 
 const MobileFootprint = () => {
   const { t } = useTranslation()
@@ -23,10 +25,12 @@ const MobileFootprint = () => {
   const [loading, setLoading] = useState(false)
   const [year, setYear] = useState<string | undefined>(undefined)
   const [tag, setTag] = useState('')
+  // 区域存完整路径（Cascader 的受控值），发后端只取末档
+  const [regionPath, setRegionPath] = useState<string[]>([])
   const [mapError, setMapError] = useState('')
 
   /** 拉取足迹数据 */
-  const load = async (y?: string, tg?: string) => {
+  const load = async (y?: string, tg?: string, rg?: string[]) => {
     try {
       setLoading(true)
       setMapError('')
@@ -37,6 +41,7 @@ const MobileFootprint = () => {
       } = await getFootprints({
         year: y,
         tag: tg || undefined,
+        region: regionOfPath(rg || []),
       })
       if (Number(code) === 200 && resp) {
         setData(resp)
@@ -51,13 +56,14 @@ const MobileFootprint = () => {
     }
   }
 
-  // 首次加载 + 年份切换后重拉
+  // 首次加载 + 年份/区域切换后重拉（换年份依旧沿用手上的标签与区域）
   useEffect(() => {
-    load(year, '')
+    load(year, '', regionPath)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [year])
+  }, [year, regionPath])
 
   const points = data?.points || []
+  const regionOptions = useMemo(() => toCascaderOptions(data?.regionOptions), [data?.regionOptions])
 
   return (
     <div className='max-w-768px mx-auto px-3 py-3'>
@@ -81,10 +87,24 @@ const MobileFootprint = () => {
           placeholder={t('content.logTagFilter')}
           value={tag}
           onChange={(e) => setTag(e.target.value)}
-          onPressEnter={() => load(year, tag)}
+          onPressEnter={() => load(year, tag, regionPath)}
         />
-        <Button className='shrink-0' type='primary' icon={<SearchOutlined />} loading={loading} onClick={() => load(year, tag)} />
+        <Button className='shrink-0' type='primary' icon={<SearchOutlined />} loading={loading} onClick={() => load(year, tag, regionPath)} />
       </div>
+
+      {/* 区域单独一行：窄屏上再挤进第一行会把标签输入框压到没法看；
+          没点带行政区时整行不出现（而不是给一个点开是空的下拉） */}
+      {regionOptions.length > 0 && (
+        <Cascader
+          allowClear
+          changeOnSelect
+          className='mb-3 w-full'
+          placeholder={t('content.footprintAllRegions')}
+          options={regionOptions}
+          value={regionPath}
+          onChange={(v) => setRegionPath((v || []).map(String))}
+        />
+      )}
 
       <div className='text-12px text-gray-400 mb-2'>{data ? `${data.total} ${t('content.footprintCount')}` : ''}</div>
 
