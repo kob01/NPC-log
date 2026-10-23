@@ -10,18 +10,33 @@ jobs:
     runs-on: ubuntu-latest # 运行环境
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # - name: Set up Node.js
-      #   uses: actions/setup-node@v3
-      #   with:
-      #     node-version: "18" # 根据项目需求调整Node.js版本
+      # ── 版本锁定点（三处必须同步：本文件 / package.json / NPC-log_node/Dockerfile）──
+      # Node 锁死到 24.22.1：与生产容器基础镜像同一个补丁版本。runner 默认 Node 是浮动值，
+      # 某次镜像或 action 更新后会在无人察觉时换掉构建运行时，产物与本地、线上不可复现。
+      # pnpm 锁 11.9.0：版本真源是 package.json 的 packageManager 字段，这里只是指定安装。
+      # ⚠ 不能用 pnpm 9：pnpm-workspace.yaml 的 allowBuilds（esbuild、@swc/core 等原生
+      # 依赖的构建脚本白名单）是 pnpm 10+ 才识别的配置，旧版直接忽略，
+      # 会导致 esbuild 二进制没落地、vite build 报找不到可执行文件。
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: '11.9.0'
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.22.1'
+          cache: 'pnpm' # 缓存 pnpm store，必须放在装好 pnpm 之后，否则取不到 store 路径
+
+      # --frozen-lockfile：以 pnpm-lock.yaml 为准，lockfile 与 package.json 不一致就硬失败，
+      # 不让 CI 自作主张重算依赖树（原 npm install 会隐式刷新 package-lock.json）。
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: pnpm install --frozen-lockfile
 
       - name: Build project
-        run: npm run build # 根据项目类型调整命令
+        run: pnpm run build # 根据项目类型调整命令
 
       - name: Compress build files
         run: cd dist && zip -r ../dist.zip . # 压缩构建产物
