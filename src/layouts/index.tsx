@@ -1,6 +1,6 @@
 import { Icon } from '@iconify/react'
 import { useDebounceFn } from 'ahooks'
-import { Skeleton, message } from 'antd'
+import { Skeleton } from 'antd'
 import { useCallback, useEffect, useState } from 'react'
 import KeepAlive from 'react-activation'
 import { useDispatch } from 'react-redux'
@@ -83,12 +83,6 @@ const Layout = () => {
       getMenuData()
     }
   }, [getUserInfo, getMenuData, navigate, token, userId])
-
-  // 监测是否需要刷新
-  // useEffect(() => {
-  //   versionCheck(message);
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [pathname]);
 
   /** 判断是否是手机端 */
   const handleIsPhone = useDebounceFn(

@@ -1,5 +1,8 @@
-import type { ItemType } from 'antd/es/menu/interface'
+import type { MenuProps } from 'antd'
 import type { ColumnsType } from 'antd/lib/table'
+
+// 侧边菜单项基础类型：antd v5 已无 menu/interface 内部路径，改从公开导出的 MenuProps 推导
+type ItemType = NonNullable<MenuProps['items']>[number]
 
 // 区间值
 type EventValue<T> = T | null
