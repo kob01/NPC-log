@@ -15,9 +15,6 @@ type PageFiles = Record<string, () => Promise<DefaultComponent<unknown>>>
 const pages = import.meta.glob('../pages/**/*.tsx') as PageFiles
 const layouts = handleRoutes(pages)
 
-// 添加显式路由配置，确保瀑布图演示页面可以正确访问
-const demoRoutes: RouteObject[] = []
-
 // 移动端轻量页：独立裸布局（不含桌面菜单/标签页），不参与 Layout
 const MobileLayout = loadable(() => import('@/pages/m/layout'))
 const MobileHome = loadable(() => import('@/pages/m/index'))
@@ -66,7 +63,7 @@ const newRoutes: RouteObject[] = [
   {
     path: '',
     element: <Layout />,
-    children: [...layouts, ...demoRoutes],
+    children: [...layouts],
   },
   ...mobileRoutes,
   {

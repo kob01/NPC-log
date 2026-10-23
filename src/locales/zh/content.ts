@@ -14,20 +14,12 @@ export default {
   hideWatermark: '隐藏水印',
   nestedData: '嵌套数据',
   sensitiveInfo: '注：标题不能含有敏感信息!',
-  // 日志图片/作品链接
+  // 日志图片
   imageField: '图片',
-  linkField: '关联作品',
   imageUpload: '上传图片',
   imageMaxCount: '最多上传 {{num}} 张图片',
   imageTypeInvalid: '仅支持 jpg/png/webp/heic 格式的图片',
   imageUploadFailed: '图片上传失败',
-  linkAdd: '添加链接',
-  linkUrlPlaceholder: '粘贴链接或分享文案，自动识别平台',
-  linkTitlePlaceholder: '作品标题（选填）',
-  linkUrlInvalid: '链接地址需以 http:// 或 https:// 开头',
-  platformDouyin: '抖音',
-  platformXiaohongshu: '小红书',
-  platformOther: '其他',
   // 地点选点与导航
   locationPlaceholder: '输入地点名称或点击地图图标选点',
   mapPicker: '地图选点',

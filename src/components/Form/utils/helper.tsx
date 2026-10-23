@@ -63,10 +63,6 @@ export function initCompProps(t: TFunction, component: ComponentType, onPressEnt
     case 'ImageUpload':
       return {}
 
-    // 作品链接列表（自定义受控组件）
-    case 'LinkList':
-      return {}
-
     // 日期
     case 'DatePicker':
       return {

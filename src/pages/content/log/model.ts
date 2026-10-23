@@ -4,62 +4,68 @@ import type { TFunction } from 'i18next'
 
 import { EMPTY_VALUE, FORM_REQUIRED } from '@/utils/config'
 
+// 分类顺序与小程序 utils/options.js 保持一致：两处存的是中文原文（event_type），
+// 增删档位时两边必须同步，否则会出现「能选却筛不到」
 export const typeOptions = [
-  {
-    label: '工作',
-    value: '工作',
-  },
-  {
-    label: '爱好',
-    value: '爱好',
-  },
-  {
-    label: '大事件',
-    value: '大事件',
-  },
-  {
-    label: '学习',
-    value: '学习',
-  },
-  {
-    label: '运动',
-    value: '运动',
-  },
-  {
-    label: '旅游',
-    value: '旅游',
-  },
   {
     label: '吃喝',
     value: '吃喝',
-  },
-  {
-    label: '社交',
-    value: '社交',
-  },
-  {
-    label: '家庭',
-    value: '家庭',
   },
   {
     label: '生活',
     value: '生活',
   },
   {
-    label: '其他',
-    value: '其他',
+    label: '感悟',
+    value: '感悟',
+  },
+  {
+    label: '运动',
+    value: '运动',
+  },
+  {
+    label: '爱好',
+    value: '爱好',
+  },
+  {
+    label: '学习',
+    value: '学习',
   },
   {
     label: 'Her',
     value: 'Her',
   },
   {
-    label: '衣',
-    value: '衣',
+    label: '旅游',
+    value: '旅游',
+  },
+  {
+    label: '家庭',
+    value: '家庭',
+  },
+  {
+    label: '社交',
+    value: '社交',
+  },
+  {
+    label: '大事件',
+    value: '大事件',
   },
   {
     label: '待办',
     value: '待办',
+  },
+  {
+    label: '衣',
+    value: '衣',
+  },
+  {
+    label: '工作',
+    value: '工作',
+  },
+  {
+    label: '其他',
+    value: '其他',
   },
 ]
 export const ratingOptions = [
@@ -153,7 +159,6 @@ export const searchList = (t: TFunction): FormList[] => [
  * @param optionRender - 渲染操作函数
  * @param TooltipRender - 文本溢出提示渲染
  * @param imageRender - 图片列渲染（JSX 由页面注入，model.ts 为纯 ts）
- * @param linkRender - 作品列渲染
  * @param positionRender - 地点列渲染（导航链接）
  * @param tagRender - AI 标签列渲染
  * @param audioRender - 录音列渲染（播放浮层由页面注入）
@@ -163,7 +168,6 @@ export const tableColumns = (
   optionRender: TableOptions<object>,
   TooltipRender: (text: string) => JSX.Element,
   imageRender: (record: object) => JSX.Element,
-  linkRender: (record: object) => JSX.Element,
   positionRender?: (record: object) => JSX.Element,
   tagRender?: (record: object) => JSX.Element,
   audioRender?: (record: object) => JSX.Element,
@@ -227,12 +231,6 @@ export const tableColumns = (
     dataIndex: 'audioUrl',
     width: 96,
     render: (_value: unknown, record: object) => (audioRender ? audioRender(record) : null),
-  },
-  {
-    title: '作品',
-    dataIndex: 'linkCount',
-    width: 72,
-    render: (_value: unknown, record: object) => linkRender(record),
   },
   {
     title: t('content.logTagColumn'),
@@ -367,10 +365,5 @@ export const createList = (t: TFunction, orgOptions: { label: string; value: num
     componentProps: {
       maxCount: 9,
     },
-  },
-  {
-    label: t('content.linkField'),
-    name: 'links',
-    component: 'LinkList',
   },
 ]

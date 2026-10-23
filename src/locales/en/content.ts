@@ -14,20 +14,12 @@ export default {
   hideWatermark: 'Hide watermark',
   nestedData: 'Nested data',
   sensitiveInfo: 'Note: The title cannot contain sensitive information!',
-  // Log images / work links
+  // Log images
   imageField: 'Images',
-  linkField: 'Linked Works',
   imageUpload: 'Upload',
   imageMaxCount: 'Upload at most {{num}} images',
   imageTypeInvalid: 'Only jpg/png/webp/heic images are supported',
   imageUploadFailed: 'Image upload failed',
-  linkAdd: 'Add Link',
-  linkUrlPlaceholder: 'Paste a link or share text to auto-detect platform',
-  linkTitlePlaceholder: 'Work title (optional)',
-  linkUrlInvalid: 'The link must start with http:// or https://',
-  platformDouyin: 'Douyin',
-  platformXiaohongshu: 'Xiaohongshu',
-  platformOther: 'Other',
   // Location picker & navigation
   locationPlaceholder: 'Enter location or click map icon to pick',
   mapPicker: 'Pick on Map',

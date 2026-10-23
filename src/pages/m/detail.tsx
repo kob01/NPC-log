@@ -37,7 +37,6 @@ interface DetailData {
   tags?: string[]
   persons?: string[]
   images?: EventImageDetail[]
-  links?: { id?: number; platform: string; url: string; title?: string }[]
   /** 随日志留存的录音（小程序录音录入产生） */
   audioUrl?: string | null
   audioDuration?: number | null

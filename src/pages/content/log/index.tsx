@@ -1,4 +1,4 @@
-import { EyeOutlined, FileExcelOutlined, LinkOutlined, SoundOutlined } from '@ant-design/icons'
+import { EyeOutlined, FileExcelOutlined, SoundOutlined } from '@ant-design/icons'
 import { message, Tooltip, Button, Image, Tag, Select, Popover, Typography } from 'antd'
 import { useEffect, useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -437,32 +437,6 @@ const Page = () => {
   }
 
   /**
-   * 作品列渲染：平台标签 + 数量，点击打开首条链接
-   * @param record - 当前行数据
-   */
-  const linkRender = (record: object) => {
-    const row = record as EventListItem
-    const count = Number(row.linkCount || 0)
-    const first = row.firstLink
-    if (count <= 0 || !first?.url) {
-      return <span>{EMPTY_VALUE}</span>
-    }
-    const colorMap: Record<string, string> = {
-      douyin: '#161823',
-      xiaohongshu: '#ff2442',
-      other: '#8c8c8c',
-    }
-    const color = colorMap[first.platform] || '#8c8c8c'
-    return (
-      <a href={first.url} target='_blank' rel='noopener noreferrer' onClick={(e) => e.stopPropagation()}>
-        <Tag color={color} style={{ marginRight: 0 }}>
-          <LinkOutlined /> {count}
-        </Tag>
-      </a>
-    )
-  }
-
-  /**
    * AI 标签列渲染：最多展示 3 个，剩余折叠为 +N（悬停看全部）
    * @param record - 当前行数据
    */
@@ -559,7 +533,7 @@ const Page = () => {
 
       <BasicTable
         loading={isLoading}
-        columns={tableColumns(t, optionRender, TooltipRender, imageRender, linkRender, positionRender, tagRender, audioRender)}
+        columns={tableColumns(t, optionRender, TooltipRender, imageRender, positionRender, tagRender, audioRender)}
         dataSource={tableData}
       />
 

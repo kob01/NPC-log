@@ -1,8 +1,5 @@
-import type { BusinessComponents } from '@/components/Business'
 import type { ImageUploadProps } from '@/components/ImageUpload'
-import type { LinkListProps } from '@/components/LinkList'
 import type { LocationPickerProps } from '@/components/LocationPicker'
-import type { EditorProps } from '@/components/WangEditor'
 import type { ServerResult } from '@/servers/request/types'
 import type {
   InputProps,
@@ -59,11 +56,8 @@ type SliderComponents = 'Slider'
 // 自定义组件
 type CustomizeComponents = 'Customize'
 
-// 富文本编辑器
-type EditorComponents = 'Editor'
-
-// 图片/链接/地点等媒体组件
-type MediaComponents = 'ImageUpload' | 'LinkList' | 'LocationPicker'
+// 图片/地点等媒体组件
+type MediaComponents = 'ImageUpload' | 'LocationPicker'
 
 // 组件集合
 export type ComponentType =
@@ -76,10 +70,8 @@ export type ComponentType =
   | UploadComponents
   | RateComponents
   | SliderComponents
-  | EditorComponents
   | TransferComponents
   | MediaComponents
-  | BusinessComponents
 
 export interface ApiResult extends Omit<DefaultOptionType, 'value'> {
   label: ReactNode
@@ -124,9 +116,7 @@ export type ComponentProps =
   | RangePickerProps
   | ApiSelectProps
   | ApiTreeSelectProps
-  | EditorProps
   | ImageUploadProps
-  | LinkListProps
   | LocationPickerProps
 
 // 表单规则

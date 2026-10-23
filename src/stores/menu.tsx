@@ -7,8 +7,8 @@ const menuSlice = createSlice({
   initialState: {
     isPhone: false,
     isCollapsed: false,
-    selectedKeys: 'dashboard', // 菜单选中值
-    openKeys: ['Dashboard'], // 菜单展开项
+    selectedKeys: '', // 菜单选中值
+    openKeys: [], // 菜单展开项
     menuList: [] as SideMenu[], // 菜单列表数据
   },
   reducers: {

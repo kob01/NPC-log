@@ -13,9 +13,6 @@ enum API {
   URL = '/api/event',
 }
 
-/** 作品链接平台 */
-export type LinkPlatform = 'douyin' | 'xiaohongshu' | 'other'
-
 /** 日志图片项（提交用） */
 export interface EventImageItem {
   url: string
@@ -25,18 +22,6 @@ export interface EventImageItem {
 
 /** 日志图片项（详情/列表返回，带 id） */
 export interface EventImageDetail extends EventImageItem {
-  id?: number
-}
-
-/** 作品链接项（提交用） */
-export interface EventLinkItem {
-  platform: LinkPlatform
-  url: string
-  title?: string
-}
-
-/** 作品链接项（详情/列表返回，带 id） */
-export interface EventLinkDetail extends EventLinkItem {
   id?: number
 }
 
@@ -81,7 +66,6 @@ export interface EventPayload {
   persons?: string[] | null
   // 随日志一起全量覆盖式保存
   images?: EventImageItem[] | null
-  links?: EventLinkItem[] | null
 }
 
 /** 列表单条返回数据（在日志基础字段上追加媒体聚合字段） */
@@ -95,8 +79,6 @@ export interface EventListItem extends FormData {
   /** 首图原图地址：行内点开的灯箱预览要用它，用缩略图等于把小图放大到全屏 */
   firstUrl?: string | null
   imageCount?: number
-  firstLink?: EventLinkDetail | null
-  linkCount?: number
   tags?: string[]
   summary?: string
   address?: string | null
@@ -281,21 +263,4 @@ export function addEventImages(eventId: string, images: EventImageItem[]) {
  */
 export function deleteEventImage(id: string | number) {
   return request.delete(`${API.URL}/images?id=${id}`)
-}
-
-/**
- * 为日志新增作品链接（独立接口，备用）
- * @param eventId - 日志ID
- * @param links - 链接列表
- */
-export function addEventLinks(eventId: string, links: EventLinkItem[]) {
-  return request.post(`${API.URL}/links`, { eventId, links })
-}
-
-/**
- * 删除日志作品链接（独立接口，备用）
- * @param id - 链接记录ID
- */
-export function deleteEventLink(id: string | number) {
-  return request.delete(`${API.URL}/links?id=${id}`)
 }

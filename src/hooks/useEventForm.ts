@@ -6,11 +6,9 @@ import { useTranslation } from 'react-i18next'
 
 import type { FormData } from '#/form'
 import type { ImageUploadValue } from '@/components/ImageUpload'
-import type { LinkListValue } from '@/components/LinkList'
 import type { LocationValue } from '@/components/LocationPicker'
 import type { EventPayload } from '@/servers/content/event'
 
-import { isValidLinkUrl } from '@/components/LinkList'
 import { getNPCEventById, getEventRevision, createNPCEvent, updateNPCEvent } from '@/servers/content/event'
 import { getMyOrgs } from '@/servers/system/organization'
 
@@ -27,7 +25,6 @@ export const INIT_EVENT_FORM: FormData = {
   visibility: 0,
   visibleOrgIds: [],
   images: [],
-  links: [],
 }
 
 /** AI 解析结果（只读展示，不参与提交） */
@@ -188,20 +185,12 @@ export function useEventForm(id?: string | null) {
       return Number.isNaN(n) ? null : n
     }
     const rawImages = (values.images as ImageUploadValue[] | undefined) || []
-    const rawLinks = (values.links as LinkListValue[] | undefined) || []
     const images = rawImages
       .filter((item) => item && item.url)
       .map((item, index) => ({
         url: item.url,
         thumbUrl: item.thumbUrl || item.url,
         sort: item.sort ?? index,
-      }))
-    const links = rawLinks
-      .filter((item) => item && item.url && item.url.trim())
-      .map((item) => ({
-        platform: item.platform,
-        url: item.url.trim(),
-        title: (item.title || '').trim(),
       }))
 
     // 拆解 location 复合对象
@@ -226,7 +215,6 @@ export function useEventForm(id?: string | null) {
         district: loc.district || null,
       },
       images,
-      links,
     }
   }
 
@@ -236,13 +224,6 @@ export function useEventForm(id?: string | null) {
    * @returns 是否提交成功（失败时已保存草稿并提示原因）
    */
   const submit = async (values: FormData): Promise<boolean> => {
-    // 链接格式校验：存在非法 URL 则提示且不提交
-    const rawLinks = (values.links as LinkListValue[] | undefined) || []
-    const hasInvalidLink = rawLinks.some((item) => item?.url && item.url.trim() && !isValidLinkUrl(item.url.trim()))
-    if (hasInvalidLink) {
-      message.error(t('content.linkUrlInvalid'))
-      return false
-    }
     try {
       setLoading(true)
       const payload = buildPayload(values)
